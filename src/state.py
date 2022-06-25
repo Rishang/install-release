@@ -3,7 +3,8 @@ import json
 from typing import Dict
 from dataclasses import is_dataclass
 
-from utils import EnhancedJSONEncoder
+# locals
+from src.utils import EnhancedJSONEncoder
 
 
 class State:

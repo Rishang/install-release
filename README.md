@@ -1,6 +1,6 @@
 # install-releases
 
-install-releases is a cli tool to install tools based on you device info directly from github releases.
+install-releases is a cli tool to install tools based on your device info directly from github releases and keep them updated.
 
 
 ## Prerequisites
@@ -23,7 +23,7 @@ export PATH=$HOME/.releases-bin:$PATH
 Example usage:
 
 ```bash
-# Installing gron tool from github from for my system (linux):
+# Installing gron tool from github from for my system (linux x86_64):
 # https://github.com/tomnomnom/gron/releases
 
 

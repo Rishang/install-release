@@ -1,17 +1,19 @@
-from tempfile import TemporaryDirectory
-from core import get_release, install_bin, GithubInfo
-from data import GithubRepo
-from utils import mkdir, rprint, logger
 import os
-from state import State
+from tempfile import TemporaryDirectory
 
+# locals
+from src.state import State
+from src.data import GithubRelease
+from src.utils import mkdir, rprint, logger
+from src.core import get_release, install_bin, GithubInfo
 
-cache = State("temp-state.json", obj=GithubRepo)
+HOME = os.environ.get("HOME")
+dest = f"{HOME}/.releases-bin"
+
+cache = State("temp-state.json", obj=GithubRelease)
 
 
 def get(repo: GithubInfo):
-    HOME = os.environ.get("HOME")
-    dest = f"{HOME}/.releases-bin"
 
     releases = repo.release()
 
@@ -31,7 +33,7 @@ def get(repo: GithubInfo):
 
 def upgrade():
 
-    state: dict[str, GithubRepo] = cache.state
+    state: dict[str, GithubRelease] = cache.state
 
     for url in state:
         rprint(f"Fetching: {url}")

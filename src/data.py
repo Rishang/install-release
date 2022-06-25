@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import List, Optional
 from dataclasses import dataclass, fields, field
-from datetime import datetime
-from utils import platform_words, logger
+
+# locals
+from src.utils import platform_words, logger
 
 _platform_words = platform_words()
 
@@ -20,7 +22,7 @@ class OsInfo:
 
 
 @dataclass(init=False)
-class GithubreleaseAssets:
+class GithubReleaseAssets:
     browser_download_url: str
     content_type: str
     created_at: str
@@ -44,7 +46,7 @@ class GithubreleaseAssets:
 
 
 @dataclass
-class GithubRepo:
+class GithubRelease:
     url: str
     name: str
     tag_name: str
@@ -53,11 +55,11 @@ class GithubRepo:
     # draft: bool
     prerelease: bool
     published_at: str
-    assets: List[GithubreleaseAssets]
+    assets: List[GithubReleaseAssets]
     # install_path: Optional[str] = field(default_factory=str)
 
     def __post_init__(self):
-        self.assets = [GithubreleaseAssets(**a) for a in self.assets]
+        self.assets = [GithubReleaseAssets(**a) for a in self.assets]
 
     def published_dt(self):
         return datetime.strptime(self.published_at, "%Y-%m-%dT%H:%M:%SZ")

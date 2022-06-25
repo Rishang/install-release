@@ -4,13 +4,13 @@ import platform
 from typing import List
 
 # pipi
-from magic.compat import detect_from_filename
 import requests
 from requests.auth import HTTPBasicAuth
+from magic.compat import detect_from_filename
 
-# local
-from utils import logger, listItemsMatcher, extract, download, sh
-from data import GithubRepo, _platform_words
+# locals
+from src.utils import logger, listItemsMatcher, extract, download, sh
+from src.data import GithubRelease, _platform_words
 
 
 # --------------- CODE ------------------
@@ -64,7 +64,7 @@ class GithubInfo:
         if not self.response:
 
             self.response = [
-                GithubRepo(
+                GithubRelease(
                     url=self.repo_url,
                     assets=r["assets"],
                     tag_name=r["tag_name"],
@@ -92,9 +92,14 @@ class installRelease:
         self.name = name
 
     def install(self, local: bool, at: str):
-        ...
+        system = platform.system().lower()
 
-    def install_linux(self, local: bool, at: str = None):
+        if system == "linux":
+            return self._install_linux(local, at)
+        elif system == "darwin":
+            return self._install_darwin(local, at)
+
+    def _install_linux(self, local: bool, at: str = None):
 
         if local:
             cmd = f"install {self.source} {at or self.paths['local']}"
@@ -113,9 +118,12 @@ class installRelease:
         else:
             return True
 
+    def _install_darwin(self, local: bool, at: str = None):
+        ...
+
 
 def get_release(
-    releases: List[GithubRepo], repo_url: str, at: str, version: str = None
+    releases: List[GithubRelease], repo_url: str, at: str, version: str = None
 ):
     probability = 0.0
     name = ""
@@ -195,4 +203,4 @@ def install_bin(src: str, dest: str, local: bool, name: str = None):
         raise Exception()
 
     irelease = installRelease(source=bin_files[0], name=name)
-    irelease.install_linux(local, at=dest)
+    irelease.install(local, at=dest)

@@ -1,6 +1,9 @@
+# pipi
 import typer
-from utils import rprint
-from main import (
+
+# locals
+from src.utils import rprint
+from src.cli_interact import (
     GithubInfo,
     get as _get,
     upgrade as _upgrade,
@@ -25,7 +28,7 @@ app = typer.Typer(help=f"release Installer")
 @app.command()
 def get(
     debug: bool = __optionDebug,
-    url: str = typer.Argument(None, help="looks or pling [URL] of theme/icon"),
+    url: str = typer.Argument(None, help="[URL] of github repository "),
 ):
     """
     | Install github release, cli tool
@@ -42,7 +45,7 @@ def upgrade(
     debug: bool = __optionDebug,
 ):
     """
-    | Upgrade all github release, cli tool
+    | Upgrade all github release, cli tools
     """
     _upgrade()
 
