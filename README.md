@@ -40,7 +40,7 @@ python cli.py get "https://github.com/tomnomnom/gron"
 $ python cli.py --help
 Usage: cli.py [OPTIONS] COMMAND [ARGS]...
 
-  release Installer
+  Github Release Installer, based on your system
 
 Commands:
 Commands:

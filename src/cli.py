@@ -26,7 +26,7 @@ def see_help(arg: str = ""):
 # cli debug type alias
 __optionDebug = typer.Option(False, "-v", help="set verbose mode.")
 
-app = typer.Typer(help=f"release Installer")
+app = typer.Typer(help=f"Github Release Installer, based on your system")
 
 
 @app.command()
