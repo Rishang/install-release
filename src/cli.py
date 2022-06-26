@@ -1,8 +1,10 @@
+import logging
+
 # pipi
 import typer
 
 # locals
-from src.utils import rprint
+from src.utils import rprint, logger
 from src.cli_interact import (
     GithubInfo,
     get as _get,
@@ -35,6 +37,8 @@ def get(
     """
     | Install github release, cli tool
     """
+    if debug:
+        logger.setLevel(logging.DEBUG)
 
     if url is None or url == "":
         see_help("get")
@@ -49,13 +53,13 @@ def upgrade(
     """
     | Upgrade all installed release, cli tools
     """
+    if debug:
+        logger.setLevel(logging.DEBUG)
     _upgrade()
 
 
 @app.command()
-def ls(
-    debug: bool = __optionDebug,
-):
+def ls():
     """
     | list all installed release, cli tools
     """
@@ -70,6 +74,9 @@ def rm(
     """
     | remove any installed release, cli tools
     """
+    if debug:
+        logger.setLevel(logging.DEBUG)
+
     remove(name)
 
 

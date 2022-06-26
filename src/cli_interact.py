@@ -12,6 +12,8 @@ dest = f"{HOME}/.releases-bin"
 
 cache = State("temp-state.json", obj=GithubRelease)
 
+logger.debug(f"state path: {cache.state_file}")
+
 
 def get(repo: GithubInfo, prompt=False):
 
