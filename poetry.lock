@@ -261,7 +261,6 @@ python-versions = ">=3.6.3,<4.0.0"
 [package.dependencies]
 commonmark = ">=0.9.0,<0.10.0"
 pygments = ">=2.6.0,<3.0.0"
-typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9\""}
 
 [package.extras]
 jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
@@ -314,7 +313,7 @@ python-versions = "*"
 name = "typing-extensions"
 version = "4.2.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -341,8 +340,8 @@ python-versions = "*"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.8"
-content-hash = "95b3ee5611fe902438d3af8442ffdf358c1acf6258f3f690f8197db78fba4813"
+python-versions = "^3.9"
+content-hash = "3f000743b00c8255d526bd5b57da0380dd28d90cb35d29c787d542e7447a695b"
 
 [metadata.files]
 atomicwrites = [

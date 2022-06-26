@@ -4,7 +4,7 @@ from typing import Dict
 from dataclasses import is_dataclass
 
 # locals
-from src.utils import EnhancedJSONEncoder
+from InstallReleases.utils import EnhancedJSONEncoder
 
 
 class State:

@@ -3,8 +3,8 @@ from typing import List, Optional
 from dataclasses import dataclass, fields, field
 
 # locals
-from src.utils import logger
-from src.constants import platform_words
+from InstallReleases.utils import logger
+from InstallReleases.constants import platform_words
 
 _platform_words = platform_words()
 

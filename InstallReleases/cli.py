@@ -4,8 +4,8 @@ import logging
 import typer
 
 # locals
-from src.utils import rprint, logger
-from src.cli_interact import (
+from InstallReleases.utils import rprint, logger
+from InstallReleases.cli_interact import (
     GithubInfo,
     get as _get,
     upgrade as _upgrade,

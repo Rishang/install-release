@@ -5,10 +5,10 @@ from tempfile import TemporaryDirectory
 from rich.progress import track
 
 # locals
-from src.state import State
-from src.data import GithubRelease, TypeState
-from src.utils import mkdir, rprint, logger, show_table
-from src.core import get_release, extract_release, install_bin, GithubInfo
+from InstallReleases.state import State
+from InstallReleases.data import GithubRelease, TypeState
+from InstallReleases.utils import mkdir, rprint, logger, show_table
+from InstallReleases.core import get_release, extract_release, install_bin, GithubInfo
 
 HOME = os.environ.get("HOME")
 dest = f"{HOME}/.releases-bin"
