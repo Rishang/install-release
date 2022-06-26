@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from src.state import State
 from src.data import GithubRelease, TypeState
 from src.utils import mkdir, rprint, logger, show_table
-from src.core import get_release, install_bin, GithubInfo
+from src.core import get_release, extract_release, install_bin, GithubInfo
 
 HOME = os.environ.get("HOME")
 dest = f"{HOME}/.releases-bin"
@@ -13,22 +13,50 @@ dest = f"{HOME}/.releases-bin"
 cache = State("temp-state.json", obj=GithubRelease)
 
 
-def get(repo: GithubInfo):
+def get(repo: GithubInfo, prompt=False):
 
     releases = repo.release()
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    _gr = get_release(releases=releases, repo_url=repo.repo_url, at=at.name)
+    _gr = get_release(releases=releases, repo_url=repo.repo_url)
 
     if _gr == False:
         return
+    else:
+        if prompt != False:
+
+            rprint(
+                f"\n[green bold]Repo     : {repo.info.full_name}"
+                f"\n[blue]Stars    : {repo.info.stargazers_count}"
+                f"\n[magenta]Language : {repo.info.language}"
+                f"\n[yellow]Title    : {repo.info.description}"
+            )
+            show_table(
+                data=[
+                    {
+                        "Name": releases[0].name,
+                        "Selected Item": _gr.name,
+                        "Version": releases[0].tag_name,
+                        "Size Mb": _gr.size_mb(),
+                        "Downloads": _gr.download_count,
+                    }
+                ],
+                title=f"Install: {releases[0].name}",
+            )
+
+            rprint("[color(34)]Install this tool (Y/N): ", end="")
+            yn = input()
+            if yn.lower() != "y":
+                return
+
+        extract_release(item=_gr, at=at.name)
 
     cache.set(repo.repo_url, value=releases[0])
     cache.save()
 
     mkdir(dest)
-    install_bin(src=at.name, dest=dest, local=True, name=repo.repo_name)
+    install_bin(src=at.name, dest=dest, local=True, name=repo.info.name)
 
 
 def upgrade():
@@ -42,19 +70,19 @@ def upgrade():
         releases = repo.release()
 
         if releases[0].tag_name != state[url].tag_name:
-            get(repo)
+            get(repo, prompt=False)
         else:
             logger.info(f"No updates")
 
 
-def listInstalled():
+def list_installed():
     state: TypeState = cache.state
 
     _table = []
     for i in state:
-        _table.append({"name": state[i].name, "url": i})
+        _table.append({"Name": state[i].name, "Version": state[i].tag_name, "Url": i})
 
-    show_table(_table)
+    show_table(_table, title="Installed tools")
 
 
 def remove(name: str):
@@ -71,4 +99,4 @@ def remove(name: str):
     if popKey != "":
         del state[popKey]
         cache.save()
-        logger.info(f"Removed {name}")
+        logger.info(f"Removed: {name}")

@@ -8,7 +8,7 @@ from src.cli_interact import (
     get as _get,
     upgrade as _upgrade,
     remove,
-    listInstalled,
+    list_installed,
 )
 
 
@@ -39,7 +39,7 @@ def get(
     if url is None or url == "":
         see_help("get")
     repo = GithubInfo(url)
-    _get(repo)
+    _get(repo, prompt=True)
 
 
 @app.command()
@@ -59,7 +59,7 @@ def ls(
     """
     | list all installed release, cli tools
     """
-    listInstalled()
+    list_installed()
 
 
 @app.command()

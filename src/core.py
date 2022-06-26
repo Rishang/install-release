@@ -1,3 +1,4 @@
+import os
 import re
 import glob
 import platform
@@ -10,7 +11,7 @@ from magic.compat import detect_from_filename
 
 # locals
 from src.utils import logger, listItemsMatcher, extract, download, sh
-from src.data import GithubRelease, _platform_words
+from src.data import GithubRelease, GithubReleaseAssets, GithubRepoInfo, _platform_words
 
 
 # --------------- CODE ------------------
@@ -35,9 +36,11 @@ class GithubInfo:
 
         repo_url_attr: list = repo_url.split("/")
 
-        self.repo_url = repo_url
+        self.repo_url: str = repo_url
         self.owner, self.repo_name = repo_url_attr[-2], repo_url_attr[-1]
         self.api = f"https://api.github.com/repos/{self.owner}/{self.repo_name}"
+
+        self.info: GithubRepoInfo = GithubRepoInfo(**self._req(self.api))
 
     def _req(self, url):
 
@@ -122,9 +125,7 @@ class installRelease:
         ...
 
 
-def get_release(
-    releases: List[GithubRelease], repo_url: str, at: str, version: str = None
-):
+def get_release(releases: List[GithubRelease], repo_url: str, version: str = None):
     probability = 0.0
     name = ""
 
@@ -141,8 +142,6 @@ def get_release(
     if len(release.assets) == 0:
         logger.warning(f"No release assets found for: {repo_url}")
         return False
-
-    logger.debug(f"Download path: {at}")
 
     for i in release.assets:
         match = listItemsMatcher(patterns=_platform_words, word=i.name.lower())
@@ -166,8 +165,8 @@ def get_release(
         count += 1
 
     item = release.assets[count]
-    logger.info(
-        "Finally selected file: \n"
+    logger.debug(
+        "Selected file: \n"
         f"File: '{item.name}', content_type: '{item.content_type}', chances: {probability}"
     )
     if probability < 0.2:
@@ -175,9 +174,15 @@ def get_release(
             f"Final Selected item has low probability"
             f"Object: {item.name}, content_type: {item.content_type}, chances: {probability}"
         )
+    return item
+
+
+def extract_release(item: GithubReleaseAssets, at):
+
+    logger.debug(f"Download path: {at}")
 
     path = download(item.browser_download_url, at)
-    logger.info(f"path: {path}")
+    logger.debug(f"path: {path}")
 
     logger.debug(f"Extracting: {path}")
     if "executable" not in detect_from_filename(path).mime_type:

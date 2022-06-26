@@ -22,7 +22,23 @@ class OsInfo:
     platform_words: List[str]
 
 
-@dataclass(init=False)
+@dataclass
+class GithubRepoInfo:
+    name: str
+    full_name: str
+    html_url: str
+    description: str
+    language: str
+    stargazers_count: int
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+
+@dataclass
 class GithubReleaseAssets:
     browser_download_url: str
     content_type: str
@@ -42,8 +58,10 @@ class GithubReleaseAssets:
                 setattr(self, k, v)
 
     def __post_init__(self):
-        self.size_mb = int(str(self.size / 1000000)[:4])
         self.updated_at_dt = datetime.strptime(self.created_at, "%Y-%m-%dT%XZ")
+
+    def size_mb(self) -> float:
+        return float(str(self.size / 1000000)[:4])
 
 
 @dataclass
