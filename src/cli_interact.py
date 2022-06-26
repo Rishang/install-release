@@ -3,8 +3,8 @@ from tempfile import TemporaryDirectory
 
 # locals
 from src.state import State
-from src.data import GithubRelease
-from src.utils import mkdir, rprint, logger
+from src.data import GithubRelease, TypeState
+from src.utils import mkdir, rprint, logger, show_table
 from src.core import get_release, install_bin, GithubInfo
 
 HOME = os.environ.get("HOME")
@@ -33,7 +33,7 @@ def get(repo: GithubInfo):
 
 def upgrade():
 
-    state: dict[str, GithubRelease] = cache.state
+    state: TypeState = cache.state
 
     for url in state:
         rprint(f"Fetching: {url}")
@@ -47,5 +47,28 @@ def upgrade():
             logger.info(f"No updates")
 
 
-def remove(tool):
-    ...
+def listInstalled():
+    state: TypeState = cache.state
+
+    _table = []
+    for i in state:
+        _table.append({"name": state[i].name, "url": i})
+
+    show_table(_table)
+
+
+def remove(name: str):
+    state: TypeState = cache.state
+    popKey = ""
+
+    for i in state:
+        if state[i].name == name:
+            popKey = i
+            if os.path.exists(f"{dest}/{name}"):
+                os.remove(f"{dest}/{name}")
+            break
+
+    if popKey != "":
+        del state[popKey]
+        cache.save()
+        logger.info(f"Removed {name}")

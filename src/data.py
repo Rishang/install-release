@@ -3,7 +3,8 @@ from typing import List, Optional
 from dataclasses import dataclass, fields, field
 
 # locals
-from src.utils import platform_words, logger
+from src.utils import logger
+from src.constants import platform_words
 
 _platform_words = platform_words()
 
@@ -63,3 +64,8 @@ class GithubRelease:
 
     def published_dt(self):
         return datetime.strptime(self.published_at, "%Y-%m-%dT%H:%M:%SZ")
+
+
+# ---------- Type Aliases ----------- #
+
+TypeState = dict[str, GithubRelease]

@@ -7,7 +7,7 @@ import logging
 import platform
 import subprocess
 import dataclasses
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 
 # pipi
@@ -15,12 +15,16 @@ import requests
 from rich import print as rprint
 from rich.console import Console
 from rich.logging import RichHandler
+from rich.text import Text
+from rich.table import Table
 from magic.compat import detect_from_filename
 
 # logging.basicConfig(level=logging.INFO)
 
 
 # locals
+from constants import _colors
+
 console = Console()
 
 
@@ -54,6 +58,13 @@ def _logger(flag: str = "", format: str = ""):
 # message
 # export loglevel=true
 logger = _logger("loglevel")
+
+
+class EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
 
 
 @dataclass
@@ -185,26 +196,46 @@ def listItemsMatcher(patterns: List[str], word: str) -> float:
     return count / len(patterns)
 
 
-def platform_words() -> list:
+def show_table(
+    data: List[Dict], ignore_keys: List = [], title: str = "", border_style=""
+):
+    """rich table"""
 
-    aliases = {
-        "x86_64": ["x86", "x64", "amd64", "amd", "x86_64"],
-        "aarch64": ["arm64", "aarch64"],
+    def dict_list_tbl(items=list[dict], ignore_keys: list = []):
+        keys = []
+        data = []
+
+        for item in items:
+            _tmp: tuple = ()
+            for key in [i for i in item.keys() if i not in ignore_keys]:
+
+                if key not in keys:
+                    keys.append(key)
+                _tmp += (str(item[key]),)
+            data.append(_tmp)
+
+        return keys, data
+
+    text = Text(title, style=_colors["light_green"])
+
+    print()
+
+    table = Table(title=text, style=_colors["purple"], border_style=border_style)
+    columns, rows = dict_list_tbl(data, ignore_keys)
+
+    colors = {
+        0: _colors["yellow"],
+        1: _colors["red"],
+        2: _colors["green"],
+        3: _colors["cyan"],
+        4: _colors["blue"],
     }
 
-    platform_words = []
+    for count, col in enumerate(columns):
+        color = colors[count % len(colors)]
+        table.add_column(col, justify="left", style=color, no_wrap=True)
+    for row in rows:
+        table.add_row(*row)
 
-    platform_words += [platform.system().lower(), platform.architecture()[0]]
-
-    for alias in aliases:
-        if platform.machine().lower() in aliases[alias]:
-            platform_words += aliases[alias]
-
-    return platform_words
-
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
+    console = Console()
+    console.print(table)

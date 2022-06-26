@@ -43,6 +43,9 @@ Usage: cli.py [OPTIONS] COMMAND [ARGS]...
   release Installer
 
 Commands:
+Commands:
   get      | Install github release, cli tool
-  upgrade  | Upgrade all github release, cli tool
+  ls       | list all installed release, cli tools
+  rm       | remove any installed release, cli tools
+  upgrade  | Upgrade all installed release, cli tools
 ```

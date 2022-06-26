@@ -7,6 +7,8 @@ from src.cli_interact import (
     GithubInfo,
     get as _get,
     upgrade as _upgrade,
+    remove,
+    listInstalled,
 )
 
 
@@ -45,9 +47,30 @@ def upgrade(
     debug: bool = __optionDebug,
 ):
     """
-    | Upgrade all github release, cli tools
+    | Upgrade all installed release, cli tools
     """
     _upgrade()
+
+
+@app.command()
+def ls(
+    debug: bool = __optionDebug,
+):
+    """
+    | list all installed release, cli tools
+    """
+    listInstalled()
+
+
+@app.command()
+def rm(
+    name: str = typer.Argument(None, help="name of installed tool to remove"),
+    debug: bool = __optionDebug,
+):
+    """
+    | remove any installed release, cli tools
+    """
+    remove(name)
 
 
 if __name__ == "__main__":
