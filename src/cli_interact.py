@@ -1,6 +1,9 @@
 import os
 from tempfile import TemporaryDirectory
 
+# pipi
+from rich.progress import track
+
 # locals
 from src.state import State
 from src.data import GithubRelease, TypeState
@@ -65,7 +68,7 @@ def upgrade():
 
     state: TypeState = cache.state
 
-    for url in state:
+    for url in track(state, description="Progress..."):
         rprint(f"Fetching: {url}")
 
         repo = GithubInfo(url)
