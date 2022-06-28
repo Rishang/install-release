@@ -11,7 +11,12 @@ from magic.compat import detect_from_filename
 
 # locals
 from InstallReleases.utils import logger, listItemsMatcher, extract, download, sh
-from InstallReleases.data import GithubRelease, GithubReleaseAssets, GithubRepoInfo, _platform_words
+from InstallReleases.data import (
+    GithubRelease,
+    GithubReleaseAssets,
+    GithubRepoInfo,
+    _platform_words,
+)
 
 
 # --------------- CODE ------------------
@@ -126,6 +131,7 @@ class installRelease:
 
     def _install_windows(self, local: bool, at: str = None):
         ...
+
 
 def get_release(releases: List[GithubRelease], repo_url: str, version: str = None):
     probability = 0.0
