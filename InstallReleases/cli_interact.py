@@ -18,13 +18,15 @@ cache = State("temp-state.json", obj=GithubRelease)
 logger.debug(f"state path: {cache.state_file}")
 
 
-def get(repo: GithubInfo, prompt=False):
+def get(repo: GithubInfo, tag_name: str = "", prompt=False):
 
-    releases = repo.release()
+    releases = repo.release(tag_name=tag_name)
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
     _gr = get_release(releases=releases, repo_url=repo.repo_url)
+
+    logger.debug(_gr)
 
     if _gr == False:
         return

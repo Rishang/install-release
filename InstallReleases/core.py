@@ -32,7 +32,7 @@ class GithubInfo:
     # https://api.github.com/repos/OWNER/REPO/releases/tags/TAG
     # https://api.github.com/repos/OWNER/REPO/releases/latest
 
-    def __init__(self, repo_url) -> None:
+    def __init__(self, repo_url, data: dict = {}) -> None:
         if "https://github.com/" not in repo_url:
             raise Exception("repo url must contain github.com")
 
@@ -45,31 +45,43 @@ class GithubInfo:
         self.owner, self.repo_name = repo_url_attr[-2], repo_url_attr[-1]
         self.api = f"https://api.github.com/repos/{self.owner}/{self.repo_name}"
 
+        self.data = data
         self.info: GithubRepoInfo = GithubRepoInfo(**self._req(self.api))
 
     def _req(self, url):
 
         response = requests.get(
-            url, headers=self.headers, auth=HTTPBasicAuth("user", "pass")
+            url,
+            headers=self.headers,
+            auth=HTTPBasicAuth("user", "pass"),
+            json=self.data,
         ).json()
 
         if isinstance(response, dict):
-            if (
-                response.get("message") != None
-                and "API rate limit exceeded" in response["message"]
-            ):
+            if response.get("message"):
+                logger.warning(response)
                 raise Exception(response["message"])
+
         return response
 
     def repository(self):
         return self._req(self.api)
 
-    def release(self):
-        api = self.api + "/releases"
+    def release(self, tag_name: str = ""):
+
+        if tag_name == "":
+            api = self.api + "/releases"
+        else:
+            api = self.api + "/releases/tags/" + tag_name
+
         logger.debug(f"api: {api}")
 
         # Github release info api
         if not self.response:
+            req = self._req(api)
+
+            if not isinstance(req, list):
+                req = [req]
 
             self.response = [
                 GithubRelease(
@@ -80,7 +92,7 @@ class GithubInfo:
                     published_at=r["published_at"],
                     name=self.repo_name,
                 )
-                for r in self._req(api)
+                for r in req
             ]
 
         return self.response
@@ -133,7 +145,7 @@ class installRelease:
         ...
 
 
-def get_release(releases: List[GithubRelease], repo_url: str, version: str = None):
+def get_release(releases: List[GithubRelease], repo_url: str):
     probability = 0.0
     name = ""
 

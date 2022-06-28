@@ -33,6 +33,7 @@ app = typer.Typer(help=f"Github Release Installer, based on your system")
 def get(
     debug: bool = __optionDebug,
     url: str = typer.Argument(None, help="[URL] of github repository "),
+    tag_name: str = typer.Option("", "-t", help="get a specific tag version."),
 ):
     """
     | Install github release, cli tool
@@ -42,8 +43,8 @@ def get(
 
     if url is None or url == "":
         see_help("get")
-    repo = GithubInfo(url)
-    _get(repo, prompt=True)
+
+    _get(GithubInfo(url), tag_name=tag_name, prompt=True)
 
 
 @app.command()
