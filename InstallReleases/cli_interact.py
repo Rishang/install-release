@@ -32,10 +32,10 @@ def get(repo: GithubInfo, prompt=False):
         if prompt != False:
 
             rprint(
-                f"\n[green bold]Repo     : {repo.info.full_name}"
-                f"\n[blue]Stars    : {repo.info.stargazers_count}"
-                f"\n[magenta]Language : {repo.info.language}"
-                f"\n[yellow]Title    : {repo.info.description}"
+                f"\n[green bold]📑 Repo     : {repo.info.full_name}"
+                f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
+                f"\n[magenta]✨ Language : {repo.info.language}"
+                f"\n[yellow]🔥 Title    : {repo.info.description}"
             )
             show_table(
                 data=[
@@ -47,10 +47,10 @@ def get(repo: GithubInfo, prompt=False):
                         "Downloads": _gr.download_count,
                     }
                 ],
-                title=f"Install: {releases[0].name}",
+                title=f"🚀 Install: {releases[0].name}",
             )
 
-            rprint("[color(34)]Install this tool (Y/N): ", end="")
+            rprint("[color(34)]Install this tool (Y/n): ", end="")
             yn = input()
             if yn.lower() != "y":
                 return
