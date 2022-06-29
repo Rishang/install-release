@@ -22,6 +22,9 @@ cache = State(
 
 def get(repo: GithubInfo, tag_name: str = "", prompt=False):
 
+    logger.debug(cache.state_file)
+    logger.debug(dest)
+
     releases = repo.release(tag_name=tag_name)
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
