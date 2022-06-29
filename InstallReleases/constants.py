@@ -1,4 +1,10 @@
+import os
 import platform
+
+
+HOME = os.path.expanduser("~")
+__bin_at__ = ".releases-bin"
+__state_at__ = ".install_releases/state.json"
 
 _colors = {
     "green": "#8CC265",
@@ -8,6 +14,17 @@ _colors = {
     "yellow": "#F0A45D bold",
     "red": "#E8678A",
     "purple": "#8782E9 bold",
+}
+
+
+state_path = {
+    "linux": f"{HOME}/.config/{__state_at__}",
+    "darwin": f"{HOME}/.config/{__state_at__}",
+}
+
+bin_path = {
+    "linux": f"{HOME}/{__bin_at__}",
+    "darwin": f"{HOME}/{__bin_at__}",
 }
 
 

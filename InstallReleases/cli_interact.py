@@ -5,17 +5,19 @@ from tempfile import TemporaryDirectory
 from rich.progress import track
 
 # locals
-from InstallReleases.state import State
+from InstallReleases.state import State, platform_path
 from InstallReleases.data import GithubRelease, TypeState
+from InstallReleases.constants import state_path, bin_path
 from InstallReleases.utils import mkdir, rprint, logger, show_table
 from InstallReleases.core import get_release, extract_release, install_bin, GithubInfo
 
-HOME = os.environ.get("HOME")
-dest = f"{HOME}/.releases-bin"
 
-cache = State("temp-state.json", obj=GithubRelease)
+dest = platform_path(paths=bin_path, alt="../temp/bin")
 
-logger.debug(f"state path: {cache.state_file}")
+cache = State(
+    file_path=platform_path(paths=state_path, alt="./temp-state.json"),
+    obj=GithubRelease,
+)
 
 
 def get(repo: GithubInfo, tag_name: str = "", prompt=False):

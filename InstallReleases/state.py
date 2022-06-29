@@ -1,10 +1,29 @@
 import os
 import json
+import platform
 from typing import Dict
 from dataclasses import is_dataclass
 
 # locals
-from InstallReleases.utils import EnhancedJSONEncoder
+from InstallReleases.utils import logger, EnhancedJSONEncoder
+
+
+def platform_path(paths: dict, alt: str = ""):
+    """provide path base on platform"""
+    system = platform.system().lower()
+
+    if os.environ.get("installState") == "test":
+        return alt
+
+    elif paths.get(system):
+        p = paths.get(system)
+
+        if not os.path.exists(os.path.dirname(p)):
+            os.makedirs(os.path.dirname(p))
+        return p
+    else:
+        logger.error(f"No state dir path set for {system}")
+        exit(1)
 
 
 class State:

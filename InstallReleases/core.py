@@ -17,7 +17,7 @@ from InstallReleases.data import (
     GithubRepoInfo,
     _platform_words,
 )
-
+from InstallReleases.constants import HOME
 
 # --------------- CODE ------------------
 
@@ -101,8 +101,8 @@ class GithubInfo:
 class installRelease:
     USER: str
     SUDO_USER: str
-    HOME: str
-    _all_paths = {"linux": {"local": "~/.local/bin", "global": "/usr/local/bin"}}
+
+    _all_paths = {"linux": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"}}
 
     def __init__(self, source: str, name: str = None) -> None:
         pl = platform.system()
@@ -136,6 +136,9 @@ class installRelease:
             logger.error(out.stderr)
             return False
         else:
+            logger.info(
+                f"[bold yellow]Installed: {self.name}[/]", extra={"markup": True}
+            )
             return True
 
     def _install_darwin(self, local: bool, at: str = None):
