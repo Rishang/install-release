@@ -45,7 +45,13 @@ export PATH=$HOME/.releases-bin:$PATH
 
 ## Install any tool
 
-### Example usage:
+### Example usage `install-release`
+
+- [Install tool from github releases](#install-tool-from-github-releases)
+- [List installed tools](#list-installed-tools)
+- [Remove installed release](#remove-installed-release)
+- [Update all previously installed tools to the latest version](#update-all-previously-installed-tools-to-the-latest-version)
+
 
 ```
 # Help page
@@ -67,6 +73,37 @@ For sub command help use: `install-release <sub-command> --help`
 
 Example: `install-release get --help`
 
+
+
+#### Install tool from github releases
+
+```bash
+❯ install-release get "https://github.com/ahmetb/kubectx"
+
+📑 Repo     : ahmetb/kubectx
+🌟 Stars    : 13295
+✨ Language : Go
+🔥 Title    : Faster way to switch between clusters and namespaces in kubectl
+
+                              🚀 Install: kubectx                               
+┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Name    ┃ Selected Item                      ┃ Version ┃ Size Mb ┃ Downloads ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
+│ kubectx │ kubectx_v0.9.4_linux_x86_64.tar.gz │ v0.9.4  │ 1.0     │ 43811     │
+└─────────┴────────────────────────────────────┴─────────┴─────────┴───────────┘
+Install this tool (Y/n): y
+ INFO     Downloaded: 'kubectx_v0.9.4_linux_x86_64.tar.gz' at /tmp/dn_kubectx_ph6i7dmk                                                               utils.py:159
+ INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/.releases-bin/kubectx                                                                  core.py:132
+ INFO     Installed: kubectx
+```
+```
+# checking if kubectx is installed
+❯ which kubectx
+/home/noobi/.releases-bin/kubectx
+
+❯ kubectx --version
+0.9.4
+```
 
 #### List installed tools
 
