@@ -2,19 +2,28 @@
 
 install-releases is a cli tool to install tools based on your device info directly from github releases and keep them updated.
 
-![demo](.github/images/demo.png)
+ This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
+
+> Also it's mainly for installing tools that are not available in the official repositories or package managers.
 
 
 ```
-# Checking for gron is installed using installed-release:
+# Installing a tool named `gron` directly from github releases
 
+❯ install-release get https://github.com/tomnomnom/gron 
+```
+![demo](.github/images/demo.png)
+
+
+Checking for gron is installed using installed-release:
+
+```
 ❯ which gron
 /home/noobi/.releases-bin/gron
 
 ❯ gron --help
 Transform JSON (from a file, URL, or stdin) into discrete assignments to make it greppable
 ... # more
-
 ```
 
 ## Prerequisites
@@ -23,7 +32,7 @@ Transform JSON (from a file, URL, or stdin) into discrete assignments to make it
 
 - [libmagic](https://github.com/ahupp/python-magic#installation)
 - Default releases Installation Path is: `~/.releases-bin/`,
-This is the path where installed tools are stored.
+This is the path where installed tools will get stored.
 
 - In order to run installed tools, you need to add the following line your `~/.bashrc` or `~/.zshrc` file:
 
@@ -35,6 +44,27 @@ export PATH=$HOME/.releases-bin:$PATH
 ## Install any tool
 
 ### Example usage:
+
+```
+# Help page
+
+❯ install-release --help
+Usage: install-release [OPTIONS] COMMAND [ARGS]...
+
+  Github Release Installer, based on your system
+
+  Commands:
+    get      | Install github release, cli tool
+    ls       | list all installed release, cli tools
+    rm       | remove any installed release, cli tools
+    upgrade  | Upgrade all installed release, cli tools
+
+```
+
+For sub command help use: `install-release <sub-command> --help`
+
+Example: `install-release get --help`
+
 
 #### List installed tools
 
@@ -77,17 +107,3 @@ Fetching: https://github.com/tomnomnom/gron
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```
 
-### Help page
-
-```
-❯ install-release --help
-Usage: install-release [OPTIONS] COMMAND [ARGS]...
-
-  Github Release Installer, based on your system
-
-  Commands:
-    get      | Install github release, cli tool
-    ls       | list all installed release, cli tools
-    rm       | remove any installed release, cli tools
-    upgrade  | Upgrade all installed release, cli tools
-```
