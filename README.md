@@ -1,5 +1,7 @@
 # install-releases
 
+[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.10-xx.svg)](https://shields.io/)
+
 install-releases is a cli tool to install tools based on your device info directly from github releases and keep them updated.
 
  This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
