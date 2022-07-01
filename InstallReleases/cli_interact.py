@@ -76,12 +76,17 @@ def upgrade():
     state: TypeState = cache.state
 
     for url in track(state, description="Progress..."):
-        rprint(f"Fetching: {url}")
+        rprint(f"\nFetching: {url}")
 
         repo = GithubInfo(url)
         releases = repo.release()
 
         if releases[0].tag_name != state[url].tag_name:
+            rprint(
+                "[bold yellow]"
+                f"Updating: {repo.repo_name}, {releases[0].tag_name} => {state[url].tag_name}" 
+                "[/]"
+            )
             get(repo, prompt=False)
         else:
             logger.info(f"No updates")

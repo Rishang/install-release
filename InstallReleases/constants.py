@@ -4,7 +4,7 @@ import platform
 
 HOME = os.path.expanduser("~")
 __bin_at__ = ".releases-bin"
-__state_at__ = ".install_releases/state.json"
+__state_at__ = "install_releases/state.json"
 
 _colors = {
     "green": "#8CC265",
