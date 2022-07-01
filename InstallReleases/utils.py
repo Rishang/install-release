@@ -23,7 +23,7 @@ from magic.compat import detect_from_filename
 
 
 # locals
-from constants import _colors
+from InstallReleases.constants import _colors
 
 console = Console()
 
