@@ -2,6 +2,20 @@
 
 install-releases is a cli tool to install tools based on your device info directly from github releases and keep them updated.
 
+![demo](.github/images/demo.png)
+
+
+```
+# Checking for gron is installed using installed-release:
+
+❯ which gron
+/home/noobi/.releases-bin/gron
+
+❯ gron --help
+Transform JSON (from a file, URL, or stdin) into discrete assignments to make it greppable
+... # more
+
+```
 
 ## Prerequisites
 
@@ -20,32 +34,60 @@ export PATH=$HOME/.releases-bin:$PATH
 
 ## Install any tool
 
-Example usage:
+### Example usage:
+
+#### List installed tools
 
 ```bash
-# Installing gron tool from github from for my system (linux x86_64):
-# https://github.com/tomnomnom/gron/releases
+❯ install-release ls
 
-
-python cli.py get "https://github.com/tomnomnom/gron"
-
-  INFO     Downloaded: 'gron-linux-amd64-0.7.1.tgz' at /tmp/dn_gron_eybzs568
-  INFO     installed /tmp/dn_gron_eybzs568/gron to /home/noobi/.releases-bin/gron
+                       Installed tools                        
+┏━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Name      ┃ Version ┃ Url                                  ┃
+┡━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ terrascan │ v1.15.2 │ https://github.com/tenable/terrascan │
+│ gron      │ v0.7.1  │ https://github.com/tomnomnom/gron    │
+└───────────┴─────────┴──────────────────────────────────────┘    
 ```
 
+#### Remove installed release
+
+```
+# Remove installed release
+
+❯ install-release rm gron
+    
+INFO     Removed: gron           
+```
+
+#### Update all previously installed tools to the latest version
+
+```
+❯ install-release upgrade
+
+Fetching: https://github.com/tenable/terrascan
+Updating: terrascan, v1.15.0 => v1.15.2
+ INFO     Downloaded: 'terrascan_1.15.2_Linux_x86_64.tar.gz' at /tmp/dn_terrascan_0as71a6v
+ INFO     install /tmp/dn_terrascan_0as71a6v/terrascan /home/noobi/.releases-bin/terrascan
+ INFO     Installed: terrascan
+
+Fetching: https://github.com/tomnomnom/gron
+ INFO     No updates
+
+Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
+```
 
 ### Help page
 
 ```
-$ python cli.py --help
-Usage: cli.py [OPTIONS] COMMAND [ARGS]...
+❯ install-release --help
+Usage: install-release [OPTIONS] COMMAND [ARGS]...
 
   Github Release Installer, based on your system
 
-Commands:
-Commands:
-  get      | Install github release, cli tool
-  ls       | list all installed release, cli tools
-  rm       | remove any installed release, cli tools
-  upgrade  | Upgrade all installed release, cli tools
+  Commands:
+    get      | Install github release, cli tool
+    ls       | list all installed release, cli tools
+    rm       | remove any installed release, cli tools
+    upgrade  | Upgrade all installed release, cli tools
 ```
