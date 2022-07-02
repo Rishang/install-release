@@ -1,19 +1,23 @@
 # install-releases
-
 [![Python Version](https://img.shields.io/badge/Python-3.8_to_3.10-xx.svg)](https://shields.io/)
 
 install-releases is a cli tool to install tools based on your device info directly from github releases and keep them updated.
 
- This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
+This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
 
 > Also it's mainly for installing tools that are not available in the official repositories or package managers.
 
+```bash
+# Install install-releases
+pip3 install install-releases
+```
 
 ```
 # Installing a tool named `gron` directly from github releases
 
-❯ install-release get https://github.com/tomnomnom/gron 
+❯ get-release install https://github.com/tomnomnom/gron 
 ```
+
 ![demo](.github/images/demo.png)
 
 
@@ -43,26 +47,26 @@ export PATH=$HOME/.releases-bin:$PATH
 ```
 
 
-## Install any tool
+## Install this package
 
-### Example usage `install-release`
+```bash
+pip3 install install-releases
+```
 
-- [Install tool from github releases](#install-tool-from-github-releases)
-- [List installed tools](#list-installed-tools)
-- [Remove installed release](#remove-installed-release)
-- [Update all previously installed tools to the latest version](#update-all-previously-installed-tools-to-the-latest-version)
+
+### Example usage `get-release`
 
 
 ```
 # Help page
 
-❯ install-release --help
+❯ get-release --help
 Usage: install-release [OPTIONS] COMMAND [ARGS]...
 
   Github Release Installer, based on your system
 
   Commands:
-    get      | Install github release, cli tool
+    install  | Install github release, cli tool
     ls       | list all installed release, cli tools
     rm       | remove any installed release, cli tools
     upgrade  | Upgrade all installed release, cli tools
