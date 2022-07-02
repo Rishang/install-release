@@ -125,7 +125,7 @@ Install this tool (Y/n): y
 
 #### Remove installed release
 
-```
+```bash
 # Remove installed release
 
 ❯ install-release rm gron
@@ -135,7 +135,7 @@ INFO     Removed: gron
 
 #### Update all previously installed tools to the latest version
 
-```
+```bash
 ❯ install-release upgrade
 
 Fetching: https://github.com/tenable/terrascan
