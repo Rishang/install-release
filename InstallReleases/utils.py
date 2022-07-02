@@ -209,7 +209,7 @@ def show_table(
 ):
     """rich table"""
 
-    def dict_list_tbl(items=list[dict], ignore_keys: list = []):
+    def dict_list_tbl(items=List[dict], ignore_keys: list = []):
         keys = []
         data = []
 

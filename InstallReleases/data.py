@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Dict
 from dataclasses import dataclass, fields, field
 
 # locals
@@ -86,4 +86,4 @@ class GithubRelease:
 
 # ---------- Type Aliases ----------- #
 
-TypeState = dict[str, GithubRelease]
+TypeState = Dict[str, GithubRelease]
