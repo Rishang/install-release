@@ -3,8 +3,8 @@ from typing import List, Dict
 from dataclasses import dataclass, fields, field
 
 # locals
-from InstallReleases.utils import logger
-from InstallReleases.constants import platform_words
+from InstallRelease.utils import logger
+from InstallRelease.constants import platform_words
 
 _platform_words = platform_words()
 

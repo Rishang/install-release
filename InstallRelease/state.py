@@ -5,7 +5,7 @@ from typing import Dict
 from dataclasses import is_dataclass
 
 # locals
-from InstallReleases.utils import logger, EnhancedJSONEncoder
+from InstallRelease.utils import logger, EnhancedJSONEncoder
 
 
 def platform_path(paths: dict, alt: str = ""):

@@ -31,7 +31,7 @@ except ImportError:
 
 
 # locals
-from InstallReleases.constants import _colors
+from InstallRelease.constants import _colors
 
 console = Console()
 

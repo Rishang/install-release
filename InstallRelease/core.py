@@ -10,14 +10,14 @@ from requests.auth import HTTPBasicAuth
 from magic.compat import detect_from_filename
 
 # locals
-from InstallReleases.utils import logger, listItemsMatcher, extract, download, sh
-from InstallReleases.data import (
+from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh
+from InstallRelease.data import (
     GithubRelease,
     GithubReleaseAssets,
     GithubRepoInfo,
     _platform_words,
 )
-from InstallReleases.constants import HOME
+from InstallRelease.constants import HOME
 
 # --------------- CODE ------------------
 

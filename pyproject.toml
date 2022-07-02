@@ -3,12 +3,12 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.1.2"
+version = "0.1.3"
 readme = "README.md"
 description = ""
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
 packages = [
-    { include = "InstallReleases" }
+    { include = "InstallRelease" }
 ]
 
 [tool.poetry.dependencies]
@@ -19,7 +19,7 @@ python-magic = "^0.4.27"
 typer = "^0.4.1"
 
 [tool.poetry.scripts]
-install-release = "InstallReleases.cli:app"
+install-release = "InstallRelease.cli:app"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

@@ -5,11 +5,11 @@ from tempfile import TemporaryDirectory
 from rich.progress import track
 
 # locals
-from InstallReleases.state import State, platform_path
-from InstallReleases.data import GithubRelease, TypeState
-from InstallReleases.constants import state_path, bin_path
-from InstallReleases.utils import mkdir, rprint, logger, show_table
-from InstallReleases.core import get_release, extract_release, install_bin, GithubInfo
+from InstallRelease.state import State, platform_path
+from InstallRelease.data import GithubRelease, TypeState
+from InstallRelease.constants import state_path, bin_path
+from InstallRelease.utils import mkdir, rprint, logger, show_table
+from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
 dest = platform_path(paths=bin_path, alt="../temp/bin")
