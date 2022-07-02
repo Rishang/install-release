@@ -25,7 +25,7 @@ Checking for gron is installed using installed-release:
 
 ```
 ❯ which gron
-/home/noobi/.releases-bin/gron
+/home/noobi/.release-bin/gron
 
 ❯ gron --help
 Transform JSON (from a file, URL, or stdin) into discrete assignments to make it greppable
@@ -97,13 +97,13 @@ Example: `install-release get --help`
 └─────────┴────────────────────────────────────┴─────────┴─────────┴───────────┘
 Install this tool (Y/n): y
  INFO     Downloaded: 'kubectx_v0.9.4_linux_x86_64.tar.gz' at /tmp/dn_kubectx_ph6i7dmk                                                               utils.py:159
- INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/.releases-bin/kubectx                                                                  core.py:132
+ INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/.release-bin/kubectx                                                                  core.py:132
  INFO     Installed: kubectx
 ```
 ```
 # checking if kubectx is installed
 ❯ which kubectx
-/home/noobi/.releases-bin/kubectx
+/home/noobi/.release-bin/kubectx
 
 ❯ kubectx --version
 0.9.4
@@ -141,7 +141,7 @@ INFO     Removed: gron
 Fetching: https://github.com/tenable/terrascan
 Updating: terrascan, v1.15.0 => v1.15.2
  INFO     Downloaded: 'terrascan_1.15.2_Linux_x86_64.tar.gz' at /tmp/dn_terrascan_0as71a6v
- INFO     install /tmp/dn_terrascan_0as71a6v/terrascan /home/noobi/.releases-bin/terrascan
+ INFO     install /tmp/dn_terrascan_0as71a6v/terrascan /home/noobi/.release-bin/terrascan
  INFO     Installed: terrascan
 
 Fetching: https://github.com/tomnomnom/gron
