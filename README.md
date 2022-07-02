@@ -9,7 +9,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 ```bash
 # Install install-releases
-pip3 install install-releases
+pip install install-release
 ```
 
 ```
@@ -50,7 +50,7 @@ export PATH=$HOME/.releases-bin:$PATH
 ## Install this package
 
 ```bash
-pip3 install install-releases
+pip install install-release
 ```
 
 
