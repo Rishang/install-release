@@ -75,6 +75,17 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 
+def FilterDataclass(data: dict, obj):
+    """"""
+
+    out: dict = dict()
+    names = set([f.name for f in dataclasses.fields(obj)])
+    for k, v in data.items():
+        if k in names:
+            out[k] = v
+    return obj(**out)
+    
+
 @dataclass
 class ShellOutputs:
     stdout: List[str]

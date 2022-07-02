@@ -5,7 +5,7 @@ from typing import Dict
 from dataclasses import is_dataclass
 
 # locals
-from InstallRelease.utils import logger, EnhancedJSONEncoder
+from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass
 
 
 def platform_path(paths: dict, alt: str = ""):
@@ -44,7 +44,7 @@ class State:
                     return
                 for k in _s:
                     if is_dataclass(obj):
-                        self.state[k] = obj(**_s[k])
+                        self.state[k] = FilterDataclass(_s[k], obj=obj)
 
     def save(self):
         with open(self.state_file, "w") as f:
