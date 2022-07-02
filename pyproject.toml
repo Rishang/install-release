@@ -5,10 +5,14 @@ in-project = true
 name = "install-release"
 version = "0.1.5"
 readme = "README.md"
-description = ""
+description = "A cli tool to install tools based on your device info directly from github releases and keep them updated."
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
 packages = [
     { include = "InstallRelease" }
+]
+homepage = "https://github.com/Rishang/install-releases"
+classifiers = [
+    "Topic :: Software Development :: Install Tools",
 ]
 
 [tool.poetry.dependencies]
