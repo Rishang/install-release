@@ -1,4 +1,4 @@
-import os
+import sys
 import re
 import glob
 import platform
@@ -34,7 +34,8 @@ class GithubInfo:
 
     def __init__(self, repo_url, data: dict = {}) -> None:
         if "https://github.com/" not in repo_url:
-            raise Exception("repo url must contain github.com")
+            logger.error("repo url must contain 'github.com'")
+            sys.exit(1)
 
         if repo_url[-1] == "/":
             repo_url = repo_url[:-1]
@@ -102,11 +103,14 @@ class installRelease:
     USER: str
     SUDO_USER: str
 
-    _all_paths = {"linux": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"}}
+    bin_path = {
+        "linux": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"},
+        "darwin": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"},
+    }
 
     def __init__(self, source: str, name: str = None) -> None:
         pl = platform.system()
-        self.paths = self._all_paths[pl.lower()]
+        self.paths = self.bin_path[pl.lower()]
         self.pl = pl
         self.source = source
         self.name = name
@@ -142,15 +146,20 @@ class installRelease:
             return True
 
     def _install_darwin(self, local: bool, at: str = None):
-        ...
+        self._install_linux(local, at)
 
     def _install_windows(self, local: bool, at: str = None):
         ...
 
 
 def get_release(releases: List[GithubRelease], repo_url: str):
-    probability = 0.0
+    selected = 0.0
     name = ""
+
+    # temp fix: install not configured for distro based on platform
+    platform_words = _platform_words + ["(.tar|.zip)"]
+
+    logger.debug(msg=("platform_words: ", platform_words))
 
     if len(releases) == 0:
         logger.warning(f"No releases found for: {repo_url}")
@@ -167,15 +176,16 @@ def get_release(releases: List[GithubRelease], repo_url: str):
         return False
 
     for i in release.assets:
-        match = listItemsMatcher(patterns=_platform_words, word=i.name.lower())
+        match = listItemsMatcher(patterns=platform_words, word=i.name.lower())
+        logger.debug(f"name: '{i.name}', chances: {match}")
+
         if match > 0:
-            if probability == 0:
-                probability = match
+            if selected == 0:
+                selected = match
                 name = i.name
-            elif match > probability:
-                probability = match
+            elif match > selected:
+                selected = match
                 name = i.name
-            logger.debug(f"name: '{i.name}', chances: {probability}")
 
     if name == "":
         logger.warn(f"No match release prefix match found for {repo_url}")
@@ -190,12 +200,12 @@ def get_release(releases: List[GithubRelease], repo_url: str):
     item = release.assets[count]
     logger.debug(
         "Selected file: \n"
-        f"File: '{item.name}', content_type: '{item.content_type}', chances: {probability}"
+        f"File: '{item.name}', content_type: '{item.content_type}', chances: {selected}"
     )
-    if probability < 0.2:
+    if selected < 0.2:
         logger.warning(
             f"Final Selected item has low probability"
-            f"Object: {item.name}, content_type: {item.content_type}, chances: {probability}"
+            f"Object: {item.name}, content_type: {item.content_type}, chances: {selected}"
         )
     return item
 
@@ -216,18 +226,21 @@ def extract_release(item: GithubReleaseAssets, at):
 
 
 def install_bin(src: str, dest: str, local: bool, name: str = None):
+
     bin_files = []
+    p = r"application\/x-(\w+-)?(executable|binary)"
+
     for file in glob.iglob(f"{src}/**", recursive=True):
         f = detect_from_filename(file)
         if f.name == "directory":
             continue
-        elif not re.match(r"application\/x-(\w+-)?executable", f.mime_type):
+        elif not re.match(pattern=p, string=f.mime_type):
             continue
 
         bin_files.append(file)
 
-    if len(bin_files) > 1:
-        logger.error(f"Expect single binary file got more:\n{bin_files}")
+    if len(bin_files) > 1 or len(bin_files) == 0:
+        logger.error(f"Expect single binary file got more or less:\n{bin_files}")
         raise Exception()
 
     irelease = installRelease(source=bin_files[0], name=name)

@@ -20,7 +20,7 @@ cache = State(
 )
 
 
-def get(repo: GithubInfo, tag_name: str = "", prompt=False):
+def get(repo: GithubInfo, tag_name: str = "", local: bool = True, prompt: bool = False):
 
     logger.debug(cache.state_file)
     logger.debug(dest)
@@ -41,7 +41,7 @@ def get(repo: GithubInfo, tag_name: str = "", prompt=False):
             rprint(
                 f"\n[green bold]📑 Repo     : {repo.info.full_name}"
                 f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
-                f"\n[magenta]✨ Language : {repo.info.language}"
+                f"\n[magenta]🔮 Language : {repo.info.language}"
                 f"\n[yellow]🔥 Title    : {repo.info.description}"
             )
             show_table(
@@ -68,7 +68,7 @@ def get(repo: GithubInfo, tag_name: str = "", prompt=False):
     cache.save()
 
     mkdir(dest)
-    install_bin(src=at.name, dest=dest, local=True, name=repo.info.name)
+    install_bin(src=at.name, dest=dest, local=local, name=repo.info.name)
 
 
 def upgrade():
@@ -84,7 +84,7 @@ def upgrade():
         if releases[0].tag_name != state[url].tag_name:
             rprint(
                 "[bold yellow]"
-                f"Updating: {repo.repo_name}, {releases[0].tag_name} => {state[url].tag_name}" 
+                f"Updating: {repo.repo_name}, {state[url].tag_name} => {releases[0].tag_name}"
                 "[/]"
             )
             get(repo, prompt=False)

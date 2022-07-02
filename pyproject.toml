@@ -3,7 +3,7 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.1.3"
+version = "0.1.4"
 readme = "README.md"
 description = ""
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]

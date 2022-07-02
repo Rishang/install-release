@@ -37,13 +37,13 @@ Transform JSON (from a file, URL, or stdin) into discrete assignments to make it
 - python3.8 or higher
 
 - [libmagic](https://github.com/ahupp/python-magic#installation)
-- Default releases Installation Path is: `~/.releases-bin/`,
+- Default releases Installation Path is: `~/.release-bin/`,
 This is the path where installed tools will get stored.
 
 - In order to run installed tools, you need to add the following line your `~/.bashrc` or `~/.zshrc` file:
 
 ```bash
-export PATH=$HOME/.releases-bin:$PATH
+export PATH=$HOME/.release-bin:$PATH
 ```
 
 

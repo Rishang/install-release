@@ -10,6 +10,7 @@ from InstallRelease.utils import logger, EnhancedJSONEncoder
 
 def platform_path(paths: dict, alt: str = ""):
     """provide path base on platform"""
+
     system = platform.system().lower()
 
     if os.environ.get("installState") == "test":
