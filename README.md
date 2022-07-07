@@ -13,9 +13,9 @@ pip install -U install-release
 ```
 
 ```
-# Installing a tool named `gron` directly from github releases
+# Example Installation a tool named `gron` directly from github releases
 
-❯ get-release install https://github.com/tomnomnom/gron 
+❯ install-release install https://github.com/tomnomnom/gron 
 ```
 
 ![demo](.github/images/demo.png)
@@ -54,13 +54,13 @@ pip install -U install-release
 ```
 
 
-### Example usage `get-release`
+### Example usage `install-release`
 
 
 ```
 # Help page
 
-❯ get-release --help
+❯ install-release --help
 Usage: install-release [OPTIONS] COMMAND [ARGS]...
 
   Github Release Installer, based on your system
