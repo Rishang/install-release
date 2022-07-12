@@ -120,6 +120,7 @@ Install this tool (Y/n): y
 ┡━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ terrascan │ v1.15.2 │ https://github.com/tenable/terrascan │
 │ gron      │ v0.7.1  │ https://github.com/tomnomnom/gron    │
+│ kubectx   │ v0.9.4  │ https://github.com/ahmetb/kubectx    │
 └───────────┴─────────┴──────────────────────────────────────┘    
 ```
 
@@ -144,7 +145,7 @@ Updating: terrascan, v1.15.0 => v1.15.2
  INFO     install /tmp/dn_terrascan_0as71a6v/terrascan /home/noobi/.release-bin/terrascan
  INFO     Installed: terrascan
 
-Fetching: https://github.com/tomnomnom/gron
+Fetching: https://github.com/ahmetb/kubectx
  INFO     No updates
 
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
