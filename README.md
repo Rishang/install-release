@@ -5,7 +5,7 @@ install-releases is a cli tool to install tools based on your device info direct
 
 This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
 
-> Also it's mainly for installing tools that are not available in the official repositories or package managers.
+> Also it's mainly for installing tools that are not available in the officially by package managers.
 
 ```bash
 # Install install-releases
@@ -13,9 +13,9 @@ pip install -U install-release
 ```
 
 ```
-# Example Installation a tool named `gron` directly from github releases
+# Example Installation a tool named `gron` directly from its github releases
 
-❯ install-release install https://github.com/tomnomnom/gron 
+❯ install-release get https://github.com/tomnomnom/gron 
 ```
 
 ![demo](.github/images/demo.png)
