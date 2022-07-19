@@ -84,7 +84,8 @@ def FilterDataclass(data: dict, obj):
         if k in names:
             out[k] = v
     return obj(**out)
-    
+
+
 def isNone(val):
     if val == None:
         return True
@@ -95,6 +96,7 @@ def isNone(val):
     elif isinstance(val, list) and val != []:
         return False
     return True
+
 
 @dataclass
 class ShellOutputs:
