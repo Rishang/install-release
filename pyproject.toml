@@ -3,7 +3,7 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.1.5"
+version = "0.1.6"
 readme = "README.md"
 description = "A cli tool to install tools based on your device info directly from github releases and keep them updated."
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
@@ -12,7 +12,8 @@ packages = [
 ]
 homepage = "https://github.com/Rishang/install-releases"
 classifiers = [
-    "Topic :: Software Development :: Install Tools",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 
 [tool.poetry.dependencies]
