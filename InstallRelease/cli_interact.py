@@ -89,7 +89,7 @@ def upgrade():
         rprint(f"\nFetching: {url}")
         releases = repo.release()
 
-        if releases[0].tag_name != state[k].tag_name:
+        if releases[0].published_dt() > state[k].published_dt():
             rprint(
                 "[bold yellow]"
                 f"Updating: {repo.repo_name}, {state[k].tag_name} => {releases[0].tag_name}"
