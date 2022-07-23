@@ -152,7 +152,7 @@ class installRelease:
         ...
 
 
-def get_release(releases: List[GithubRelease], repo_url: str):
+def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list = []):
     selected = 0.0
     name = ""
 
@@ -176,7 +176,7 @@ def get_release(releases: List[GithubRelease], repo_url: str):
         return False
 
     for i in release.assets:
-        match = listItemsMatcher(patterns=platform_words, word=i.name.lower())
+        match = listItemsMatcher(patterns=platform_words + extra_words, word=i.name.lower())
         logger.debug(f"name: '{i.name}', chances: {match}")
 
         if match > 0:
@@ -209,7 +209,7 @@ def get_release(releases: List[GithubRelease], repo_url: str):
         )
     return item
 
-
+        
 def extract_release(item: GithubReleaseAssets, at):
 
     logger.debug(f"Download path: {at}")

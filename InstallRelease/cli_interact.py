@@ -8,7 +8,7 @@ from rich.progress import track
 from InstallRelease.state import State, platform_path
 from InstallRelease.data import GithubRelease, TypeState
 from InstallRelease.constants import state_path, bin_path
-from InstallRelease.utils import mkdir, rprint, logger, show_table
+from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
@@ -20,16 +20,21 @@ cache = State(
 )
 
 
-def get(repo: GithubInfo, tag_name: str = "", local: bool = True, prompt: bool = False):
+def get(repo: GithubInfo, tag_name: str = "", local: bool = True, prompt: bool = False, name: str = None):
 
     logger.debug(cache.state_file)
     logger.debug(dest)
 
     releases = repo.release(tag_name=tag_name)
+    
+    if isNone(name):
+        toolname = releases[0].name
+    else:
+        toolname = name
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    _gr = get_release(releases=releases, repo_url=repo.repo_url)
+    _gr = get_release(releases=releases, repo_url=repo.repo_url, extra_words=[toolname])
 
     logger.debug(_gr)
 
@@ -47,14 +52,14 @@ def get(repo: GithubInfo, tag_name: str = "", local: bool = True, prompt: bool =
             show_table(
                 data=[
                     {
-                        "Name": releases[0].name,
+                        "Name": toolname,
                         "Selected Item": _gr.name,
                         "Version": releases[0].tag_name,
                         "Size Mb": _gr.size_mb(),
                         "Downloads": _gr.download_count,
                     }
                 ],
-                title=f"🚀 Install: {releases[0].name}",
+                title=f"🚀 Install: {toolname}",
             )
 
             rprint("[color(34)]Install this tool (Y/n): ", end="")
@@ -64,30 +69,33 @@ def get(repo: GithubInfo, tag_name: str = "", local: bool = True, prompt: bool =
 
         extract_release(item=_gr, at=at.name)
 
-    cache.set(repo.repo_url, value=releases[0])
+    releases[0].assets = [_gr]
+    cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()
 
     mkdir(dest)
-    install_bin(src=at.name, dest=dest, local=local, name=repo.info.name)
+    install_bin(src=at.name, dest=dest, local=local, name=toolname)
 
 
 def upgrade():
 
     state: TypeState = cache.state
 
-    for url in track(state, description="Progress..."):
-        rprint(f"\nFetching: {url}")
+    for k in track(state, description="Progress..."):
+        url = k.split("#")[0]
+        name = k.split("#")[1]
 
         repo = GithubInfo(url)
+        rprint(f"\nFetching: {url}")
         releases = repo.release()
 
-        if releases[0].tag_name != state[url].tag_name:
+        if releases[0].tag_name != state[k].tag_name:
             rprint(
                 "[bold yellow]"
-                f"Updating: {repo.repo_name}, {state[url].tag_name} => {releases[0].tag_name}"
+                f"Updating: {repo.repo_name}, {state[k].tag_name} => {releases[0].tag_name}"
                 "[/]"
             )
-            get(repo, prompt=False)
+            get(repo, prompt=False, name=name)
         else:
             logger.info(f"No updates")
 
@@ -97,7 +105,7 @@ def list_installed():
 
     _table = []
     for i in state:
-        _table.append({"Name": state[i].name, "Version": state[i].tag_name, "Url": i})
+        _table.append({"Name": i.split("#")[-1], "Version": state[i].tag_name, "Url": state[i].url})
 
     show_table(_table, title="Installed tools")
 
@@ -107,7 +115,7 @@ def remove(name: str):
     popKey = ""
 
     for i in state:
-        if state[i].name == name:
+        if i.split("#")[-1] == name:
             popKey = i
             if os.path.exists(f"{dest}/{name}"):
                 os.remove(f"{dest}/{name}")
