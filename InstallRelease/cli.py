@@ -34,7 +34,8 @@ def get(
     debug: bool = __optionDebug,
     url: str = typer.Argument(None, help="[URL] of github repository "),
     tag_name: str = typer.Option("", "-t", help="get a specific tag version."),
-    name: str = typer.Option("", "-n", help="tool name you want, Only for releases having different tools in releases")
+    name: str = typer.Option("", "-n", help="tool name you want, Only for releases having different tools in releases"),
+    approve: bool = typer.Option(False, "--auto-approve", help="Approve without Prompt")
 ):
     """
     | Install github release, cli tool
@@ -45,7 +46,7 @@ def get(
     if url is None or url == "":
         see_help("get")
 
-    _get(GithubInfo(url), tag_name=tag_name, prompt=True, name=name)
+    _get(GithubInfo(url), tag_name=tag_name, prompt=not approve, name=name)
 
 
 @app.command()
