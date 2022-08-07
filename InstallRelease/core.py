@@ -60,8 +60,8 @@ class GithubInfo:
 
         if isinstance(response, dict):
             if response.get("message"):
-                logger.warning(response)
-                raise Exception(response["message"])
+                logger.error(response)
+                exit(1)
 
         return response
 
