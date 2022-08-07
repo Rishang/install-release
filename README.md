@@ -1,11 +1,11 @@
 # install-releases 🚀
 [![Python Version](https://img.shields.io/badge/Python-3.8_to_3.10-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/install-release?&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
 
-install-releases is a cli tool to install tools based on your device info directly from github releases and keep them updated.
+`install-releases` is a cli tool to install any tool for your device directly from their github releases and keep them updated.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
 
-> Also it's mainly for installing tools that are not available in the officially by package managers.
+> Also it's mainly for installing tools that are not directly available in the officially by package managers `apt, yum, pacman` etc.
 
 ```bash
 # Install install-releases
