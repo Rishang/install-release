@@ -78,6 +78,14 @@ For sub command help use: `install-release <sub-command> --help`
 Example: `install-release get --help`
 
 
+You can shorten the command by setting alias to your `.bashrc` or `.zshrc`
+
+```bash
+alias ir="install-release"
+```
+after this you can you alias directly for easiness
+
+Example: `ir get --help`
 
 #### Install tool from github releases
 
