@@ -147,14 +147,19 @@ INFO     Removed: gron
 ```bash
 ❯ install-release upgrade
 
-Fetching: https://github.com/tenable/terrascan
+Fetching: https://github.com/tenable/terrascan#terrascan
+Fetching: https://github.com/ahmetb/kubectx#kubectx
+
+Following tools will be upgraded:
+
+terrascan
+
+Upgrade these tools, (Y/n) y
+
 Updating: terrascan, v1.15.0 => v1.15.2
  INFO     Downloaded: 'terrascan_1.15.2_Linux_x86_64.tar.gz' at /tmp/dn_terrascan_0as71a6v
- INFO     install /tmp/dn_terrascan_0as71a6v/terrascan /home/noobi/.release-bin/terrascan
+ INFO     install /tmp/dn_terrascan_0as71a6v/terrascan ~/.release-bin/terrascan
  INFO     Installed: terrascan
-
-Fetching: https://github.com/ahmetb/kubectx
- INFO     No updates
 
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```

@@ -75,10 +75,9 @@ class GithubInfo:
         else:
             api = self.api + "/releases/tags/" + tag_name
 
-        logger.debug(f"api: {api}")
-
         # Github release info api
         if not self.response:
+            logger.debug(f"get: {api}")
             req = self._req(api)
 
             if not isinstance(req, list):
