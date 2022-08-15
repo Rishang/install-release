@@ -25,6 +25,15 @@ def see_help(arg: str = ""):
 
 # cli debug type alias
 __optionDebug = typer.Option(False, "-v", help="set verbose mode.")
+__optionQuite = typer.Option(False, "-q", help="set quite mode.")
+
+
+def setLogger(quite: bool = None, debug: bool = None):
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    elif quite:
+        logger.setLevel(logging.ERROR)
+
 
 app = typer.Typer(help=f"Github Release Installer, based on your system")
 
@@ -32,6 +41,7 @@ app = typer.Typer(help=f"Github Release Installer, based on your system")
 @app.command()
 def get(
     debug: bool = __optionDebug,
+    quite: bool = __optionQuite,
     url: str = typer.Argument(None, help="[URL] of github repository "),
     tag_name: str = typer.Option("", "-t", help="get a specific tag version."),
     name: str = typer.Option(
@@ -46,8 +56,7 @@ def get(
     """
     | Install github release, cli tool
     """
-    if debug:
-        logger.setLevel(logging.DEBUG)
+    setLogger(quite, debug)
 
     if url is None or url == "":
         see_help("get")
@@ -58,12 +67,12 @@ def get(
 @app.command()
 def upgrade(
     debug: bool = __optionDebug,
+    quite: bool = __optionQuite,
 ):
     """
     | Upgrade all installed release, cli tools
     """
-    if debug:
-        logger.setLevel(logging.DEBUG)
+    setLogger(quite, debug)
     _upgrade()
 
 
@@ -83,8 +92,7 @@ def rm(
     """
     | remove any installed release, cli tools
     """
-    if debug:
-        logger.setLevel(logging.DEBUG)
+    setLogger(debug=debug)
 
     remove(name)
 
