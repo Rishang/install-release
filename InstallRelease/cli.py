@@ -11,6 +11,7 @@ from InstallRelease.cli_interact import (
     upgrade as _upgrade,
     remove,
     list_installed,
+    config
 )
 
 
@@ -61,7 +62,7 @@ def get(
     if url is None or url == "":
         see_help("get")
 
-    _get(GithubInfo(url), tag_name=tag_name, prompt=not approve, name=name)
+    _get(GithubInfo(url, token=config.IR_TOKEN), tag_name=tag_name, prompt=not approve, name=name)
 
 
 @app.command()

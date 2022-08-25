@@ -3,8 +3,14 @@ import platform
 
 
 HOME = os.path.expanduser("~")
+
+
+class config:
+    IR_TOKEN = os.environ.get("IR_TOKEN")
+
 __bin_at__ = ".release-bin"
 __state_at__ = "install_release/state.json"
+__config_at__ = "install_release/config.json"
 
 _colors = {
     "green": "#8CC265",
@@ -20,6 +26,11 @@ _colors = {
 state_path = {
     "linux": f"{HOME}/.config/{__state_at__}",
     "darwin": f"{HOME}/Library/.config/{__state_at__}",
+}
+
+config_path = {
+    "linux": f"{HOME}/.config/{__config_at__}",
+    "darwin": f"{HOME}/Library/.config/{__config_at__}",
 }
 
 bin_path = {

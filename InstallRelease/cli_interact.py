@@ -9,7 +9,7 @@ from rich.console import Console
 # locals
 from InstallRelease.state import State, platform_path
 from InstallRelease.data import GithubRelease, TypeState
-from InstallRelease.constants import state_path, bin_path
+from InstallRelease.constants import state_path, bin_path, config
 from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
@@ -96,7 +96,7 @@ def upgrade():
         url = k.split("#")[0]
         name = k.split("#")[1]
 
-        repo = GithubInfo(url)
+        repo = GithubInfo(url, token=config.IR_TOKEN)
         rprint(f"Fetching: {k}")
         releases = repo.release()
 

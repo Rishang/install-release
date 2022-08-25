@@ -32,7 +32,7 @@ class GithubInfo:
     # https://api.github.com/repos/OWNER/REPO/releases/tags/TAG
     # https://api.github.com/repos/OWNER/REPO/releases/latest
 
-    def __init__(self, repo_url, data: dict = {}) -> None:
+    def __init__(self, repo_url, data: dict = {}, token: str = None) -> None:
         if "https://github.com/" not in repo_url:
             logger.error("repo url must contain 'github.com'")
             sys.exit(1)
@@ -45,16 +45,23 @@ class GithubInfo:
         self.repo_url: str = repo_url
         self.owner, self.repo_name = repo_url_attr[-2], repo_url_attr[-1]
         self.api = f"https://api.github.com/repos/{self.owner}/{self.repo_name}"
+        self.token = token
 
         self.data = data
         self.info: GithubRepoInfo = GithubRepoInfo(**self._req(self.api))
 
     def _req(self, url):
 
+        if isinstance(self.token, str) or self.token != "":
+            auth = HTTPBasicAuth("user", self.token)
+        else:
+            logger.debug("Token not set")
+            auth = HTTPBasicAuth("user", "pass")
+
         response = requests.get(
             url,
             headers=self.headers,
-            auth=HTTPBasicAuth("user", "pass"),
+            auth=auth,
             json=self.data,
         ).json()
 
