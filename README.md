@@ -156,7 +156,7 @@ Following tools will be upgraded:
 
 terrascan
 
-Upgrade these tools, (Y/n) y
+Upgrade these tools, (Y/n): y
 
 Updating: terrascan, v1.15.0 => v1.15.2
  INFO     Downloaded: 'terrascan_1.15.2_Linux_x86_64.tar.gz' at /tmp/dn_terrascan_0as71a6v

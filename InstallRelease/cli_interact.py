@@ -108,7 +108,7 @@ def upgrade():
 
         rprint("\n[bold magenta]Following tool will get upgraded.\n")
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
-        rprint("[bold blue]Upgrade these tools, (Y/n)", end=" ")
+        rprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
         r = input()
         if r.lower() != "y":
