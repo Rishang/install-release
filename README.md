@@ -15,6 +15,8 @@ pip install -U install-release
 ```
 # Example Installation a tool named `gron` directly from its github releases
 
+# install-release get [GITHUB-URL]
+
 ❯ install-release get https://github.com/tomnomnom/gron 
 ```
 
