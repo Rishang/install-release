@@ -11,6 +11,7 @@ from InstallRelease.cli_interact import (
     upgrade as _upgrade,
     remove,
     list_installed,
+    show_state,
     config
 )
 
@@ -96,6 +97,16 @@ def rm(
     setLogger(debug=debug)
 
     remove(name)
+
+@app.command()
+def state(
+    debug: bool = __optionDebug
+):
+    """
+    | Upgrade all installed release, cli tools
+    """
+    setLogger(debug=debug)
+    show_state()
 
 
 if __name__ == "__main__":
