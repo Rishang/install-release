@@ -130,10 +130,12 @@ def upgrade():
         )
         get(repo, prompt=False, name=name)
 
+
 def show_state():
     if os.path.exists(cache.state_file) and os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
             print(f.read())
+
 
 def list_installed():
     state: TypeState = cache.state

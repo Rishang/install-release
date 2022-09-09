@@ -8,6 +8,7 @@ HOME = os.path.expanduser("~")
 class config:
     IR_TOKEN = os.environ.get("IR_TOKEN")
 
+
 __bin_at__ = ".release-bin"
 __state_at__ = "install_release/state.json"
 __config_at__ = "install_release/config.json"

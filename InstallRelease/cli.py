@@ -12,7 +12,7 @@ from InstallRelease.cli_interact import (
     remove,
     list_installed,
     show_state,
-    config
+    config,
 )
 
 
@@ -63,7 +63,12 @@ def get(
     if url is None or url == "":
         see_help("get")
 
-    _get(GithubInfo(url, token=config.IR_TOKEN), tag_name=tag_name, prompt=not approve, name=name)
+    _get(
+        GithubInfo(url, token=config.IR_TOKEN),
+        tag_name=tag_name,
+        prompt=not approve,
+        name=name,
+    )
 
 
 @app.command()
@@ -98,10 +103,9 @@ def rm(
 
     remove(name)
 
+
 @app.command()
-def state(
-    debug: bool = __optionDebug
-):
+def state(debug: bool = __optionDebug):
     """
     | Upgrade all installed release, cli tools
     """
