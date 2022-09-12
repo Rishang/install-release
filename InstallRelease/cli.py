@@ -28,6 +28,7 @@ def see_help(arg: str = ""):
 # cli debug type alias
 __optionDebug = typer.Option(False, "-v", help="set verbose mode.")
 __optionQuite = typer.Option(False, "-q", help="set quite mode.")
+__optionForce = typer.Option(False, "-F", help="set force.")
 
 
 def setLogger(quite: bool = None, debug: bool = None):
@@ -75,12 +76,13 @@ def get(
 def upgrade(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
+    force: bool = __optionForce,
 ):
     """
     | Upgrade all installed release, cli tools
     """
     setLogger(quite, debug)
-    _upgrade()
+    _upgrade(force=force)
 
 
 @app.command()

@@ -88,7 +88,7 @@ def get(
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
 
 
-def upgrade():
+def upgrade(force: bool = False):
 
     state: TypeState = cache.state
 
@@ -101,7 +101,7 @@ def upgrade():
         rprint(f"Fetching: {k}")
         releases = repo.release()
 
-        if releases[0].published_dt() > state[k].published_dt():
+        if releases[0].published_dt() > state[k].published_dt() or force == True:
             upgrades[name] = repo
 
     # ask prompt to upgrade listed tools
