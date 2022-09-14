@@ -249,7 +249,7 @@ def install_bin(src: str, dest: str, local: bool, name: str = None):
 
     if len(bin_files) > 1 or len(bin_files) == 0:
         logger.error(f"Expect single binary file got more or less:\n{bin_files}")
-        raise Exception()
+        exit(1)
 
     irelease = installRelease(source=bin_files[0], name=name)
     irelease.install(local, at=dest)
