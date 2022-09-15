@@ -27,7 +27,7 @@ typer = "^0.4.1"
 install-release = "InstallRelease.cli:app"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.1"
 mypy = "*"
 black = "*"
 types-requests = "*"
