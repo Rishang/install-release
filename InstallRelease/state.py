@@ -29,22 +29,22 @@ def platform_path(paths: dict, alt: str = ""):
 
 class State:
 
-    state: dict = {}
-    cache: object
-
     def __init__(self, file_path: str, obj):
+        self.state: dict = {}
+        self.cache: object
         self.state_file = file_path
-        self.load(obj)
+        self.obj = obj
+        self.load()
 
-    def load(self, obj):
+    def load(self):
         if os.path.exists(self.state_file):
             with open(self.state_file, "r") as f:
                 _s = json.load(f)
                 if len(_s) == 0:
                     return
                 for k in _s:
-                    if is_dataclass(obj):
-                        self.state[k] = FilterDataclass(_s[k], obj=obj)
+                    if is_dataclass(self.obj):
+                        self.state[k] = FilterDataclass(_s[k], obj=self.obj)
 
     def save(self):
         with open(self.state_file, "w") as f:
