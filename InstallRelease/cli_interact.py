@@ -1,5 +1,4 @@
 import os
-import json
 from typing import Dict
 from tempfile import TemporaryDirectory
 
@@ -9,20 +8,53 @@ from rich.console import Console
 
 # locals
 from InstallRelease.state import State, platform_path
-from InstallRelease.data import GithubRelease, TypeState
-from InstallRelease.constants import state_path, bin_path, config
+from InstallRelease.data import GithubRelease, ToolConfig
+
+from InstallRelease.data import TypeState
+
+from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
 console = Console(width=40)
 
-dest = platform_path(paths=bin_path, alt="../temp/bin")
+if os.environ.get("installState","") == "test":
+    __spath = {
+        "state_path": "./temp-state.json",
+        "config_path": "./temp-config.json",
+    }
+    logger.info(f"installState={os.environ.get('installState')}")
+else:
+    __spath = {"state_path": "", "config_path": ""}
 
 cache = State(
-    file_path=platform_path(paths=state_path, alt="./temp-state.json"),
+    file_path=platform_path(paths=state_path, alt=__spath["state_path"]),
     obj=GithubRelease,
 )
+
+cache_config = State(
+    file_path=platform_path(paths=config_path, alt=__spath["config_path"]),
+    obj=ToolConfig,
+)
+
+
+def load_config():
+    config: ToolConfig = cache_config.state.get("config")
+
+    if config != None:
+        return config
+    else:
+        cache_config.set("config", ToolConfig())
+        cache_config.save()
+        return ToolConfig()
+
+
+config: ToolConfig = load_config()
+
+dest = platform_path(paths=bin_path, alt=config.path)
+
+# ------- cli ----------
 
 
 def get(
@@ -97,7 +129,7 @@ def upgrade(force: bool = False):
         url = k.split("#")[0]
         name = k.split("#")[1]
 
-        repo = GithubInfo(url, token=config.IR_TOKEN)
+        repo = GithubInfo(url, token=config.token)
         rprint(f"Fetching: {k}")
         releases = repo.release()
 

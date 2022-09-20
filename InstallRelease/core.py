@@ -10,7 +10,7 @@ from requests.auth import HTTPBasicAuth
 from magic.compat import detect_from_filename
 
 # locals
-from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh
+from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh, isNone
 from InstallRelease.data import (
     GithubRelease,
     GithubReleaseAssets,
@@ -32,7 +32,7 @@ class GithubInfo:
     # https://api.github.com/repos/OWNER/REPO/releases/tags/TAG
     # https://api.github.com/repos/OWNER/REPO/releases/latest
 
-    def __init__(self, repo_url, data: dict = {}, token: str = None) -> None:
+    def __init__(self, repo_url, data: dict = {}, token: str = "") -> None:
         if "https://github.com/" not in repo_url:
             logger.error("repo url must contain 'github.com'")
             sys.exit(1)
@@ -52,7 +52,7 @@ class GithubInfo:
 
     def _req(self, url):
 
-        if isinstance(self.token, str) or self.token != "":
+        if not isNone(self.token):
             auth = HTTPBasicAuth("user", self.token)
         else:
             logger.debug("Token not set")
