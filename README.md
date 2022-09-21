@@ -72,7 +72,8 @@ Usage: install-release [OPTIONS] COMMAND [ARGS]...
     ls       | list all installed release, cli tools
     rm       | remove any installed release, cli tools
     upgrade  | Upgrade all installed release, cli tools
-
+    state    | show currnet stored state
+    config   | Set configs for tool
 ```
 
 For sub command help use: `install-release <sub-command> --help`
@@ -166,3 +167,11 @@ Updating: terrascan, v1.15.0 => v1.15.2
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```
 
+#### Config tool installation path
+
+```bash
+❯ install-release config --path ~/.local/bin
+
+INFO   updated path to:  ~/.local/bin
+INFO   Done
+```

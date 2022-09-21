@@ -111,13 +111,6 @@ def rm(
     remove(name)
 
 
-@app.command()
-def state(debug: bool = __optionDebug):
-    """
-    | Upgrade all installed release, cli tools
-    """
-    setLogger(debug=debug)
-    show_state()
 
 
 @app.command(name="config")
@@ -126,7 +119,7 @@ def Config(
     token: str = typer.Option(
         "",
         "--token",
-        help="set github token",
+        help="set your github token to solve github api rate-limiting issue",
     ),
     path: str = typer.Option(
         "",
@@ -152,6 +145,14 @@ def Config(
     cache_config.save()
     logger.info("Done.")
 
+
+@app.command()
+def state(debug: bool = __optionDebug):
+    """
+    | show currnet stored state
+    """
+    setLogger(debug=debug)
+    show_state()
 
 if __name__ == "__main__":
     app()
