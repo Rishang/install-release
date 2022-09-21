@@ -21,6 +21,8 @@ from InstallRelease.constants import HOME
 
 # --------------- CODE ------------------
 
+__exec_pattern = r"application\/x-(\w+-)?(executable|binary)"
+
 
 class GithubInfo:
     owner = ""
@@ -226,7 +228,7 @@ def extract_release(item: GithubReleaseAssets, at):
     logger.debug(f"path: {path}")
 
     logger.debug(f"Extracting: {path}")
-    if "executable" not in detect_from_filename(path).mime_type:
+    if not re.search(__exec_pattern, detect_from_filename(path).mime_type):
         extract(path=path, at=at)
         logger.debug("Extracting done.")
 
@@ -236,13 +238,12 @@ def extract_release(item: GithubReleaseAssets, at):
 def install_bin(src: str, dest: str, local: bool, name: str = None):
 
     bin_files = []
-    p = r"application\/x-(\w+-)?(executable|binary)"
 
     for file in glob.iglob(f"{src}/**", recursive=True):
         f = detect_from_filename(file)
         if f.name == "directory":
             continue
-        elif not re.match(pattern=p, string=f.mime_type):
+        elif not re.match(pattern=__exec_pattern, string=f.mime_type):
             continue
 
         bin_files.append(file)

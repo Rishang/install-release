@@ -40,7 +40,7 @@ def setLogger(quite: bool = None, debug: bool = None):
         logger.setLevel(logging.ERROR)
 
 
-if os.environ.get("IR_DEBUG","").lower() == "true":
+if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
 app = typer.Typer(help=f"Github Release Installer, based on your system")
@@ -139,7 +139,7 @@ def Config(
     """
 
     setLogger(debug=debug)
-    
+
     logger.info(f"Loading config: {cache_config.state_file}")
 
     if token != "":

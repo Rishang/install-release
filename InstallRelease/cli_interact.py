@@ -19,7 +19,7 @@ from InstallRelease.core import get_release, extract_release, install_bin, Githu
 
 console = Console(width=40)
 
-if os.environ.get("installState","") == "test":
+if os.environ.get("installState", "") == "test":
     __spath = {
         "state_path": "./temp-state.json",
         "config_path": "./temp-config.json",
