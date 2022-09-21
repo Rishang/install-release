@@ -111,8 +111,6 @@ def rm(
     remove(name)
 
 
-
-
 @app.command(name="config")
 def Config(
     debug: bool = __optionDebug,
@@ -153,6 +151,7 @@ def state(debug: bool = __optionDebug):
     """
     setLogger(debug=debug)
     show_state()
+
 
 if __name__ == "__main__":
     app()

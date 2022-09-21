@@ -228,7 +228,9 @@ def extract_release(item: GithubReleaseAssets, at):
     logger.debug(f"path: {path}")
 
     logger.debug(f"Extracting: {path}")
-    if not re.search(__exec_pattern, detect_from_filename(path).mime_type):
+    if not re.match(
+        pattern=__exec_pattern, string=detect_from_filename(path).mime_type
+    ):
         extract(path=path, at=at)
         logger.debug("Extracting done.")
 

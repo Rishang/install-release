@@ -88,6 +88,12 @@ class ToolConfig:
     path: Optional[str] = field(default_factory=str)
 
 
+class irKey:
+    def __init__(self, value):
+        self.name = value.split("#")[-1]
+        self.url = value.split("#")[0]
+
+
 # ---------- Type Aliases ----------- #
 
 TypeState = Dict[str, GithubRelease]

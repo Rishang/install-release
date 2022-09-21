@@ -8,7 +8,7 @@ from rich.console import Console
 
 # locals
 from InstallRelease.state import State, platform_path
-from InstallRelease.data import GithubRelease, ToolConfig
+from InstallRelease.data import GithubRelease, ToolConfig, irKey
 
 from InstallRelease.data import TypeState
 
@@ -126,15 +126,14 @@ def upgrade(force: bool = False):
 
     upgrades: Dict[str, GithubInfo] = {}
     for k in track(state, description="Fetching..."):
-        url = k.split("#")[0]
-        name = k.split("#")[1]
+        i = irKey(k)
 
-        repo = GithubInfo(url, token=config.token)
+        repo = GithubInfo(i.url, token=config.token)
         rprint(f"Fetching: {k}")
         releases = repo.release()
 
         if releases[0].published_dt() > state[k].published_dt() or force == True:
-            upgrades[name] = repo
+            upgrades[i.name] = repo
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:
@@ -173,12 +172,13 @@ def list_installed():
     state: TypeState = cache.state
 
     _table = []
-    for i in state:
+    for key in state:
+        i = irKey(key)
         _table.append(
             {
-                "Name": i.split("#")[-1],
-                "Version": state[i].tag_name,
-                "Url": state[i].url,
+                "Name": i.name,
+                "Version": state[key].tag_name,
+                "Url": state[key].url,
             }
         )
 
@@ -189,9 +189,10 @@ def remove(name: str):
     state: TypeState = cache.state
     popKey = ""
 
-    for i in state:
-        if i.split("#")[-1] == name:
-            popKey = i
+    for key in state:
+        i = irKey(key)
+        if i.name == name:
+            popKey = key
             if os.path.exists(f"{dest}/{name}"):
                 os.remove(f"{dest}/{name}")
             break
