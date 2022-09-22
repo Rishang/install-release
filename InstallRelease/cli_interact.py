@@ -104,7 +104,7 @@ def get(
                 ],
                 title=f"🚀 Install: {toolname}",
             )
-
+            rprint(f"[color(6)]\nPath: {dest}")
             rprint("[color(34)]Install this tool (Y/n): ", end="")
             yn = input()
             if yn.lower() != "y":
