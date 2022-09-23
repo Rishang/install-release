@@ -58,7 +58,7 @@ def get(
         help="tool name you want, Only for releases having different tools in releases",
     ),
     approve: bool = typer.Option(
-        False, "--auto-approve", help="Approve without Prompt"
+        False, "-y", help="Approve without Prompt"
     ),
 ):
     """
