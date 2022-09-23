@@ -1,4 +1,5 @@
 import logging
+import os
 
 # pipi
 import typer
@@ -12,6 +13,7 @@ from InstallRelease.cli_interact import (
     remove,
     list_installed,
     show_state,
+    cache_config,
     config,
 )
 
@@ -38,6 +40,9 @@ def setLogger(quite: bool = None, debug: bool = None):
         logger.setLevel(logging.ERROR)
 
 
+if os.environ.get("IR_DEBUG", "").lower() == "true":
+    setLogger(debug=True)
+
 app = typer.Typer(help=f"Github Release Installer, based on your system")
 
 
@@ -53,19 +58,19 @@ def get(
         help="tool name you want, Only for releases having different tools in releases",
     ),
     approve: bool = typer.Option(
-        False, "--auto-approve", help="Approve without Prompt"
+        False, "-y", help="Approve without Prompt"
     ),
 ):
     """
     | Install github release, cli tool
     """
-    setLogger(quite, debug)
 
+    setLogger(quite, debug)
     if url is None or url == "":
         see_help("get")
 
     _get(
-        GithubInfo(url, token=config.IR_TOKEN),
+        GithubInfo(url, token=config.token),
         tag_name=tag_name,
         prompt=not approve,
         name=name,
@@ -106,10 +111,43 @@ def rm(
     remove(name)
 
 
+@app.command(name="config")
+def Config(
+    debug: bool = __optionDebug,
+    token: str = typer.Option(
+        "",
+        "--token",
+        help="set your github token to solve github api rate-limiting issue",
+    ),
+    path: str = typer.Option(
+        "",
+        "--path",
+        help="set install path",
+    ),
+):
+    """
+    | Set configs for tool
+    """
+
+    setLogger(debug=debug)
+
+    logger.info(f"Loading config: {cache_config.state_file}")
+
+    if token != "":
+        config.token = token
+        logger.info("Updated token")
+    if path != "":
+        config.path = path
+        logger.info("Updated path")
+
+    cache_config.save()
+    logger.info("Done.")
+
+
 @app.command()
 def state(debug: bool = __optionDebug):
     """
-    | Upgrade all installed release, cli tools
+    | show currnet stored state
     """
     setLogger(debug=debug)
     show_state()

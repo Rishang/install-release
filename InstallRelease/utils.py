@@ -7,6 +7,7 @@ import logging
 import platform
 import subprocess
 import dataclasses
+from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass
 
@@ -162,8 +163,12 @@ def sh(command: str):
 
 
 def mkdir(path: str):
-    if not os.path.isdir(path):
-        os.makedirs(name=path)
+    file_path = Path(path)
+    file_path = file_path.expanduser()
+
+    if not file_path.is_dir():
+        logger.debug(f"creating dir: {file_path.absolute()}")
+        os.makedirs(name=file_path.absolute())
     else:
         ...
 

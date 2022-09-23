@@ -82,6 +82,18 @@ class GithubRelease:
         return datetime.strptime(self.published_at, "%Y-%m-%dT%H:%M:%SZ")
 
 
+@dataclass
+class ToolConfig:
+    token: Optional[str] = field(default_factory=str)
+    path: Optional[str] = field(default_factory=str)
+
+
+class irKey:
+    def __init__(self, value):
+        self.name = value.split("#")[-1]
+        self.url = value.split("#")[0]
+
+
 # ---------- Type Aliases ----------- #
 
 TypeState = Dict[str, GithubRelease]

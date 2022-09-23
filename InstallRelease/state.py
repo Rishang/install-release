@@ -5,7 +5,7 @@ from typing import Dict
 from dataclasses import is_dataclass
 
 # locals
-from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass
+from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass, isNone
 
 
 def platform_path(paths: dict, alt: str = ""):
@@ -13,7 +13,7 @@ def platform_path(paths: dict, alt: str = ""):
 
     system = platform.system().lower()
 
-    if os.environ.get("installState") == "test":
+    if not isNone(alt):
         return alt
 
     elif paths.get(system):
@@ -28,30 +28,29 @@ def platform_path(paths: dict, alt: str = ""):
 
 
 class State:
-
-    state: dict = {}
-    cache: object
-
     def __init__(self, file_path: str, obj):
+        self.state: dict = {}
+        self.cache: object
         self.state_file = file_path
-        self.load(obj)
+        self.obj = obj
+        self.load()
 
-    def load(self, obj):
+    def load(self):
         if os.path.exists(self.state_file):
             with open(self.state_file, "r") as f:
                 _s = json.load(f)
                 if len(_s) == 0:
                     return
                 for k in _s:
-                    if is_dataclass(obj):
-                        self.state[k] = FilterDataclass(_s[k], obj=obj)
+                    if is_dataclass(self.obj):
+                        self.state[k] = FilterDataclass(_s[k], obj=self.obj)
 
     def save(self):
         with open(self.state_file, "w") as f:
             json.dump(self.state, f, indent=4, cls=EnhancedJSONEncoder)
 
     def get(self, key: str) -> Dict:
-        return self.state[key]
+        return self.state.get(key)
 
     def set(self, key: str, value):
         self.state[key] = value

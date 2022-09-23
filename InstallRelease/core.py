@@ -10,7 +10,7 @@ from requests.auth import HTTPBasicAuth
 from magic.compat import detect_from_filename
 
 # locals
-from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh
+from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh, isNone
 from InstallRelease.data import (
     GithubRelease,
     GithubReleaseAssets,
@@ -20,6 +20,8 @@ from InstallRelease.data import (
 from InstallRelease.constants import HOME
 
 # --------------- CODE ------------------
+
+__exec_pattern = r"application\/x-(\w+-)?(executable|binary)"
 
 
 class GithubInfo:
@@ -32,7 +34,7 @@ class GithubInfo:
     # https://api.github.com/repos/OWNER/REPO/releases/tags/TAG
     # https://api.github.com/repos/OWNER/REPO/releases/latest
 
-    def __init__(self, repo_url, data: dict = {}, token: str = None) -> None:
+    def __init__(self, repo_url, data: dict = {}, token: str = "") -> None:
         if "https://github.com/" not in repo_url:
             logger.error("repo url must contain 'github.com'")
             sys.exit(1)
@@ -52,7 +54,7 @@ class GithubInfo:
 
     def _req(self, url):
 
-        if isinstance(self.token, str) or self.token != "":
+        if not isNone(self.token):
             auth = HTTPBasicAuth("user", self.token)
         else:
             logger.debug("Token not set")
@@ -226,7 +228,9 @@ def extract_release(item: GithubReleaseAssets, at):
     logger.debug(f"path: {path}")
 
     logger.debug(f"Extracting: {path}")
-    if "executable" not in detect_from_filename(path).mime_type:
+    if not re.match(
+        pattern=__exec_pattern, string=detect_from_filename(path).mime_type
+    ):
         extract(path=path, at=at)
         logger.debug("Extracting done.")
 
@@ -236,13 +240,12 @@ def extract_release(item: GithubReleaseAssets, at):
 def install_bin(src: str, dest: str, local: bool, name: str = None):
 
     bin_files = []
-    p = r"application\/x-(\w+-)?(executable|binary)"
 
     for file in glob.iglob(f"{src}/**", recursive=True):
         f = detect_from_filename(file)
         if f.name == "directory":
             continue
-        elif not re.match(pattern=p, string=f.mime_type):
+        elif not re.match(pattern=__exec_pattern, string=f.mime_type):
             continue
 
         bin_files.append(file)

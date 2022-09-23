@@ -1,5 +1,4 @@
 import os
-import json
 from typing import Dict
 from tempfile import TemporaryDirectory
 
@@ -9,20 +8,53 @@ from rich.console import Console
 
 # locals
 from InstallRelease.state import State, platform_path
-from InstallRelease.data import GithubRelease, TypeState
-from InstallRelease.constants import state_path, bin_path, config
+from InstallRelease.data import GithubRelease, ToolConfig, irKey
+
+from InstallRelease.data import TypeState
+
+from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
 console = Console(width=40)
 
-dest = platform_path(paths=bin_path, alt="../temp/bin")
+if os.environ.get("installState", "") == "test":
+    __spath = {
+        "state_path": "./temp-state.json",
+        "config_path": "./temp-config.json",
+    }
+    logger.info(f"installState={os.environ.get('installState')}")
+else:
+    __spath = {"state_path": "", "config_path": ""}
 
 cache = State(
-    file_path=platform_path(paths=state_path, alt="./temp-state.json"),
+    file_path=platform_path(paths=state_path, alt=__spath["state_path"]),
     obj=GithubRelease,
 )
+
+cache_config = State(
+    file_path=platform_path(paths=config_path, alt=__spath["config_path"]),
+    obj=ToolConfig,
+)
+
+
+def load_config():
+    config: ToolConfig = cache_config.state.get("config")
+
+    if config != None:
+        return config
+    else:
+        cache_config.set("config", ToolConfig())
+        cache_config.save()
+        return ToolConfig()
+
+
+config: ToolConfig = load_config()
+
+dest = platform_path(paths=bin_path, alt=config.path)
+
+# ------- cli ----------
 
 
 def get(
@@ -72,7 +104,7 @@ def get(
                 ],
                 title=f"🚀 Install: {toolname}",
             )
-
+            rprint(f"[color(6)]\nPath: {dest}")
             rprint("[color(34)]Install this tool (Y/n): ", end="")
             yn = input()
             if yn.lower() != "y":
@@ -94,15 +126,14 @@ def upgrade(force: bool = False):
 
     upgrades: Dict[str, GithubInfo] = {}
     for k in track(state, description="Fetching..."):
-        url = k.split("#")[0]
-        name = k.split("#")[1]
+        i = irKey(k)
 
-        repo = GithubInfo(url, token=config.IR_TOKEN)
+        repo = GithubInfo(i.url, token=config.token)
         rprint(f"Fetching: {k}")
         releases = repo.release()
 
         if releases[0].published_dt() > state[k].published_dt() or force == True:
-            upgrades[name] = repo
+            upgrades[i.name] = repo
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:
@@ -141,12 +172,13 @@ def list_installed():
     state: TypeState = cache.state
 
     _table = []
-    for i in state:
+    for key in state:
+        i = irKey(key)
         _table.append(
             {
-                "Name": i.split("#")[-1],
-                "Version": state[i].tag_name,
-                "Url": state[i].url,
+                "Name": i.name,
+                "Version": state[key].tag_name,
+                "Url": state[key].url,
             }
         )
 
@@ -157,9 +189,10 @@ def remove(name: str):
     state: TypeState = cache.state
     popKey = ""
 
-    for i in state:
-        if i.split("#")[-1] == name:
-            popKey = i
+    for key in state:
+        i = irKey(key)
+        if i.name == name:
+            popKey = key
             if os.path.exists(f"{dest}/{name}"):
                 os.remove(f"{dest}/{name}")
             break

@@ -4,14 +4,11 @@ import platform
 
 HOME = os.path.expanduser("~")
 
-
-class config:
-    IR_TOKEN = os.environ.get("IR_TOKEN")
-
-
 __bin_at__ = ".release-bin"
-__state_at__ = "install_release/state.json"
-__config_at__ = "install_release/config.json"
+__dir_name__ = "install_release"
+
+__state_at__ = f"{__dir_name__}/state.json"
+__config_at__ = f"{__dir_name__}/config.json"
 
 _colors = {
     "green": "#8CC265",
