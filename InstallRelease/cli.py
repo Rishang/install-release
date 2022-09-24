@@ -57,9 +57,7 @@ def get(
         "-n",
         help="tool name you want, Only for releases having different tools in releases",
     ),
-    approve: bool = typer.Option(
-        False, "-y", help="Approve without Prompt"
-    ),
+    approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
 ):
     """
     | Install github release, cli tool
