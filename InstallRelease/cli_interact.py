@@ -66,6 +66,7 @@ def get(
 ):
 
     logger.debug(cache.state_file)
+    logger.debug(cache_config.state_file)
     logger.debug(dest)
 
     releases = repo.release(tag_name=tag_name)
