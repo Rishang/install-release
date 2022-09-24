@@ -175,3 +175,14 @@ Progress... ━━━━━━━━━━━━━━━━━━━━━━�
 INFO   updated path to:  ~/.local/bin
 INFO   Done
 ```
+
+#### Config github to token for higher rate limit
+
+
+
+```bash
+❯ install-release config --token [your github token]
+
+INFO: Update token
+INFO: Done.
+```
