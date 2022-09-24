@@ -57,6 +57,12 @@ dest = platform_path(paths=bin_path, alt=config.path)
 # ------- cli ----------
 
 
+def state_info():
+    logger.debug(cache.state_file)
+    logger.debug(cache_config.state_file)
+    logger.debug(dest)
+
+
 def get(
     repo: GithubInfo,
     tag_name: str = "",
@@ -64,10 +70,7 @@ def get(
     prompt: bool = False,
     name: str = None,
 ):
-
-    logger.debug(cache.state_file)
-    logger.debug(cache_config.state_file)
-    logger.debug(dest)
+    state_info()
 
     releases = repo.release(tag_name=tag_name)
 
@@ -123,6 +126,8 @@ def get(
 
 def upgrade(force: bool = False):
 
+    state_info()
+
     state: TypeState = cache.state
 
     upgrades: Dict[str, GithubInfo] = {}
@@ -164,12 +169,16 @@ def upgrade(force: bool = False):
 
 
 def show_state():
+
+    state_info()
     if os.path.exists(cache.state_file) and os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
             print(f.read())
 
 
 def list_installed():
+
+    state_info()
     state: TypeState = cache.state
 
     _table = []
@@ -187,6 +196,8 @@ def list_installed():
 
 
 def remove(name: str):
+
+    state_info()
     state: TypeState = cache.state
     popKey = ""
 
