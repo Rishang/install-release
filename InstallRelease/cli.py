@@ -151,5 +151,15 @@ def state(debug: bool = __optionDebug):
     show_state()
 
 
+@app.command()
+def version():
+    """
+    | print version of install-release
+    """
+    import InstallRelease
+
+    print(InstallRelease.__version__)
+
+
 if __name__ == "__main__":
     app()
