@@ -13,7 +13,7 @@ def platform_path(paths: dict, alt: str = ""):
 
     system = platform.system().lower()
 
-    if not isNone(alt):
+    if not isNone(alt) and alt != "null":
         return alt
 
     elif paths.get(system):

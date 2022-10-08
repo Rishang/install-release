@@ -73,6 +73,10 @@ def get(
     state_info()
 
     releases = repo.release(tag_name=tag_name)
+    
+    if not len(releases) > 0:
+        logger.error(f"No releases found: {repo.repo_url}")
+        return
 
     if isNone(name):
         toolname = releases[0].name
