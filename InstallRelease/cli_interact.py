@@ -241,8 +241,8 @@ def pull_state(url: str = ""):
     rprint("\n[bold magenta]Following tool will get Installed.\n")
     rprint("[bold blue]Install these tools, (Y/n):", end=" ")
 
-    r = input()
-    if r.lower() != "y":
+    _i = input()
+    if _i.lower() != "y":
         return
     for key in data:
         try:
