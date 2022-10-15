@@ -160,6 +160,11 @@ def pull(
         "--url",
         help="install tools from remote state",
     ),
+    override: bool = typer.Option(
+        False,
+        "-O",
+        help="Enable Override local tool version with remote state version.",
+    ),
 ):
     """
     | Install tools from remote state
@@ -169,7 +174,7 @@ def pull(
     if url is None or url == "":
         see_help("pull")
 
-    pull_state(url)
+    pull_state(url, override)
 
 
 @app.command()

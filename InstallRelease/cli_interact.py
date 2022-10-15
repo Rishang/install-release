@@ -221,7 +221,7 @@ def remove(name: str):
         logger.info(f"Removed: {name}")
 
 
-def pull_state(url: str = ""):
+def pull_state(url: str = "", override: bool = False):
     """
     | Install tools from remote state
     """
@@ -254,10 +254,13 @@ def pull_state(url: str = ""):
         if state.get(key) != None and state[key].tag_name == data[key].tag_name:
             logger.info(f"Skipping: {key}")
             continue
-        else:
+        elif state.get(key) != None and override != False:
             get(
                 GithubInfo(i.url, token=config.token),
                 tag_name=data[key].tag_name,
                 prompt=False,
                 name=i.name,
             )
+        else:
+            logger.info(f"Skipping: {key}")
+            continue
