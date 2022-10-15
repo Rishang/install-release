@@ -235,15 +235,8 @@ def pull_state(url: str = "", override: bool = False):
     data: dict = {k: GithubRelease(**r[k]) for k in r}
     state: TypeState = cache.state
 
-    logger.debug(data)
+    temp: Dict[str, GithubRelease] = {}
 
-    list_install(state=data, title="Tools to be installed")
-    rprint("\n[bold magenta]Following tool will get Installed.\n")
-    rprint("[bold blue]Install these tools, (Y/n):", end=" ")
-
-    _i = input()
-    if _i.lower() != "y":
-        return
     for key in data:
         try:
             i = irKey(key)
@@ -253,19 +246,27 @@ def pull_state(url: str = "", override: bool = False):
 
         if state.get(key) != None:
             if state[key].tag_name == data[key].tag_name or override == False:
-                logger.info(f"Skipping: {key}")
+                logger.debug(f"Skipping: {key}")
                 continue
             else:
-                get(
-                    GithubInfo(i.url, token=config.token),
-                    tag_name=data[key].tag_name,
-                    prompt=False,
-                    name=i.name,
-                )
+                temp[key] = data[key]
         else:
-            get(
-                GithubInfo(i.url, token=config.token),
-                tag_name=data[key].tag_name,
-                prompt=False,
-                name=i.name,
-            )
+            temp[key] = data[key]
+
+    logger.debug(temp)
+
+    list_install(state=temp, title="Tools to be installed")
+    rprint("\n[bold magenta]Following tool will get Installed.\n")
+    rprint("[bold blue]Install these tools, (Y/n):", end=" ")
+
+    _i = input()
+    if _i.lower() != "y":
+        return
+
+    for key in temp:
+        get(
+            GithubInfo(i.url, token=config.token),
+            tag_name=temp[key].tag_name,
+            prompt=False,
+            name=i.name,
+        )
