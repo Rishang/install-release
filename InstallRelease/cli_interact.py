@@ -264,6 +264,11 @@ def pull_state(url: str = "", override: bool = False):
         return
 
     for key in temp:
+        try:
+            i = irKey(key)
+        except:
+            logger.warning(f"Invalid input: {key}")
+            continue
         get(
             GithubInfo(i.url, token=config.token),
             tag_name=temp[key].tag_name,
