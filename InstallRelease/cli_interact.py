@@ -251,16 +251,21 @@ def pull_state(url: str = "", override: bool = False):
             logger.warning(f"Invalid input: {key}")
             continue
 
-        if state.get(key) != None and state[key].tag_name == data[key].tag_name:
-            logger.info(f"Skipping: {key}")
-            continue
-        elif state.get(key) != None and override != False:
+        if state.get(key) != None:
+            if state[key].tag_name == data[key].tag_name or override == False:
+                logger.info(f"Skipping: {key}")
+                continue
+            else:
+                get(
+                    GithubInfo(i.url, token=config.token),
+                    tag_name=data[key].tag_name,
+                    prompt=False,
+                    name=i.name,
+                )
+        else:
             get(
                 GithubInfo(i.url, token=config.token),
                 tag_name=data[key].tag_name,
                 prompt=False,
                 name=i.name,
             )
-        else:
-            logger.info(f"Skipping: {key}")
-            continue
