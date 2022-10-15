@@ -3,6 +3,7 @@ from typing import Dict
 from tempfile import TemporaryDirectory
 
 # pipi
+import requests
 from rich.progress import track
 from rich.console import Console
 
@@ -73,7 +74,7 @@ def get(
     state_info()
 
     releases = repo.release(tag_name=tag_name)
-    
+
     if not len(releases) > 0:
         logger.error(f"No releases found: {repo.repo_url}")
         return
@@ -121,11 +122,11 @@ def get(
         extract_release(item=_gr, at=at.name)
 
     releases[0].assets = [_gr]
-    cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
-    cache.save()
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
+    cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
+    cache.save()
 
 
 def upgrade(force: bool = False):
@@ -180,10 +181,11 @@ def show_state():
             print(f.read())
 
 
-def list_installed():
+def list_install(state: TypeState = None, title: str = "Installed tools"):
 
-    state_info()
-    state: TypeState = cache.state
+    if state == None:
+        state_info()
+        state = cache.state
 
     _table = []
     for key in state:
@@ -196,7 +198,7 @@ def list_installed():
             }
         )
 
-    show_table(_table, title="Installed tools")
+    show_table(_table, title=title)
 
 
 def remove(name: str):
@@ -217,3 +219,48 @@ def remove(name: str):
         del state[popKey]
         cache.save()
         logger.info(f"Removed: {name}")
+
+
+def pull_state(url: str = "", override: bool = False):
+    """
+    | Install tools from remote state
+    """
+    logger.debug(url)
+
+    if isNone(url):
+        return
+
+    r: dict = requests.get(url=url).json()
+
+    data: dict = {k: GithubRelease(**r[k]) for k in r}
+    state: TypeState = cache.state
+
+    logger.debug(data)
+
+    list_install(state=data, title="Tools to be installed")
+    rprint("\n[bold magenta]Following tool will get Installed.\n")
+    rprint("[bold blue]Install these tools, (Y/n):", end=" ")
+
+    _i = input()
+    if _i.lower() != "y":
+        return
+    for key in data:
+        try:
+            i = irKey(key)
+        except:
+            logger.warning(f"Invalid input: {key}")
+            continue
+
+        if state.get(key) != None and state[key].tag_name == data[key].tag_name:
+            logger.info(f"Skipping: {key}")
+            continue
+        elif state.get(key) != None and override != False:
+            get(
+                GithubInfo(i.url, token=config.token),
+                tag_name=data[key].tag_name,
+                prompt=False,
+                name=i.name,
+            )
+        else:
+            logger.info(f"Skipping: {key}")
+            continue

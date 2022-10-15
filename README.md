@@ -68,12 +68,14 @@ Usage: install-release [OPTIONS] COMMAND [ARGS]...
   Github Release Installer, based on your system
 
   Commands:
-    install  | Install github release, cli tool
+    get      | Install github release, cli tool
     ls       | list all installed release, cli tools
     rm       | remove any installed release, cli tools
     upgrade  | Upgrade all installed release, cli tools
     state    | show currnet stored state
     config   | Set configs for tool
+    pull     | Install tools from remote state
+    version  | print version of install-release 
 ```
 
 For sub command help use: `install-release <sub-command> --help`

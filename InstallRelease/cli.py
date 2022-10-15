@@ -8,10 +8,11 @@ import typer
 from InstallRelease.utils import rprint, logger
 from InstallRelease.cli_interact import (
     GithubInfo,
+    pull_state,
     get as _get,
     upgrade as _upgrade,
     remove,
-    list_installed,
+    list_install,
     show_state,
     cache_config,
     config,
@@ -93,7 +94,7 @@ def ls():
     """
     | list all installed release, cli tools
     """
-    list_installed()
+    list_install()
 
 
 @app.command()
@@ -149,6 +150,31 @@ def state(debug: bool = __optionDebug):
     """
     setLogger(debug=debug)
     show_state()
+
+
+@app.command()
+def pull(
+    debug: bool = __optionDebug,
+    url: str = typer.Option(
+        "",
+        "--url",
+        help="install tools from remote state",
+    ),
+    override: bool = typer.Option(
+        False,
+        "-O",
+        help="Enable Override local tool version with remote state version.",
+    ),
+):
+    """
+    | Install tools from remote state
+    """
+    setLogger(debug=debug)
+
+    if url is None or url == "":
+        see_help("pull")
+
+    pull_state(url, override)
 
 
 @app.command()
