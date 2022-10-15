@@ -255,6 +255,9 @@ def pull_state(url: str = "", override: bool = False):
 
     logger.debug(temp)
 
+    if len(temp) == 0:
+        return
+
     list_install(state=temp, title="Tools to be installed")
     rprint("\n[bold magenta]Following tool will get Installed.\n")
     rprint("[bold blue]Install these tools, (Y/n):", end=" ")
