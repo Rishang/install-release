@@ -52,4 +52,12 @@ def platform_words() -> list:
         if platform.machine().lower() in aliases[alias]:
             platform_words += aliases[alias]
 
+    try:
+        sys_alias = platform.platform().split("-")[0].lower()
+        
+        if platform.system().lower() != sys_alias:
+            platform_words.append(sys_alias)
+    except:
+        ...
+
     return platform_words
