@@ -54,7 +54,7 @@ def platform_words() -> list:
 
     try:
         sys_alias = platform.platform().split("-")[0].lower()
-        
+
         if platform.system().lower() != sys_alias:
             platform_words.append(sys_alias)
     except:
