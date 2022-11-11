@@ -1,7 +1,7 @@
 # install-release 🚀
 [![Python Version](https://img.shields.io/badge/Python-3.8_to_3.10-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/install-release?&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
 
-`install-release` is a cli tool to install any tool for your device directly from their github releases and keep them updated.
+`install-release` is a cli tool to install any tool for your device directly from their github releases and keep them updated. you can consider it as a small package manager for github releases.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
 
