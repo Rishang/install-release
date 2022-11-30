@@ -22,8 +22,8 @@ jobs:
        
       - name: Config Poetry
         run: |
+          curl -sSL https://install.python-poetry.org | python3 -
           python -m pip install --upgrade pip
-          pip install -U poetry
           poetry install
 
       - name: Build 
