@@ -14,6 +14,7 @@ from InstallRelease.cli_interact import (
     remove,
     list_install,
     show_state,
+    hold,
     cache_config,
     config,
 )
@@ -185,6 +186,19 @@ def version():
     import InstallRelease
 
     print(InstallRelease.__version__)
+
+
+@app.command(name="hold")
+def _hold(
+    name: str = typer.Argument(
+        None, help="Name of tool for which updates will be kept on hold"
+    ),
+    unset: bool = typer.Option(True, "--unset", help="unset from hold.")
+):
+    """
+    | Keep updates a tool on hold.
+    """
+    hold(name, hold_update=unset)
 
 
 if __name__ == "__main__":
