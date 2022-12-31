@@ -127,6 +127,14 @@ def get(
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
+    
+    # """For ignoring holds in get too"""
+    # check_key = cache.get(f"{repo.repo_url}#{toolname}")
+
+    # if isinstance(check_key, GithubRelease) and check_key.hold_update == True:
+    #     logger.debug(f"hold_update={check_key.hold_update}")
+    #     releases[0].hold_update = True
+        
     cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()
 
@@ -140,6 +148,12 @@ def upgrade(force: bool = False):
     upgrades: Dict[str, GithubInfo] = {}
     for k in track(state, description="Fetching..."):
         i = irKey(k)
+        
+        try:
+            if state[k].hold_update == True:
+                continue
+        except AttributeError:
+            ...
 
         repo = GithubInfo(i.url, token=config.token)
         rprint(f"Fetching: {k}")
@@ -184,7 +198,8 @@ def show_state():
 
 
 def list_install(state: TypeState = None, title: str = "Installed tools"):
-
+    from colorama import Fore, Back, Style
+    
     if state == None:
         state_info()
         state = cache.state
@@ -192,13 +207,22 @@ def list_install(state: TypeState = None, title: str = "Installed tools"):
     _table = []
     for key in state:
         i = irKey(key)
-        _table.append(
-            {
-                "Name": i.name,
-                "Version": state[key].tag_name,
-                "Url": state[key].url,
-            }
-        )
+        if state[key].hold_update == True:
+            _table.append(
+                {
+                    "Name": i.name,
+                    "Version": f"[dim]{state[key].tag_name}",
+                    "Url": f"[dim]{state[key].url}",
+                }
+            )
+        else:
+            _table.append(
+                {
+                    "Name": i.name,
+                    "Version": state[key].tag_name,
+                    "Url": state[key].url,
+                }
+            )
 
     show_table(_table, title=title)
 
@@ -221,6 +245,22 @@ def remove(name: str):
         del state[popKey]
         cache.save()
         logger.info(f"Removed: {name}")
+
+
+def hold(name: str, hold_update: bool):
+    """
+    | Holds updates of any cli tool.
+    """
+    state_info()
+    state: TypeState = cache.state
+    
+    for _k in state:
+        key = irKey(_k)
+        if key.name == name:
+            state[_k].hold_update = hold_update
+            logger.info(f"Update on hold for, {name}")
+            break
+    cache.save()
 
 
 def pull_state(url: str = "", override: bool = False):

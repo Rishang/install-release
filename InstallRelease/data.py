@@ -67,13 +67,13 @@ class GithubRelease:
     url: str
     name: str
     tag_name: str
-    # author: dict
-    # target_commitish: str
-    # draft: bool
     prerelease: bool
     published_at: str
     assets: List[GithubReleaseAssets]
-    # install_path: Optional[str] = field(default_factory=str)
+    hold_update: Optional[bool] = field(default=False)
+    # author: dict
+    # draft: bool
+    # target_commitish: str
 
     def __post_init__(self):
         self.assets = [GithubReleaseAssets(**a) for a in self.assets]
