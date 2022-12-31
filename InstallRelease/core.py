@@ -10,7 +10,11 @@ from requests.auth import HTTPBasicAuth
 from magic.compat import detect_from_filename
 
 # locals
-from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh, isNone
+from InstallRelease.utils import (
+    logger, listItemsMatcher, extract, download, sh, isNone,
+    show_table, rprint
+)
+
 from InstallRelease.data import (
     GithubRelease,
     GithubReleaseAssets,
@@ -160,7 +164,7 @@ class installRelease:
         ...
 
 
-def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list = []):
+def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list = [], select: bool = False):
     selected = 0.0
     name = ""
 
@@ -183,19 +187,51 @@ def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list 
         logger.warning(f"No release assets found for: {repo_url}")
         return False
 
-    for i in release.assets:
-        match = listItemsMatcher(
-            patterns=platform_words + extra_words, word=i.name.lower()
-        )
-        logger.debug(f"name: '{i.name}', chances: {match}")
+    logger.debug(f'Manualy select assets:{select}')
 
-        if match > 0:
-            if selected == 0:
-                selected = match
-                name = i.name
-            elif match > selected:
-                selected = match
-                name = i.name
+    if not select:
+        for i in release.assets:
+            match = listItemsMatcher(
+                    patterns=platform_words + extra_words, word=i.name.lower()
+            )
+            logger.debug(f"name: '{i.name}', chances: {match}")
+
+            if match > 0:
+                if selected == 0:
+                    selected = match
+                    name = i.name
+                elif match > selected:
+                    selected = match
+                    name = i.name
+    else:
+        data = []
+        count = 1
+        for i in release.assets:
+            data.append(
+                {
+                    "Index": f'{count}',
+                    "Selected Item": i.name,
+                    "Version": releases[0].tag_name,
+                    "Size Mb": i.size_mb(),
+                    "Downloads": i.download_count,
+                }
+            )
+            count += 1
+        show_table(data=data,
+                   title=f"🚀 Release packages",
+                   )
+        rprint("[color(34)]Install which package (1~" + str(count - 1) + "): ", end="")
+        index = input()
+        try:
+            index = int(index)
+
+            if index < 1 or index >= count:
+                return False
+
+            name = release.assets[index - 1].name
+            select = 1.0
+        except:
+            return False
 
     if name == "":
         logger.warn(f"No match release prefix match found for {repo_url}")

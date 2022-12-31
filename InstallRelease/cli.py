@@ -59,6 +59,7 @@ def get(
         help="tool name you want, Only for releases having different tools in releases",
     ),
     approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
+    select: bool = typer.Option(False, "-m", help="Manually select the release"),
 ):
     """
     | Install github release, cli tool
@@ -73,6 +74,7 @@ def get(
         tag_name=tag_name,
         prompt=not approve,
         name=name,
+        select=select,
     )
 
 

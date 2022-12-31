@@ -71,6 +71,7 @@ def get(
     local: bool = True,
     prompt: bool = False,
     name: str = None,
+    select: bool = False,
 ):
     state_info()
 
@@ -87,7 +88,7 @@ def get(
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    _gr = get_release(releases=releases, repo_url=repo.repo_url, extra_words=[toolname])
+    _gr = get_release(releases=releases, repo_url=repo.repo_url, extra_words=[toolname], select=select)
 
     logger.debug(_gr)
 
