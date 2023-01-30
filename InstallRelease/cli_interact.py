@@ -126,14 +126,14 @@ def get(
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
-    
+
     # """For ignoring holds in get too"""
     # check_key = cache.get(f"{repo.repo_url}#{toolname}")
 
     # if isinstance(check_key, GithubRelease) and check_key.hold_update == True:
     #     logger.debug(f"hold_update={check_key.hold_update}")
     #     releases[0].hold_update = True
-        
+
     cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()
 
@@ -147,7 +147,7 @@ def upgrade(force: bool = False):
     upgrades: Dict[str, GithubInfo] = {}
     for k in track(state, description="Fetching..."):
         i = irKey(k)
-        
+
         try:
             if state[k].hold_update == True:
                 continue
@@ -196,34 +196,41 @@ def show_state():
             print(f.read())
 
 
-def list_install(state: TypeState = None, title: str = "Installed tools"):
-    from colorama import Fore, Back, Style
-    
+def list_install(
+    state: TypeState = None, title: str = "Installed tools", hold_update=False
+):
+
     if state == None:
         state_info()
         state = cache.state
 
     _table = []
+    _hold_table = []
     for key in state:
         i = irKey(key)
-        if state[key].hold_update == True:
-            _table.append(
-                {
-                    "Name": i.name,
-                    "Version": f"[dim]{state[key].tag_name}",
-                    "Url": f"[dim]{state[key].url}",
-                }
-            )
-        else:
-            _table.append(
-                {
-                    "Name": i.name,
-                    "Version": state[key].tag_name,
-                    "Url": state[key].url,
-                }
-            )
+        if hold_update:
+            if state[key].hold_update == True:
+                _hold_table.append(
+                    {
+                        "Name": i.name,
+                        "Version": f"[dim]{state[key].tag_name}",
+                        "Url": f"[dim]{state[key].url}",
+                    }
+                )
+            continue
 
-    show_table(_table, title=title)
+        _table.append(
+            {
+                "Name": i.name,
+                "Version": state[key].tag_name,
+                "Url": state[key].url,
+            }
+        )
+
+    if hold_update:
+        show_table(_hold_table, title=f"{title} kept on hold")
+    else:
+        show_table(_table, title=title)
 
 
 def remove(name: str):
@@ -252,12 +259,12 @@ def hold(name: str, hold_update: bool):
     """
     state_info()
     state: TypeState = cache.state
-    
+
     for _k in state:
         key = irKey(_k)
         if key.name == name:
             state[_k].hold_update = hold_update
-            logger.info(f"Update on hold for, {name}")
+            logger.info(f"Update on hold for, {name} to {hold_update}")
             break
     cache.save()
 

@@ -91,11 +91,17 @@ def upgrade(
 
 
 @app.command()
-def ls():
+def ls(
+    hold: bool = typer.Option(
+        False,
+        "--hold",
+        help="list of tools which are kept on hold",
+    )
+):
     """
     | list all installed release, cli tools
     """
-    list_install()
+    list_install(hold_update=hold)
 
 
 @app.command()
@@ -193,7 +199,7 @@ def _hold(
     name: str = typer.Argument(
         None, help="Name of tool for which updates will be kept on hold"
     ),
-    unset: bool = typer.Option(True, "--unset", help="unset from hold.")
+    unset: bool = typer.Option(True, "--unset", help="unset from hold."),
 ):
     """
     | Keep updates a tool on hold.

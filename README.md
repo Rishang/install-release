@@ -169,6 +169,36 @@ Updating: terrascan, v1.15.0 => v1.15.2
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```
 
+#### Hold Update to specific installed tool.
+
+In case you want to hold update to specific tool, you can use `hold {tool-name}` command by which it will pause update for that tool.
+
+Example: keep tool named [k9s](https://github.com/derailed/k9s) update on hold
+
+```bash
+❯ install-release hold k9s
+ INFO     Update on hold for, k9s to True
+```
+
+You can list tools on hold updates  by `ls --hold` command
+
+```bash
+❯ install-release ls --hold
+             Installed tools kept on hold             
+┏━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Name ┃ Version ┃ Url                               ┃
+┡━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ k9s  │ v0.26.7 │ https://github.com/derailed/k9s   │
+└──────┴─────────┴───────────────────────────────────┘
+```
+
+In case you want to unhold update to specific tool, you can use `hold --unset {tool-name}` command by which it will pause update for that tool.
+
+```
+❯ install-release hold --unset k9s
+ INFO     Update on hold for, k9s to False
+```
+
 #### Config tool installation path
 
 ```bash
