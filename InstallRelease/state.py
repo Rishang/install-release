@@ -2,7 +2,7 @@ import os
 import json
 import platform
 from typing import Dict
-from dataclasses import is_dataclass
+import dataclasses
 
 # locals
 from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass, isNone
@@ -42,7 +42,7 @@ class State:
                 if len(_s) == 0:
                     return
                 for k in _s:
-                    if is_dataclass(self.obj):
+                    if dataclasses.is_dataclass(self.obj):
                         self.state[k] = FilterDataclass(_s[k], obj=self.obj)
 
     def save(self):
@@ -50,10 +50,19 @@ class State:
             json.dump(self.state, f, cls=EnhancedJSONEncoder)
 
     def get(self, key: str) -> Dict:
-        return self.state.get(key)
+        return self.state.get(key)  # type: ignore
 
     def set(self, key: str, value):
         self.state[key] = value
+
+    def items(self):
+        return self.state.items()
+
+    def keys(self):
+        return self.state.keys()
+
+    def pop(self, key: str):
+        self.state.pop(key)
 
     def __getitem__(self, key: str) -> Dict:
         return self.state[key]
