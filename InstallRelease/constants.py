@@ -4,7 +4,7 @@ import platform
 
 HOME = os.path.expanduser("~")
 
-__bin_at__ = ".release-bin"
+__bin_at__ = "bin"
 __dir_name__ = "install_release"
 
 __state_at__ = f"{__dir_name__}/state.json"
