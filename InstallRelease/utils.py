@@ -10,6 +10,7 @@ import dataclasses
 from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
 
 # pipi
 import requests
@@ -132,7 +133,7 @@ class Shell:
 
     def cmd(self, cmd) -> ShellOutputs:
         try:
-            process = subprocess.Popen(cmd, **self.popen_args)
+            process = subprocess.Popen(cmd, **self.popen_args)  # type: ignore
             stdout, stderr = process.communicate()
             returncode = process.returncode
 
@@ -230,6 +231,16 @@ def listItemsMatcher(patterns: List[str], word: str) -> float:
         return 0
 
     return count / len(patterns)
+
+
+def threads(funct, data, max_workers=5, return_result: bool = True):
+    results = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future = executor.map(funct, data)
+        if return_result == True:
+            for i in future:
+                results.append(i)
+    return results
 
 
 def show_table(

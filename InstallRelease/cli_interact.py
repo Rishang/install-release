@@ -14,7 +14,7 @@ from InstallRelease.data import GithubRelease, ToolConfig, irKey
 from InstallRelease.data import TypeState
 
 from InstallRelease.constants import state_path, bin_path, config_path
-from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone
+from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone, threads
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
@@ -145,12 +145,13 @@ def upgrade(force: bool = False):
     state: TypeState = cache.state
 
     upgrades: Dict[str, GithubInfo] = {}
-    for k in track(state, description="Fetching..."):
+
+    def task(k: str):
         i = irKey(k)
 
         try:
             if state[k].hold_update == True:
-                continue
+                return
         except AttributeError:
             ...
 
@@ -160,6 +161,8 @@ def upgrade(force: bool = False):
 
         if releases[0].published_dt() > state[k].published_dt() or force == True:
             upgrades[i.name] = repo
+
+    threads(task, data=[k for k in state], max_workers=20, return_result=False)
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:

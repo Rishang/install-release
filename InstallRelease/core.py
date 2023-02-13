@@ -183,31 +183,28 @@ def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list 
         logger.warning(f"No release assets found for: {repo_url}")
         return False
 
-    for i in release.assets:
+    _index: int = int()
+    for index, e in enumerate(release.assets):
         match = listItemsMatcher(
-            patterns=platform_words + extra_words, word=i.name.lower()
+            patterns=platform_words + extra_words, word=e.name.lower()
         )
-        logger.debug(f"name: '{i.name}', chances: {match}")
+        logger.debug(f"name: '{e.name}', chances: {match}")
 
         if match > 0:
             if selected == 0:
                 selected = match
-                name = i.name
+                name = e.name
+                _index = index
             elif match > selected:
                 selected = match
-                name = i.name
+                name = e.name
+                _index = index
 
     if name == "":
         logger.warn(f"No match release prefix match found for {repo_url}")
         return False
 
-    count = 0
-    for i in release.assets:
-        if i.name == name:
-            break
-        count += 1
-
-    item = release.assets[count]
+    item = release.assets[_index]
     logger.debug(
         "Selected file: \n"
         f"File: '{item.name}', content_type: '{item.content_type}', chances: {selected}"
