@@ -5,7 +5,7 @@
 
 This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
 
-> Also it's mainly for installing tools that are not directly available in the officially by package managers `apt, yum, pacman` etc.
+> INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman` etc.
 
 ```bash
 # Install install-release
