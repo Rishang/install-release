@@ -80,7 +80,7 @@ class GithubInfo:
     def release(self, tag_name: str = ""):
 
         if tag_name == "":
-            api = self.api + "/releases"
+            api = self.api + "/releases/latest"
         else:
             api = self.api + "/releases/tags/" + tag_name
 
