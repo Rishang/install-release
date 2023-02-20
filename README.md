@@ -55,6 +55,17 @@ export PATH=$HOME/.release-bin:$PATH
 pip install -U install-release
 ```
 
+## Update this package
+
+For seeing verison:
+```bash
+install-release me --version
+```
+
+For updating:
+```bash
+install-release me --upgrade
+```
 
 ### Example usage `install-release`
 
@@ -75,7 +86,8 @@ Usage: install-release [OPTIONS] COMMAND [ARGS]...
     state    | show currnet stored state
     config   | Set configs for tool
     pull     | Install tools from remote state
-    version  | print version of install-release 
+    hold     | Keep updates a tool on hold.
+    me       | Update install-release tool.
 ```
 
 For sub command help use: `install-release <sub-command> --help`
@@ -91,6 +103,13 @@ alias ir="install-release"
 after this you can you alias directly for easiness
 
 Example: `ir get --help`
+
+#### Install completion for shell
+```bash
+# install-release --install-completion [SHELL: bash|zsh|fish|powershell]
+# Example for zsh:
+install-release --install-completion zsh
+```
 
 #### Install tool from github releases
 
