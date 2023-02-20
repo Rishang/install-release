@@ -208,6 +208,14 @@ INFO   updated path to:  ~/.local/bin
 INFO   Done
 ```
 
+#### Config updates for pre release versions
+
+This is useful when you want to install pre-release versions of tools like beta or alpha releases. by default it is set to `False` in which case it will only check for latest release.
+
+```bash
+❯ install-release config --pre-release
+```
+
 #### Config github to token for higher rate limit
 
 

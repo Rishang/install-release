@@ -53,7 +53,6 @@ class GithubInfo:
         self.info: GithubRepoInfo = GithubRepoInfo(**self._req(self.api))
 
     def _req(self, url):
-
         if not isNone(self.token):
             auth = HTTPBasicAuth("user", self.token)
         else:
@@ -77,10 +76,11 @@ class GithubInfo:
     def repository(self):
         return self._req(self.api)
 
-    def release(self, tag_name: str = ""):
-
+    def release(self, tag_name: str = "", pre_release: bool = False):
         if tag_name == "":
-            api = self.api + "/releases/latest"
+            api = (
+                self.api + "/releases" + f"{'/latest' if pre_release == False else ''}"
+            )
         else:
             api = self.api + "/releases/tags/" + tag_name
 
@@ -132,7 +132,6 @@ class installRelease:
             return self._install_darwin(local, at)
 
     def _install_linux(self, local: bool, at: str = None):
-
         if local:
             cmd = f"install {self.source} {at or self.paths['local']}"
         else:
@@ -218,7 +217,6 @@ def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list 
 
 
 def extract_release(item: GithubReleaseAssets, at):
-
     logger.debug(f"Download path: {at}")
 
     path = download(item.browser_download_url, at)
@@ -235,7 +233,6 @@ def extract_release(item: GithubReleaseAssets, at):
 
 
 def install_bin(src: str, dest: str, local: bool, name: str = None):
-
     bin_files = []
 
     for file in glob.iglob(f"{src}/**", recursive=True):

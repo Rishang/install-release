@@ -130,6 +130,9 @@ def Config(
         "--path",
         help="set install path",
     ),
+    pre_release: bool = typer.Option(
+        False, "--pre-release", help="Also include pre-releases while checking updates."
+    ),
 ):
     """
     | Set configs for tool
@@ -144,7 +147,9 @@ def Config(
         logger.info("Updated token")
     if path != "":
         config.path = path
-        logger.info("Updated path")
+        logger.info(f"Updated path to {path}")
+
+    config.pre_release = pre_release
 
     cache_config.save()
     logger.info("Done.")

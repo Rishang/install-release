@@ -38,7 +38,6 @@ bin_path = {
 
 
 def platform_words() -> list:
-
     aliases = {
         "x86_64": ["x86", "x64", "amd64", "amd", "x86_64"],
         "aarch64": ["arm64", "aarch64"],
