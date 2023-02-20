@@ -27,7 +27,7 @@ Checking for gron is installed using installed-release:
 
 ```
 ❯ which gron
-/home/noobi/.release-bin/gron
+/home/noobi/bin/gron
 
 ❯ gron --help
 Transform JSON (from a file, URL, or stdin) into discrete assignments to make it greppable
@@ -39,13 +39,13 @@ Transform JSON (from a file, URL, or stdin) into discrete assignments to make it
 - python3.8 or higher
 
 - [libmagic](https://github.com/ahupp/python-magic#installation)
-- Default releases Installation Path is: `~/.release-bin/`,
+- Default releases Installation Path is: `~/bin/`,
 This is the path where installed tools will get stored.
 
 - In order to run installed tools, you need to add the following line your `~/.bashrc` or `~/.zshrc` file:
 
 ```bash
-export PATH=$HOME/.release-bin:$PATH
+export PATH=$HOME/bin:$PATH
 ```
 
 
@@ -129,13 +129,13 @@ install-release --install-completion zsh
 └─────────┴────────────────────────────────────┴─────────┴─────────┴───────────┘
 Install this tool (Y/n): y
  INFO     Downloaded: 'kubectx_v0.9.4_linux_x86_64.tar.gz' at /tmp/dn_kubectx_ph6i7dmk                                                               utils.py:159
- INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/.release-bin/kubectx                                                                  core.py:132
+ INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/bin/kubectx                                                                  core.py:132
  INFO     Installed: kubectx
 ```
 ```
 # checking if kubectx is installed
 ❯ which kubectx
-/home/noobi/.release-bin/kubectx
+/home/noobi/bin/kubectx
 
 ❯ kubectx --version
 0.9.4
@@ -182,7 +182,7 @@ Upgrade these tools, (Y/n): y
 
 Updating: terrascan, v1.15.0 => v1.15.2
  INFO     Downloaded: 'terrascan_1.15.2_Linux_x86_64.tar.gz' at /tmp/dn_terrascan_0as71a6v
- INFO     install /tmp/dn_terrascan_0as71a6v/terrascan ~/.release-bin/terrascan
+ INFO     install /tmp/dn_terrascan_0as71a6v/terrascan ~/bin/terrascan
  INFO     Installed: terrascan
 
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
