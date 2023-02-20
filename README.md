@@ -92,6 +92,13 @@ after this you can you alias directly for easiness
 
 Example: `ir get --help`
 
+#### Install completion for shell
+```bash
+# install-release --install-completion [SHELL: bash|zsh|fish|powershell]
+# Example for zsh:
+install-release --install-completion zsh
+```
+
 #### Install tool from github releases
 
 ```bash
