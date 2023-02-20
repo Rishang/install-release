@@ -55,6 +55,17 @@ export PATH=$HOME/.release-bin:$PATH
 pip install -U install-release
 ```
 
+## Update this package
+
+For seeing verison:
+```bash
+install-release me --version
+```
+
+For updating:
+```bash
+install-release me --upgrade
+```
 
 ### Example usage `install-release`
 
@@ -75,7 +86,8 @@ Usage: install-release [OPTIONS] COMMAND [ARGS]...
     state    | show currnet stored state
     config   | Set configs for tool
     pull     | Install tools from remote state
-    version  | print version of install-release 
+    hold     | Keep updates a tool on hold.
+    me       | Update install-release tool.
 ```
 
 For sub command help use: `install-release <sub-command> --help`

@@ -99,7 +99,7 @@ def ls(
     )
 ):
     """
-    | list all installed release, cli tools
+    | List all installed release, cli tools
     """
     list_install(hold_update=hold)
 
@@ -110,7 +110,7 @@ def rm(
     debug: bool = __optionDebug,
 ):
     """
-    | remove any installed release, cli tools
+    | Remove any installed release, cli tools
     """
     setLogger(debug=debug)
 
@@ -158,7 +158,7 @@ def Config(
 @app.command()
 def state(debug: bool = __optionDebug):
     """
-    | show currnet stored state
+    | Show currnet stored state
     """
     setLogger(debug=debug)
     show_state()
@@ -189,16 +189,6 @@ def pull(
     pull_state(url, override)
 
 
-@app.command()
-def version():
-    """
-    | print version of install-release
-    """
-    import InstallRelease
-
-    print(InstallRelease.__version__)
-
-
 @app.command(name="hold")
 def _hold(
     name: str = typer.Argument(
@@ -210,6 +200,27 @@ def _hold(
     | Keep updates a tool on hold.
     """
     hold(name, hold_update=unset)
+
+
+@app.command(name="me")
+def me(
+    update: bool = typer.Option(
+        False, "--upgrade", help="Update tool, install-release."
+    ),
+    version: bool = typer.Option(
+        False, "--version", help="print version this tool, install-release."
+    ),
+):
+    """
+    | Update install-release tool.
+    """
+
+    if update:
+        os.system("python3 -m pip install -U install-release")
+    elif version:
+        import InstallRelease
+
+        print(InstallRelease.__version__)
 
 
 if __name__ == "__main__":
