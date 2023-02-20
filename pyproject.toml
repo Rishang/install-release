@@ -3,7 +3,7 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.3.1"
+version = "0.3.2"
 readme = "README.md"
 description = "A cli tool to install tools based on your device info directly from github releases and keep them updated."
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
