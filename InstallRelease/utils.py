@@ -108,7 +108,6 @@ class ShellOutputs:
 
 
 class Shell:
-
     line_breaks = "\n"
     popen_args = {"shell": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
 
@@ -255,7 +254,6 @@ def show_table(
         for item in items:
             _tmp: tuple = ()
             for key in [i for i in item.keys() if i not in ignore_keys]:
-
                 if key not in keys:
                     keys.append(key)
                 _tmp += (str(item[key]),)

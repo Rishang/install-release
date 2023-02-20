@@ -86,6 +86,7 @@ class GithubRelease:
 class ToolConfig:
     token: Optional[str] = field(default_factory=str)
     path: Optional[str] = field(default_factory=str)
+    pre_release: Optional[bool] = field(default=False)
 
 
 class irKey:

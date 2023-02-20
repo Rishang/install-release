@@ -38,26 +38,23 @@ bin_path = {
 
 
 def platform_words() -> list:
-
     aliases = {
         "x86_64": ["x86", "x64", "amd64", "amd", "x86_64"],
         "aarch64": ["arm64", "aarch64"],
     }
 
-    platform_words = []
-
-    platform_words += [platform.system().lower(), platform.architecture()[0]]
+    words = [platform.system().lower(), platform.architecture()[0]]
 
     for alias in aliases:
         if platform.machine().lower() in aliases[alias]:
-            platform_words += aliases[alias]
+            words += aliases[alias]
 
     try:
         sys_alias = platform.platform().split("-")[0].lower()
 
         if platform.system().lower() != sys_alias:
-            platform_words.append(sys_alias)
+            words.append(sys_alias)
     except:
         ...
 
-    return platform_words
+    return words

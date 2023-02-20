@@ -5,7 +5,7 @@
 
 This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
 
-> Also it's mainly for installing tools that are not directly available in the officially by package managers `apt, yum, pacman` etc.
+> INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman` etc.
 
 ```bash
 # Install install-release
@@ -206,6 +206,14 @@ In case you want to unhold update to specific tool, you can use `hold --unset {t
 
 INFO   updated path to:  ~/.local/bin
 INFO   Done
+```
+
+#### Config updates for pre release versions
+
+This is useful when you want to install pre-release versions of tools like beta or alpha releases. by default it is set to `False` in which case it will only check for latest release.
+
+```bash
+❯ install-release config --pre-release
 ```
 
 #### Config github to token for higher rate limit

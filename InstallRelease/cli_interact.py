@@ -74,7 +74,7 @@ def get(
 ):
     state_info()
 
-    releases = repo.release(tag_name=tag_name)
+    releases = repo.release(tag_name=tag_name, pre_release=config.pre_release)
 
     if not len(releases) > 0:
         logger.error(f"No releases found: {repo.repo_url}")
@@ -95,7 +95,6 @@ def get(
         return
     else:
         if prompt != False:
-
             rprint(
                 f"\n[green bold]📑 Repo     : {repo.info.full_name}"
                 f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
@@ -139,7 +138,6 @@ def get(
 
 
 def upgrade(force: bool = False):
-
     state_info()
 
     state: TypeState = cache.state
@@ -157,7 +155,7 @@ def upgrade(force: bool = False):
 
         repo = GithubInfo(i.url, token=config.token)
         rprint(f"Fetching: {k}")
-        releases = repo.release()
+        releases = repo.release(pre_release=config.pre_release)
 
         if releases[0].published_dt() > state[k].published_dt() or force == True:
             upgrades[i.name] = repo
@@ -166,7 +164,6 @@ def upgrade(force: bool = False):
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:
-
         rprint("\n[bold magenta]Following tool will get upgraded.\n")
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
         rprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
@@ -192,7 +189,6 @@ def upgrade(force: bool = False):
 
 
 def show_state():
-
     state_info()
     if os.path.exists(cache.state_file) and os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
@@ -202,7 +198,6 @@ def show_state():
 def list_install(
     state: TypeState = None, title: str = "Installed tools", hold_update=False
 ):
-
     if state == None:
         state_info()
         state = cache.state
@@ -237,7 +232,6 @@ def list_install(
 
 
 def remove(name: str):
-
     state_info()
     state: TypeState = cache.state
     popKey = ""
