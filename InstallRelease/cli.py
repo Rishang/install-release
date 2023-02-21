@@ -214,13 +214,17 @@ def me(
     """
     | Update install-release tool.
     """
+    import InstallRelease
+
+    _v = InstallRelease.__version__
 
     if update:
         os.system("python3 -m pip install -U install-release")
     elif version:
-        import InstallRelease
-
-        print(InstallRelease.__version__)
+        rprint(_v)
+    else:
+        rprint(f"Version: {_v}")
+        rprint(f"Repo:    https://github.com/Rishang/install-release")
 
 
 if __name__ == "__main__":
