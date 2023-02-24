@@ -67,7 +67,7 @@ For updating:
 install-release me --upgrade
 ```
 
-### Example usage `install-release`
+### Example usage `install-release --help`
 
 
 ```
