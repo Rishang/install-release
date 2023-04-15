@@ -1,3 +1,4 @@
+import sys
 import logging
 import os
 
@@ -87,6 +88,8 @@ def upgrade(
     | Upgrade all installed release, cli tools
     """
     setLogger(quite, debug)
+    os.system(f"{sys.executable} -m pip install -U install-release")
+
     _upgrade(force=force)
 
 
@@ -219,7 +222,7 @@ def me(
     _v = InstallRelease.__version__
 
     if update:
-        os.system("python3 -m pip install -U install-release")
+        os.system(f"{sys.executable} -m pip install -U install-release")
     elif version:
         rprint(_v)
     else:
