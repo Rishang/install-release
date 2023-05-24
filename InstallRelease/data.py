@@ -59,7 +59,7 @@ class GithubReleaseAssets:
         self.updated_at_dt = datetime.strptime(self.created_at, "%Y-%m-%dT%XZ")
 
     def size_mb(self) -> float:
-        return float(str(self.size / 1000000)[:4])
+        return float(format(float(self.size) / 1000000, 'f')[:4])
 
 
 @dataclass
