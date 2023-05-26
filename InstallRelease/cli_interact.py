@@ -1,6 +1,7 @@
 import os
 from typing import Dict
 from tempfile import TemporaryDirectory
+import platform
 
 # pipi
 import requests
@@ -79,6 +80,14 @@ def get(
     | Get a release from a github repository
     """
     state_info()
+
+    logger.debug(f"Python version: {platform.python_version()}")
+    logger.debug(f"Platform: {platform.platform()}")
+    try:
+        logger.debug(f"Platform version: {platform.version()}")
+        logger.debug(f"Platform release: {platform.release()}")
+    except:
+        ...
 
     releases = repo.release(tag_name=tag_name, pre_release=config.pre_release)
 
