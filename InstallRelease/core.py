@@ -108,6 +108,10 @@ class GithubInfo:
 
 
 class installRelease:
+    """
+    Install a release from github
+    """
+
     USER: str
     SUDO_USER: str
 
@@ -160,6 +164,9 @@ class installRelease:
 
 
 def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list = []):
+    """
+    Get the release with the highest priority
+    """
     selected = 0.0
     name = ""
 
@@ -217,6 +224,9 @@ def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list 
 
 
 def extract_release(item: GithubReleaseAssets, at):
+    """
+    Download and extract release
+    """
     logger.debug(f"Download path: {at}")
 
     path = download(item.browser_download_url, at)
@@ -233,6 +243,9 @@ def extract_release(item: GithubReleaseAssets, at):
 
 
 def install_bin(src: str, dest: str, local: bool, name: str = None):
+    """
+    Install single binary executable file from source to destination
+    """
     bin_files = []
 
     for file in glob.iglob(f"{src}/**", recursive=True):

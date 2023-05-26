@@ -42,6 +42,9 @@ cache_config = State(
 
 
 def load_config():
+    """
+    Load config from cache_config
+    """
     config: ToolConfig = cache_config.state.get("config")
 
     if config != None:
@@ -72,6 +75,9 @@ def get(
     prompt: bool = False,
     name: str = None,
 ):
+    """
+    | Get a release from a github repository
+    """
     state_info()
 
     releases = repo.release(tag_name=tag_name, pre_release=config.pre_release)
@@ -138,6 +144,9 @@ def get(
 
 
 def upgrade(force: bool = False):
+    """
+    | Upgrade all tools
+    """
     state_info()
 
     state: TypeState = cache.state
@@ -189,6 +198,9 @@ def upgrade(force: bool = False):
 
 
 def show_state():
+    """
+    | Show state of all tools
+    """
     state_info()
     if os.path.exists(cache.state_file) and os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
@@ -198,6 +210,9 @@ def show_state():
 def list_install(
     state: TypeState = None, title: str = "Installed tools", hold_update=False
 ):
+    """
+    | List all installed tools
+    """
     if state == None:
         state_info()
         state = cache.state
@@ -232,6 +247,9 @@ def list_install(
 
 
 def remove(name: str):
+    """
+    | Remove any cli tool.
+    """
     state_info()
     state: TypeState = cache.state
     popKey = ""
