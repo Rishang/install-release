@@ -48,6 +48,8 @@ if os.environ.get("IR_DEBUG", "").lower() == "true":
 
 app = typer.Typer(help=f"Github Release Installer, based on your system")
 
+logger.debug(f"Python version: {sys.version}")
+
 
 @app.command()
 def get(
