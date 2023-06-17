@@ -188,6 +188,14 @@ Updating: terrascan, v1.15.0 => v1.15.2
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```
 
+#### Pull state-templates for installing tools.
+
+You can push you state to somewhere like github and use it for your any outher device, to make sync for tools installed via install-release
+
+```bash
+❯ install-release pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/install-release/state.json
+```
+ 
 #### Hold Update to specific installed tool.
 
 In case you want to hold update to specific tool, you can use `hold {tool-name}` command by which it will pause update for that tool.
