@@ -1,9 +1,9 @@
 # install-release 🚀
 [![Python Version](https://img.shields.io/badge/Python-3.8_to_3.10-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/install-release?&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
 
-`install-release` is a cli tool to install any tool for your device directly from their github releases and keep them updated. you can consider it as a small package manager for github releases.
+`install-release` is a CLI tool to install any tool for your device directly from their GitHub releases and keep them updated. you can consider it as a small package manager for GitHub releases.
 
-This can be any tool you want to install, which is pre-compiled for your device and present on github releases.
+This can be any tool you want to install, which is pre-compiled for your device and present on GitHub releases.
 
 > INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman` etc.
 
@@ -13,7 +13,7 @@ pip install -U install-release
 ```
 
 ```
-# Example Installation a tool named `gron` directly from its github releases
+# Example Installation a tool named `gron` directly from its GitHub releases
 
 # install-release get [GITHUB-URL]
 
@@ -42,7 +42,7 @@ Transform JSON (from a file, URL, or stdin) into discrete assignments to make it
 - Default releases Installation Path is: `~/bin/`,
 This is the path where installed tools will get stored.
 
-- In order to run installed tools, you need to add the following line your `~/.bashrc` or `~/.zshrc` file:
+- In order to run installed tools, you need to add the following line to your `~/.bashrc` or `~/.zshrc` file:
 
 ```bash
 export PATH=$HOME/bin:$PATH
@@ -57,7 +57,7 @@ pip install -U install-release
 
 ## Update this package
 
-For seeing verison:
+For seeing version:
 ```bash
 install-release me --version
 ```
@@ -76,26 +76,26 @@ install-release me --upgrade
 ❯ install-release --help
 Usage: install-release [OPTIONS] COMMAND [ARGS]...
 
-  Github Release Installer, based on your system
+  GitHub Release Installer, based on your system
 
   Commands:
-    get      | Install github release, cli tool
-    ls       | list all installed release, cli tools
+    get      | Install GitHub release, cli tool
+    ls       | list all installed releases, cli tools
     rm       | remove any installed release, cli tools
-    upgrade  | Upgrade all installed release, cli tools
-    state    | show currnet stored state
+    upgrade  | Upgrade all installed releases, cli tools
+    state    | show currently stored state
     config   | Set configs for tool
-    pull     | Install tools from remote state
+    pull     | Install tools from a remote state
     hold     | Keep updates a tool on hold.
     me       | Update install-release tool.
 ```
 
-For sub command help use: `install-release <sub-command> --help`
+For sub-command help use: `install-release <sub-command> --help`
 
 Example: `install-release get --help`
 
 
-You can shorten the command by setting alias to your `.bashrc` or `.zshrc`
+You can shorten the command by setting the alias to your `.bashrc` or `.zshrc`
 
 ```bash
 alias ir="install-release"
@@ -111,7 +111,7 @@ Example: `ir get --help`
 install-release --install-completion zsh
 ```
 
-#### Install tool from github releases
+#### Install tool from GitHub releases
 
 ```bash
 ❯ install-release get "https://github.com/ahmetb/kubectx"
@@ -188,9 +188,9 @@ Updating: terrascan, v1.15.0 => v1.15.2
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```
 
-#### Pull state-templates for installing tools.
+#### Pull state templates for installing tools.
 
-You can push you state to somewhere like github and use it for your any outher device, to make sync for tools installed via install-release
+You can push your state to somewhere like GitHub and use it for any other device, to make a sync for tools installed via install-release
 
 ```bash
 ❯ install-release pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/install-release/state.json
@@ -198,7 +198,7 @@ You can push you state to somewhere like github and use it for your any outher d
  
 #### Hold Update to specific installed tool.
 
-In case you want to hold update to specific tool, you can use `hold {tool-name}` command by which it will pause update for that tool.
+In case you want to hold an update to the specific tool, you can use `hold {tool-name}` command which will pause update for that tool.
 
 Example: keep tool named [k9s](https://github.com/derailed/k9s) update on hold
 
@@ -219,7 +219,7 @@ You can list tools on hold updates  by `ls --hold` command
 └──────┴─────────┴───────────────────────────────────┘
 ```
 
-In case you want to unhold update to specific tool, you can use `hold --unset {tool-name}` command by which it will pause update for that tool.
+In case you want to unhold update to the specific tool, you can use `hold --unset {tool-name}` command by which it will pause update for that tool.
 
 ```
 ❯ install-release hold --unset k9s
@@ -235,15 +235,15 @@ INFO   updated path to:  ~/.local/bin
 INFO   Done
 ```
 
-#### Config updates for pre release versions
+#### Config updates for pre-release versions
 
-This is useful when you want to install pre-release versions of tools like beta or alpha releases. by default it is set to `False` in which case it will only check for latest release.
+This is useful when you want to install pre-release versions of tools like beta or alpha releases. By default, it is set to `False` in which case it will only check for latest release.
 
 ```bash
 ❯ install-release config --pre-release
 ```
 
-#### Config github to token for higher rate limit
+#### Config GitHub to token for higher rate limit
 
 
 
