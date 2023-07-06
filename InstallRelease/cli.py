@@ -63,7 +63,7 @@ def get(
     approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
 ):
     """
-    | Install github release, cli tool
+    | Install GitHub release, cli tool
     """
 
     setLogger(quite, debug)
@@ -102,7 +102,7 @@ def ls(
     )
 ):
     """
-    | List all installed release, cli tools
+    | List all installed releases, cli tools
     """
     list_install(hold_update=hold)
 
@@ -113,7 +113,7 @@ def rm(
     debug: bool = __optionDebug,
 ):
     """
-    | Remove any installed release, cli tools
+    | Remove any installed releases, cli tools
     """
     setLogger(debug=debug)
 
@@ -126,7 +126,7 @@ def Config(
     token: str = typer.Option(
         "",
         "--token",
-        help="set your github token to solve github api rate-limiting issue",
+        help="set your GitHub token to solve GitHub API rate-limiting issue",
     ),
     path: str = typer.Option(
         "",
@@ -161,7 +161,7 @@ def Config(
 @app.command()
 def state(debug: bool = __optionDebug):
     """
-    | Show currnet stored state
+    | Show the current stored state
     """
     setLogger(debug=debug)
     show_state()
@@ -173,7 +173,7 @@ def pull(
     url: str = typer.Option(
         "",
         "--url",
-        help="install tools from remote state",
+        help="install tools from the remote state",
     ),
     override: bool = typer.Option(
         False,
@@ -182,7 +182,7 @@ def pull(
     ),
 ):
     """
-    | Install tools from remote state
+    | Install tools from the remote state
     """
     setLogger(debug=debug)
 
