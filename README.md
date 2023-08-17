@@ -49,13 +49,13 @@ export PATH=$HOME/bin:$PATH
 ```
 
 
-## Install this package
+## Install `install-release` package
 
 ```bash
 pip install -U install-release
 ```
 
-## Update this package
+## Updating `install-release`
 
 For seeing version:
 ```bash
