@@ -4,6 +4,7 @@ import os
 
 # pipi
 import typer
+import requests
 
 # locals
 from InstallRelease.utils import rprint, logger
@@ -18,6 +19,7 @@ from InstallRelease.cli_interact import (
     hold,
     cache_config,
     config,
+    install_release_version,
 )
 
 
@@ -88,8 +90,15 @@ def upgrade(
     | Upgrade all installed release, cli tools
     """
     setLogger(quite, debug)
-    os.system(f"{sys.executable} -m pip install -U install-release")
-
+    local_version = install_release_version.local_version()
+    latest_version = install_release_version.latest_version()
+    logger.debug(f"local_version: {local_version}")
+    logger.debug(f"latest_version: {latest_version}")
+    if local_version != latest_version:
+        rprint(
+            f"[bold]***INFO: New version of install-release is available, "
+            "run [yellow]install-release me --upgrade[reset] to update. ***\n"
+        )
     _upgrade(force=force)
 
 
@@ -208,7 +217,7 @@ def _hold(
 @app.command(name="me")
 def me(
     update: bool = typer.Option(
-        False, "--upgrade", help="Update tool, install-release."
+        False, "--upgrade", "-U", help="Update tool, install-release."
     ),
     version: bool = typer.Option(
         False, "--version", help="print version this tool, install-release."
@@ -217,12 +226,19 @@ def me(
     """
     | Update install-release tool.
     """
-    import InstallRelease
 
-    _v = InstallRelease.__version__
+    _v = install_release_version._local_version
 
     if update:
-        os.system(f"{sys.executable} -m pip install -U install-release")
+        _cmd = f"{sys.executable} -m pip install -U install-release"
+        rprint(f"Running: {_cmd}")
+
+        os.system(_cmd)
+        rprint(
+            "\n\nNote: If update failed, with message `[red]error: externally-managed-environment[reset]` "
+            "then try running below command,\n"
+            f"command: [yellow]{_cmd} --break-system-packages[reset]"
+        )
     elif version:
         rprint(_v)
     else:

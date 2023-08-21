@@ -3,7 +3,7 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.3.5"
+version = "0.3.6"
 readme = "README.md"
 description = "A cli tool to install tools based on your device info directly from github releases and keep them updated."
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
@@ -33,6 +33,7 @@ black = "*"
 types-requests = "*"
 toml = "*"
 types-toml = "*"
+types-setuptools = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

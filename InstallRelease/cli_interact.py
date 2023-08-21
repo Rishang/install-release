@@ -15,11 +15,22 @@ from InstallRelease.data import GithubRelease, ToolConfig, irKey
 from InstallRelease.data import TypeState
 
 from InstallRelease.constants import state_path, bin_path, config_path
-from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone, threads
+from InstallRelease.utils import (
+    mkdir,
+    rprint,
+    logger,
+    show_table,
+    isNone,
+    threads,
+    PackageVersion,
+)
+
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
 console = Console(width=40)
+
+install_release_version = PackageVersion("install-release")
 
 if os.environ.get("installState", "") == "test":
     temp_dir = "../temp"
