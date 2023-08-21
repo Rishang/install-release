@@ -23,7 +23,7 @@ pip install -U install-release
 ![demo](.github/images/demo.png)
 
 
-Checking for gron is installed using installed-release:
+Checking for gron is installed using `installed-release`:
 
 ```
 ❯ which gron
