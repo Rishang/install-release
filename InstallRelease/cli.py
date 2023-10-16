@@ -4,7 +4,6 @@ import os
 
 # pipi
 import typer
-import requests
 
 # locals
 from InstallRelease.utils import rprint, logger
