@@ -144,6 +144,8 @@ def get(
             yn = input()
             if yn.lower() != "y":
                 return
+            else:
+                print("[magenta]Downloading...[/magenta]")
 
         extract_release(item=_gr, at=at.name)
 
