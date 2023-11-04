@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 # pipi
 import pkg_resources
 import requests
-from rich import print as rprint
+from rich import print as pprint
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.text import Text
@@ -24,7 +24,7 @@ from rich.table import Table
 try:
     from magic.compat import detect_from_filename
 except ImportError:
-    rprint(
+    pprint(
         "[red]Failed to find libmagic.  Check your installation\n"
         "refer this url to install libmagic first: https://github.com/ahupp/python-magic#installation [/]"
     )

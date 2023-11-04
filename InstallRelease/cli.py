@@ -6,7 +6,7 @@ import os
 import typer
 
 # locals
-from InstallRelease.utils import rprint, logger
+from InstallRelease.utils import pprint, logger
 from InstallRelease.cli_interact import (
     GithubInfo,
     pull_state,
@@ -23,7 +23,7 @@ from InstallRelease.cli_interact import (
 
 
 def see_help(arg: str = ""):
-    rprint(
+    pprint(
         "This command required arguments, use "
         f"[yellow]{arg} --help[reset]"
         " to see them"
@@ -94,7 +94,7 @@ def upgrade(
     logger.debug(f"local_version: {local_version}")
     logger.debug(f"latest_version: {latest_version}")
     if local_version != latest_version:
-        rprint(
+        pprint(
             f"[bold]***INFO: New version of install-release is available, "
             "run [yellow]install-release me --upgrade[reset] to update. ***\n"
         )
@@ -230,19 +230,19 @@ def me(
 
     if update:
         _cmd = f"{sys.executable} -m pip install -U install-release"
-        rprint(f"Running: {_cmd}")
+        pprint(f"Running: {_cmd}")
 
         os.system(_cmd)
-        rprint(
+        pprint(
             "\n\nNote: If update failed, with message `[red]error: externally-managed-environment[reset]` "
             "then try running below command,\n"
             f"command: [yellow]{_cmd} --break-system-packages[reset]"
         )
     elif version:
-        rprint(_v)
+        pprint(_v)
     else:
-        rprint(f"Version: {_v}")
-        rprint(f"Repo:    https://github.com/Rishang/install-release")
+        pprint(f"Version: {_v}")
+        pprint(f"Repo:    https://github.com/Rishang/install-release")
 
 
 if __name__ == "__main__":

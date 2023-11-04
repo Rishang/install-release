@@ -17,7 +17,7 @@ from InstallRelease.data import TypeState
 from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import (
     mkdir,
-    rprint,
+    pprint,
     logger,
     show_table,
     isNone,
@@ -121,7 +121,7 @@ def get(
         return
     else:
         if prompt != False:
-            rprint(
+            pprint(
                 f"\n[green bold]📑 Repo     : {repo.info.full_name}"
                 f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
                 f"\n[magenta]🔮 Language : {repo.info.language}"
@@ -139,13 +139,13 @@ def get(
                 ],
                 title=f"🚀 Install: {toolname}",
             )
-            rprint(f"[color(6)]\nPath: {dest}")
-            rprint("[color(34)]Install this tool (Y/n): ", end="")
+            pprint(f"[color(6)]\nPath: {dest}")
+            pprint("[color(34)]Install this tool (Y/n): ", end="")
             yn = input()
             if yn.lower() != "y":
                 return
             else:
-                print("[magenta]Downloading...[/magenta]")
+                pprint("[magenta]Downloading...[/magenta]")
 
         extract_release(item=_gr, at=at.name)
 
@@ -185,7 +185,7 @@ def upgrade(force: bool = False):
             ...
 
         repo = GithubInfo(i.url, token=config.token)
-        rprint(f"Fetching: {k}")
+        pprint(f"Fetching: {k}")
         releases = repo.release(pre_release=config.pre_release)
 
         if releases[0].published_dt() > state[k].published_dt() or force == True:
@@ -195,15 +195,15 @@ def upgrade(force: bool = False):
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:
-        rprint("\n[bold magenta]Following tool will get upgraded.\n")
+        pprint("\n[bold magenta]Following tool will get upgraded.\n")
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
-        rprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
+        pprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
         r = input()
         if r.lower() != "y":
             return
     else:
-        rprint("[bold green]All tools are onto latest version")
+        pprint("[bold green]All tools are onto latest version")
         return
 
     for name in track(upgrades, description="Upgrading..."):
@@ -211,7 +211,7 @@ def upgrade(force: bool = False):
         releases = repo.release()
         k = f"{repo.repo_url}#{name}"
 
-        rprint(
+        pprint(
             "[bold yellow]"
             f"Updating: {name}, {state[k].tag_name} => {releases[0].tag_name}"
             "[/]"
@@ -344,8 +344,8 @@ def pull_state(url: str = "", override: bool = False):
         return
 
     list_install(state=temp, title="Tools to be installed")
-    rprint("\n[bold magenta]Following tool will get Installed.\n")
-    rprint("[bold blue]Install these tools, (Y/n):", end=" ")
+    pprint("\n[bold magenta]Following tool will get Installed.\n")
+    pprint("[bold blue]Install these tools, (Y/n):", end=" ")
 
     _i = input()
     if _i.lower() != "y":
