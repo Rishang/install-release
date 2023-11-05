@@ -23,6 +23,7 @@ from InstallRelease.utils import (
     isNone,
     threads,
     PackageVersion,
+    requests_session,
 )
 
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
@@ -145,11 +146,15 @@ def get(
             if yn.lower() != "y":
                 return
             else:
-                pprint("[magenta]Downloading...[/magenta]")
+                pprint("\n[magenta]Downloading...[/magenta]")
 
         extract_release(item=_gr, at=at.name)
 
     releases[0].assets = [_gr]
+
+    # hold update if tag_name is not empty
+    if tag_name != "":
+        releases[0].hold_update = True
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
@@ -257,7 +262,9 @@ def list_install(
         _table.append(
             {
                 "Name": i.name,
-                "Version": state[key].tag_name,
+                "Version": state[key].tag_name + f"[yellow] *HOLD_UPDATE*[/yellow]"
+                if state[key].hold_update == True
+                else state[key].tag_name,
                 "Url": state[key].url,
             }
         )
@@ -315,7 +322,7 @@ def pull_state(url: str = "", override: bool = False):
     if isNone(url):
         return
 
-    r: dict = requests.get(url=url).json()
+    r: dict = requests_session.get(url=url).json()
 
     data: dict = {k: GithubRelease(**r[k]) for k in r}
     state: TypeState = cache.state

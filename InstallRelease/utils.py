@@ -36,6 +36,8 @@ except ImportError:
 # locals
 from InstallRelease.constants import _colors
 
+requests_session = requests.Session()
+
 console = Console()
 
 
@@ -97,7 +99,7 @@ class PackageVersion:
             if self._latest_version != None:
                 return self._latest_version
 
-            response = requests.get(self.url)
+            response = requests_session.get(self.url)
             logger.debug(
                 f"pipi response for package '{self.package_name}': " + str(response)
             )
@@ -211,7 +213,7 @@ def mkdir(path: str):
 def download(url: str, at: str):
     """Download a file"""
 
-    file = requests.get(url, stream=True)
+    file = requests_session.get(url, stream=True)
     if not os.path.exists(at):
         os.makedirs(at)
 
