@@ -6,7 +6,7 @@ import os
 import typer
 
 # locals
-from InstallRelease.utils import rprint, logger
+from InstallRelease.utils import pprint, logger
 from InstallRelease.cli_interact import (
     GithubInfo,
     pull_state,
@@ -18,11 +18,12 @@ from InstallRelease.cli_interact import (
     hold,
     cache_config,
     config,
+    install_release_version,
 )
 
 
 def see_help(arg: str = ""):
-    rprint(
+    pprint(
         "This command required arguments, use "
         f"[yellow]{arg} --help[reset]"
         " to see them"
@@ -34,6 +35,7 @@ def see_help(arg: str = ""):
 __optionDebug = typer.Option(False, "-v", help="set verbose mode.")
 __optionQuite = typer.Option(False, "-q", help="set quite mode.")
 __optionForce = typer.Option(False, "-F", help="set force.")
+__optionSkipPrompt = typer.Option(False, "-y", help="skip confirmation (y/n) prompt.")
 
 
 def setLogger(quite: bool = None, debug: bool = None):
@@ -83,14 +85,22 @@ def upgrade(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
     force: bool = __optionForce,
+    skip_prompt: bool = __optionSkipPrompt,
 ):
     """
     | Upgrade all installed release, cli tools
     """
     setLogger(quite, debug)
-    os.system(f"{sys.executable} -m pip install -U install-release")
-
-    _upgrade(force=force)
+    local_version = install_release_version.local_version()
+    latest_version = install_release_version.latest_version()
+    logger.debug(f"local_version: {local_version}")
+    logger.debug(f"latest_version: {latest_version}")
+    if local_version != latest_version:
+        pprint(
+            f"[bold]***INFO: New version of install-release is available, "
+            "run [yellow]install-release me --upgrade[reset] to update. ***\n"
+        )
+    _upgrade(force=force, skip_prompt=skip_prompt)
 
 
 @app.command()
@@ -121,7 +131,7 @@ def rm(
 
 
 @app.command(name="config")
-def Config(
+def _config(
     debug: bool = __optionDebug,
     token: str = typer.Option(
         "",
@@ -208,7 +218,7 @@ def _hold(
 @app.command(name="me")
 def me(
     update: bool = typer.Option(
-        False, "--upgrade", help="Update tool, install-release."
+        False, "--upgrade", "-U", help="Update tool, install-release."
     ),
     version: bool = typer.Option(
         False, "--version", help="print version this tool, install-release."
@@ -217,17 +227,24 @@ def me(
     """
     | Update install-release tool.
     """
-    import InstallRelease
 
-    _v = InstallRelease.__version__
+    _v = install_release_version._local_version
 
     if update:
-        os.system(f"{sys.executable} -m pip install -U install-release")
+        _cmd = f"{sys.executable} -m pip install -U install-release"
+        pprint(f"Running: {_cmd}")
+
+        os.system(_cmd)
+        pprint(
+            "\n\nNote: If update failed, with message `[red]error: externally-managed-environment[reset]` "
+            "then try running below command,\n"
+            f"command: [yellow]{_cmd} --break-system-packages[reset]"
+        )
     elif version:
-        rprint(_v)
+        pprint(_v)
     else:
-        rprint(f"Version: {_v}")
-        rprint(f"Repo:    https://github.com/Rishang/install-release")
+        pprint(f"Version: {_v}")
+        pprint(f"Repo:    https://github.com/Rishang/install-release")
 
 
 if __name__ == "__main__":

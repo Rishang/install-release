@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 
 # pipi
+import pkg_resources
 import requests
-from rich import print as rprint
+from rich import print as pprint
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.text import Text
@@ -23,7 +24,7 @@ from rich.table import Table
 try:
     from magic.compat import detect_from_filename
 except ImportError:
-    rprint(
+    pprint(
         "[red]Failed to find libmagic.  Check your installation\n"
         "refer this url to install libmagic first: https://github.com/ahupp/python-magic#installation [/]"
     )
@@ -34,6 +35,8 @@ except ImportError:
 
 # locals
 from InstallRelease.constants import _colors
+
+requests_session = requests.Session()
 
 console = Console()
 
@@ -66,8 +69,8 @@ def _logger(flag: str = "", format: str = ""):
 
 
 # message
-# export loglevel=true
-logger = _logger("loglevel")
+# export LOG_LEVEL=true
+logger = _logger("LOG_LEVEL")
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -75,6 +78,40 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         return super().default(o)
+
+
+class PackageVersion:
+    def __init__(self, package_name: str):
+        self.package_name = package_name
+        self.url = f"https://pypi.org/pypi/{package_name}/json"
+        self._local_version = self.local_version()
+        self._latest_version = None
+
+    def local_version(self):
+        try:
+            version = pkg_resources.get_distribution(self.package_name).version
+            return version
+        except pkg_resources.DistributionNotFound:
+            return None
+
+    def latest_version(self):
+        try:
+            if self._latest_version != None:
+                return self._latest_version
+
+            response = requests_session.get(self.url)
+            logger.debug(
+                f"pipi response for package '{self.package_name}': " + str(response)
+            )
+            data = response.json()
+            version = data["info"]["version"]
+            self._latest_version = version
+
+            return version
+
+        except requests.RequestException:
+            print(f"Failed to fetch data for {self.package_name}")
+            return None
 
 
 def FilterDataclass(data: dict, obj):
@@ -176,7 +213,7 @@ def mkdir(path: str):
 def download(url: str, at: str):
     """Download a file"""
 
-    file = requests.get(url, stream=True)
+    file = requests_session.get(url, stream=True)
     if not os.path.exists(at):
         os.makedirs(at)
 

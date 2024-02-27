@@ -1,11 +1,36 @@
-# install-release 🚀
-[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.10-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/install-release?&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
+# Install Release 🚀
+[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.11-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/install-release?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
 
-`install-release` is a CLI tool to install any tool for your device directly from their GitHub releases and keep them updated. you can consider it as a small package manager for GitHub releases.
+
+`install-release` is a CLI tool to install any tool for your device directly from their GitHub releases and keep them updated. Consider it as a small package manager to install tools from GitHub releases.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on GitHub releases.
 
 > INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman` etc.
+
+
+<!-- Table of content -->
+## Table of Contents
+- [Install Release 🚀](#install-release-)
+  - [Table of Contents](#table-of-contents)
+  - [Getting started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Install `install-release` package](#install-install-release-package)
+  - [Updating `install-release`](#updating-install-release)
+  - [Example usage `install-release --help`](#example-usage-install-release---help)
+      - [Install completion for cli](#install-completion-for-cli)
+      - [Install tool from GitHub releases](#install-tool-from-github-releases)
+      - [List installed tools](#list-installed-tools)
+      - [Remove installed release](#remove-installed-release)
+      - [Update all previously installed tools to the latest version](#update-all-previously-installed-tools-to-the-latest-version)
+      - [Pull state templates for installing tools.](#pull-state-templates-for-installing-tools)
+      - [Hold Update to specific installed tool.](#hold-update-to-specific-installed-tool)
+      - [Config tool installation path](#config-tool-installation-path)
+      - [Config updates for pre-release versions](#config-updates-for-pre-release-versions)
+      - [Configure GitHub token for higher rate limit](#configure-github-token-for-higher-rate-limit)
+
+## Getting started
+
 
 ```bash
 # Install install-release
@@ -20,10 +45,10 @@ pip install -U install-release
 ❯ install-release get https://github.com/tomnomnom/gron 
 ```
 
-![demo](.github/images/demo.png)
+![demo](./.github/images/demo.png)
 
 
-Checking for gron is installed using installed-release:
+Checking for gron is installed using `installed-release`:
 
 ```
 ❯ which gron
@@ -33,6 +58,7 @@ Checking for gron is installed using installed-release:
 Transform JSON (from a file, URL, or stdin) into discrete assignments to make it greppable
 ... # more
 ```
+
 
 ## Prerequisites
 
@@ -49,13 +75,13 @@ export PATH=$HOME/bin:$PATH
 ```
 
 
-## Install this package
+## Install `install-release` package
 
 ```bash
 pip install -U install-release
 ```
 
-## Update this package
+## Updating `install-release`
 
 For seeing version:
 ```bash
@@ -67,7 +93,7 @@ For updating:
 install-release me --upgrade
 ```
 
-### Example usage `install-release --help`
+## Example usage `install-release --help`
 
 
 ```
@@ -104,7 +130,7 @@ after this you can you alias directly for easiness
 
 Example: `ir get --help`
 
-#### Install completion for shell
+#### Install completion for cli
 ```bash
 # install-release --install-completion [SHELL: bash|zsh|fish|powershell]
 # Example for zsh:
@@ -243,7 +269,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 ❯ install-release config --pre-release
 ```
 
-#### Config GitHub to token for higher rate limit
+#### Configure GitHub token for higher rate limit
 
 
 

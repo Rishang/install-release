@@ -15,11 +15,23 @@ from InstallRelease.data import GithubRelease, ToolConfig, irKey
 from InstallRelease.data import TypeState
 
 from InstallRelease.constants import state_path, bin_path, config_path
-from InstallRelease.utils import mkdir, rprint, logger, show_table, isNone, threads
+from InstallRelease.utils import (
+    mkdir,
+    pprint,
+    logger,
+    show_table,
+    isNone,
+    threads,
+    PackageVersion,
+    requests_session,
+)
+
 from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
 
 
 console = Console(width=40)
+
+install_release_version = PackageVersion("install-release")
 
 if os.environ.get("installState", "") == "test":
     temp_dir = "../temp"
@@ -110,7 +122,7 @@ def get(
         return
     else:
         if prompt != False:
-            rprint(
+            pprint(
                 f"\n[green bold]📑 Repo     : {repo.info.full_name}"
                 f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
                 f"\n[magenta]🔮 Language : {repo.info.language}"
@@ -128,15 +140,21 @@ def get(
                 ],
                 title=f"🚀 Install: {toolname}",
             )
-            rprint(f"[color(6)]\nPath: {dest}")
-            rprint("[color(34)]Install this tool (Y/n): ", end="")
+            pprint(f"[color(6)]\nPath: {dest}")
+            pprint("[color(34)]Install this tool (Y/n): ", end="")
             yn = input()
             if yn.lower() != "y":
                 return
+            else:
+                pprint("\n[magenta]Downloading...[/magenta]")
 
         extract_release(item=_gr, at=at.name)
 
     releases[0].assets = [_gr]
+
+    # hold update if tag_name is not empty
+    if tag_name != "":
+        releases[0].hold_update = True
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
@@ -152,7 +170,7 @@ def get(
     cache.save()
 
 
-def upgrade(force: bool = False):
+def upgrade(force: bool = False, skip_prompt: bool = False):
     """
     | Upgrade all tools
     """
@@ -172,7 +190,7 @@ def upgrade(force: bool = False):
             ...
 
         repo = GithubInfo(i.url, token=config.token)
-        rprint(f"Fetching: {k}")
+        pprint(f"Fetching: {k}")
         releases = repo.release(pre_release=config.pre_release)
 
         if releases[0].published_dt() > state[k].published_dt() or force == True:
@@ -182,15 +200,15 @@ def upgrade(force: bool = False):
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:
-        rprint("\n[bold magenta]Following tool will get upgraded.\n")
+        pprint("\n[bold magenta]Following tool will get upgraded.\n")
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
-        rprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
+        pprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
         r = input()
-        if r.lower() != "y":
+        if r.lower() != "y" and skip_prompt == False:
             return
     else:
-        rprint("[bold green]All tools are onto latest version")
+        pprint("[bold green]All tools are onto latest version")
         return
 
     for name in track(upgrades, description="Upgrading..."):
@@ -198,7 +216,7 @@ def upgrade(force: bool = False):
         releases = repo.release()
         k = f"{repo.repo_url}#{name}"
 
-        rprint(
+        pprint(
             "[bold yellow]"
             f"Updating: {name}, {state[k].tag_name} => {releases[0].tag_name}"
             "[/]"
@@ -244,7 +262,9 @@ def list_install(
         _table.append(
             {
                 "Name": i.name,
-                "Version": state[key].tag_name,
+                "Version": state[key].tag_name + f"[yellow] *HOLD_UPDATE*[/yellow]"
+                if state[key].hold_update == True
+                else state[key].tag_name,
                 "Url": state[key].url,
             }
         )
@@ -302,7 +322,7 @@ def pull_state(url: str = "", override: bool = False):
     if isNone(url):
         return
 
-    r: dict = requests.get(url=url).json()
+    r: dict = requests_session.get(url=url).json()
 
     data: dict = {k: GithubRelease(**r[k]) for k in r}
     state: TypeState = cache.state
@@ -331,8 +351,8 @@ def pull_state(url: str = "", override: bool = False):
         return
 
     list_install(state=temp, title="Tools to be installed")
-    rprint("\n[bold magenta]Following tool will get Installed.\n")
-    rprint("[bold blue]Install these tools, (Y/n):", end=" ")
+    pprint("\n[bold magenta]Following tool will get Installed.\n")
+    pprint("[bold blue]Install these tools, (Y/n):", end=" ")
 
     _i = input()
     if _i.lower() != "y":
