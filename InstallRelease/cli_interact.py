@@ -204,9 +204,10 @@ def upgrade(force: bool = False, skip_prompt: bool = False):
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
         pprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
-        r = input()
-        if r.lower() != "y" and skip_prompt == False:
-            return
+        if skip_prompt == False:
+            r = input()
+            if r.lower() != "y":
+                return
     else:
         pprint("[bold green]All tools are onto latest version")
         return
@@ -262,9 +263,11 @@ def list_install(
         _table.append(
             {
                 "Name": i.name,
-                "Version": state[key].tag_name + f"[yellow] *HOLD_UPDATE*[/yellow]"
-                if state[key].hold_update == True
-                else state[key].tag_name,
+                "Version": (
+                    state[key].tag_name + f"[yellow] *HOLD_UPDATE*[/yellow]"
+                    if state[key].hold_update == True
+                    else state[key].tag_name
+                ),
                 "Url": state[key].url,
             }
         )

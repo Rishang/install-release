@@ -159,8 +159,7 @@ class installRelease:
     def _install_darwin(self, local: bool, at: str = None):
         self._install_linux(local, at)
 
-    def _install_windows(self, local: bool, at: str = None):
-        ...
+    def _install_windows(self, local: bool, at: str = None): ...
 
 
 def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list = []):
