@@ -170,7 +170,7 @@ def get(
     cache.save()
 
 
-def upgrade(force: bool = False):
+def upgrade(force: bool = False, skip_prompt: bool = False):
     """
     | Upgrade all tools
     """
@@ -205,7 +205,7 @@ def upgrade(force: bool = False):
         pprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
         r = input()
-        if r.lower() != "y":
+        if r.lower() != "y" and skip_prompt == False:
             return
     else:
         pprint("[bold green]All tools are onto latest version")

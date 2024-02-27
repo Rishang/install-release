@@ -35,6 +35,7 @@ def see_help(arg: str = ""):
 __optionDebug = typer.Option(False, "-v", help="set verbose mode.")
 __optionQuite = typer.Option(False, "-q", help="set quite mode.")
 __optionForce = typer.Option(False, "-F", help="set force.")
+__optionSkipPrompt = typer.Option(False, "-y", help="skip confirmation (y/n) prompt.")
 
 
 def setLogger(quite: bool = None, debug: bool = None):
@@ -84,6 +85,7 @@ def upgrade(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
     force: bool = __optionForce,
+    skip_prompt: bool = __optionSkipPrompt,
 ):
     """
     | Upgrade all installed release, cli tools
@@ -98,7 +100,7 @@ def upgrade(
             f"[bold]***INFO: New version of install-release is available, "
             "run [yellow]install-release me --upgrade[reset] to update. ***\n"
         )
-    _upgrade(force=force)
+    _upgrade(force=force, skip_prompt=skip_prompt)
 
 
 @app.command()
@@ -129,7 +131,7 @@ def rm(
 
 
 @app.command(name="config")
-def Config(
+def _config(
     debug: bool = __optionDebug,
     token: str = typer.Option(
         "",
