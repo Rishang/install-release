@@ -32,4 +32,4 @@ jobs:
 
       - name: publish
         run: |
-          poetry publish -u ${{ secrets.USERNAME }} -p ${{ secrets.PASSWORD }}
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
