@@ -6,7 +6,7 @@
 
 This can be any tool you want to install, which is pre-compiled for your device and present on GitHub releases.
 
-> INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman` etc.
+> INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman, brew` etc.
 
 
 <!-- Table of content -->
