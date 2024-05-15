@@ -45,7 +45,7 @@ pip install -U install-release
 ❯ install-release get https://github.com/tomnomnom/gron 
 ```
 
-![demo](./.github/images/demo.png)
+![demo](https://raw.githubusercontent.com/Rishang/install-release/main/.github/images/demo.png)
 
 
 Checking for gron is installed using `installed-release`:
