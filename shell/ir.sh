@@ -20,16 +20,16 @@ parse_arguments() {
   while [ "$1" != "" ]; do
     case $1 in
       --repo ) shift
-               repo=$1
-               ;;
+        repo=$1
+        ;;
       --release ) shift
-                  release=$1
-                  ;;
+        release=$1
+        ;;
       --name ) shift
-               name=$1
-               ;;
+        name=$1
+        ;;
       * ) print_usage
-          exit 1
+        exit 1
     esac
     shift
   done
