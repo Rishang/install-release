@@ -72,6 +72,10 @@ def get(
     if url is None or url == "":
         see_help("get")
 
+    
+    _url = url
+    url = "/".join(_url.split("/")[:5])
+
     _get(
         GithubInfo(url, token=config.token),
         tag_name=tag_name,
