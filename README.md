@@ -45,7 +45,7 @@ pip install -U ir
 ❯ ir get https://github.com/tomnomnom/gron 
 ```
 
-![demo](https://raw.githubusercontent.com/Rishang/ir/main/.github/images/demo.png)
+![demo](https://raw.githubusercontent.com/Rishang/install-release/main/.github/images/demo.png)
 
 
 Checking for gron is installed by `install-release`:
@@ -209,7 +209,7 @@ Progress... ━━━━━━━━━━━━━━━━━━━━━━�
 You can push your state to somewhere like GitHub and use it for any other device, to make a sync for tools installed via ir
 
 ```bash
-❯ ir pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/ir/state.json
+❯ ir pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/install-release/state.json
 ```
  
 #### Hold Update to specific installed tool.
