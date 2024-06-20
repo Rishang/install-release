@@ -10,26 +10,26 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 
 <!-- Table of content -->
-## Table of Contents
+## Table of Contents 📚
 - [Install Release 🚀](#install-release-)
-  - [Table of Contents](#table-of-contents)
-  - [Getting started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Install `install-release` package](#install-install-release-package)
-  - [Updating `install-release`](#updating-install-release)
-  - [Example usage `ir --help`](#example-usage-ir---help)
-      - [Install completion for cli](#install-completion-for-cli)
-      - [Install tool from GitHub releases](#install-tool-from-github-releases)
-      - [List installed tools](#list-installed-tools)
-      - [Remove installed release](#remove-installed-release)
-      - [Update all previously installed tools to the latest version](#update-all-previously-installed-tools-to-the-latest-version)
-      - [Pull state templates for installing tools.](#pull-state-templates-for-installing-tools)
-      - [Hold Update to specific installed tool.](#hold-update-to-specific-installed-tool)
-      - [Config tool installation path](#config-tool-installation-path)
-      - [Config updates for pre-release versions](#config-updates-for-pre-release-versions)
-      - [Configure GitHub token for higher rate limit](#configure-github-token-for-higher-rate-limit)
+  - [Table of Contents 📚](#table-of-contents-)
+  - [Getting started ⚡](#getting-started-)
+  - [Prerequisites 📋](#prerequisites-)
+  - [Install `install-release` package 📦](#install-install-release-package-)
+  - [Updating `install-release` 🔄](#updating-install-release-)
+  - [Example usage `ir --help` 💡](#example-usage-ir---help-)
+      - [Install completion for cli 🎠](#install-completion-for-cli-)
+      - [Install tool from GitHub releases 🌈](#install-tool-from-github-releases-)
+      - [List installed tools 📋](#list-installed-tools-)
+      - [Remove installed release ❌](#remove-installed-release-)
+      - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-️)
+      - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
+      - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
+      - [Config tool installation path 🗂️](#config-tool-installation-path-️)
+      - [Config updates for pre-release versions �](#config-updates-for-pre-release-versions-)
+      - [Configure GitHub token for higher rate limit 🔑](#configure-github-token-for-higher-rate-limit-)
 
-## Getting started
+## Getting started ⚡
 
 
 ```bash
@@ -60,7 +60,7 @@ Transform JSON (from a file, URL, or stdin) into discrete assignments to make it
 ```
 
 
-## Prerequisites
+## Prerequisites 📋
 
 - python3.8 or higher
 
@@ -75,13 +75,13 @@ export PATH=$HOME/bin:$PATH
 ```
 
 
-## Install `install-release` package
+## Install `install-release` package 📦
 
 ```bash
 pip install -U install-release
 ```
 
-## Updating `install-release`
+## Updating `install-release` 🔄
 
 For seeing version:
 ```bash
@@ -93,7 +93,7 @@ For updating:
 ir me --upgrade
 ```
 
-## Example usage `ir --help`
+## Example usage `ir --help` 💡
 
 
 ```
@@ -120,14 +120,14 @@ For sub-command help use: `ir <sub-command> --help`
 
 Example: `ir get --help`
 
-#### Install completion for cli
+#### Install completion for cli 🎠
 ```bash
 # ir --install-completion [SHELL: bash|zsh|fish|powershell]
 # Example for zsh:
 ir --install-completion zsh
 ```
 
-#### Install tool from GitHub releases
+#### Install tool from GitHub releases 🌈
 
 ```bash
 ❯ ir get "https://github.com/ahmetb/kubectx"
@@ -157,7 +157,7 @@ Install this tool (Y/n): y
 0.9.4
 ```
 
-#### List installed tools
+#### List installed tools 📋
 
 ```bash
 ❯ ir ls
@@ -172,7 +172,7 @@ Install this tool (Y/n): y
 └───────────┴─────────┴──────────────────────────────────────┘    
 ```
 
-#### Remove installed release
+#### Remove installed release ❌
 
 ```bash
 # Remove installed release
@@ -182,7 +182,7 @@ Install this tool (Y/n): y
 INFO     Removed: gron           
 ```
 
-#### Update all previously installed tools to the latest version
+#### Update all previously installed tools to the latest version 🕶️
 
 ```bash
 ❯ ir upgrade
@@ -204,7 +204,7 @@ Updating: terrascan, v1.15.0 => v1.15.2
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 
 ```
 
-#### Pull state templates for installing tools.
+#### Pull state templates for installing tools 📄
 
 You can push your state to somewhere like GitHub and use it for any other device, to make a sync for tools installed via ir
 
@@ -212,7 +212,7 @@ You can push your state to somewhere like GitHub and use it for any other device
 ❯ ir pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/install-release/state.json
 ```
  
-#### Hold Update to specific installed tool.
+#### Hold Update to specific installed tool ✋
 
 In case you want to hold an update to the specific tool, you can use `hold {tool-name}` command which will pause update for that tool.
 
@@ -242,7 +242,7 @@ In case you want to unhold update to the specific tool, you can use `hold --unse
  INFO     Update on hold for, k9s to False
 ```
 
-#### Config tool installation path
+#### Config tool installation path 🗂️
 
 ```bash
 ❯ ir config --path ~/.local/bin
@@ -251,7 +251,7 @@ INFO   updated path to:  ~/.local/bin
 INFO   Done
 ```
 
-#### Config updates for pre-release versions
+#### Config updates for pre-release versions 🔌
 
 This is useful when you want to install pre-release versions of tools like beta or alpha releases. By default, it is set to `False` in which case it will only check for latest release.
 
@@ -259,7 +259,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 ❯ ir config --pre-release
 ```
 
-#### Configure GitHub token for higher rate limit
+#### Configure GitHub token for higher rate limit 🔑
 
 
 
