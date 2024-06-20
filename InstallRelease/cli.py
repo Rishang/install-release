@@ -102,7 +102,7 @@ def upgrade(
     if local_version != latest_version:
         pprint(
             f"[bold]***INFO: New version of install-release is available, "
-            "run [yellow]install-release me --upgrade[reset] to update. ***\n"
+            "run [yellow]ir me --upgrade[reset] to update. ***\n"
         )
     _upgrade(force=force, skip_prompt=skip_prompt)
 

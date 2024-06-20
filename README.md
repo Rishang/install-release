@@ -1,8 +1,8 @@
 # Install Release 🚀
-[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.11-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/install-release?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
+[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.11-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/ir?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/ir)
 
 
-`install-release` is a CLI tool to install any tool for your device directly from their GitHub releases and keep them updated. Consider it as a small package manager to install tools from GitHub releases.
+`ir` is a CLI tool to install any tool for your device directly from their GitHub releases and keep them updated. Consider it as a small package manager to install tools from GitHub releases.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on GitHub releases.
 
@@ -17,7 +17,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Prerequisites](#prerequisites)
   - [Install `install-release` package](#install-install-release-package)
   - [Updating `install-release`](#updating-install-release)
-  - [Example usage `install-release --help`](#example-usage-install-release---help)
+  - [Example usage `ir --help`](#example-usage-ir---help)
       - [Install completion for cli](#install-completion-for-cli)
       - [Install tool from GitHub releases](#install-tool-from-github-releases)
       - [List installed tools](#list-installed-tools)
@@ -33,22 +33,22 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 
 ```bash
-# Install install-release
-pip install -U install-release
+# Install ir
+pip install -U ir
 ```
 
 ```
 # Example Installation a tool named `gron` directly from its GitHub releases
 
-# install-release get [GITHUB-URL]
+# ir get [GITHUB-URL]
 
-❯ install-release get https://github.com/tomnomnom/gron 
+❯ ir get https://github.com/tomnomnom/gron 
 ```
 
-![demo](https://raw.githubusercontent.com/Rishang/install-release/main/.github/images/demo.png)
+![demo](https://raw.githubusercontent.com/Rishang/ir/main/.github/images/demo.png)
 
 
-Checking for gron is installed using `installed-release`:
+Checking for gron is installed by `install-release`:
 
 ```
 ❯ which gron
@@ -85,22 +85,22 @@ pip install -U install-release
 
 For seeing version:
 ```bash
-install-release me --version
+ir me --version
 ```
 
 For updating:
 ```bash
-install-release me --upgrade
+ir me --upgrade
 ```
 
-## Example usage `install-release --help`
+## Example usage `ir --help`
 
 
 ```
 # Help page
 
-❯ install-release --help
-Usage: install-release [OPTIONS] COMMAND [ARGS]...
+❯ ir --help
+Usage: ir [OPTIONS] COMMAND [ARGS]...
 
   GitHub Release Installer, based on your system
 
@@ -113,34 +113,24 @@ Usage: install-release [OPTIONS] COMMAND [ARGS]...
     config   | Set configs for tool
     pull     | Install tools from a remote state
     hold     | Keep updates a tool on hold.
-    me       | Update install-release tool.
+    me       | Update ir tool.
 ```
 
-For sub-command help use: `install-release <sub-command> --help`
-
-Example: `install-release get --help`
-
-
-You can shorten the command by setting the alias to your `.bashrc` or `.zshrc`
-
-```bash
-alias ir="install-release"
-```
-after this you can you alias directly for easiness
+For sub-command help use: `ir <sub-command> --help`
 
 Example: `ir get --help`
 
 #### Install completion for cli
 ```bash
-# install-release --install-completion [SHELL: bash|zsh|fish|powershell]
+# ir --install-completion [SHELL: bash|zsh|fish|powershell]
 # Example for zsh:
-install-release --install-completion zsh
+ir --install-completion zsh
 ```
 
 #### Install tool from GitHub releases
 
 ```bash
-❯ install-release get "https://github.com/ahmetb/kubectx"
+❯ ir get "https://github.com/ahmetb/kubectx"
 
 📑 Repo     : ahmetb/kubectx
 🌟 Stars    : 13295
@@ -170,7 +160,7 @@ Install this tool (Y/n): y
 #### List installed tools
 
 ```bash
-❯ install-release ls
+❯ ir ls
 
                        Installed tools                        
 ┏━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -187,7 +177,7 @@ Install this tool (Y/n): y
 ```bash
 # Remove installed release
 
-❯ install-release rm gron
+❯ ir rm gron
     
 INFO     Removed: gron           
 ```
@@ -195,7 +185,7 @@ INFO     Removed: gron
 #### Update all previously installed tools to the latest version
 
 ```bash
-❯ install-release upgrade
+❯ ir upgrade
 
 Fetching: https://github.com/tenable/terrascan#terrascan
 Fetching: https://github.com/ahmetb/kubectx#kubectx
@@ -216,10 +206,10 @@ Progress... ━━━━━━━━━━━━━━━━━━━━━━�
 
 #### Pull state templates for installing tools.
 
-You can push your state to somewhere like GitHub and use it for any other device, to make a sync for tools installed via install-release
+You can push your state to somewhere like GitHub and use it for any other device, to make a sync for tools installed via ir
 
 ```bash
-❯ install-release pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/install-release/state.json
+❯ ir pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/ir/state.json
 ```
  
 #### Hold Update to specific installed tool.
@@ -229,14 +219,14 @@ In case you want to hold an update to the specific tool, you can use `hold {tool
 Example: keep tool named [k9s](https://github.com/derailed/k9s) update on hold
 
 ```bash
-❯ install-release hold k9s
+❯ ir hold k9s
  INFO     Update on hold for, k9s to True
 ```
 
 You can list tools on hold updates  by `ls --hold` command
 
 ```bash
-❯ install-release ls --hold
+❯ ir ls --hold
              Installed tools kept on hold             
 ┏━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Name ┃ Version ┃ Url                               ┃
@@ -248,14 +238,14 @@ You can list tools on hold updates  by `ls --hold` command
 In case you want to unhold update to the specific tool, you can use `hold --unset {tool-name}` command by which it will pause update for that tool.
 
 ```
-❯ install-release hold --unset k9s
+❯ ir hold --unset k9s
  INFO     Update on hold for, k9s to False
 ```
 
 #### Config tool installation path
 
 ```bash
-❯ install-release config --path ~/.local/bin
+❯ ir config --path ~/.local/bin
 
 INFO   updated path to:  ~/.local/bin
 INFO   Done
@@ -266,7 +256,7 @@ INFO   Done
 This is useful when you want to install pre-release versions of tools like beta or alpha releases. By default, it is set to `False` in which case it will only check for latest release.
 
 ```bash
-❯ install-release config --pre-release
+❯ ir config --pre-release
 ```
 
 #### Configure GitHub token for higher rate limit
@@ -274,7 +264,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 
 
 ```bash
-❯ install-release config --token [your github token]
+❯ ir config --token [your github token]
 
 INFO: Update token
 INFO: Done.

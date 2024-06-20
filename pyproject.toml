@@ -3,14 +3,14 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.4.3"
+version = "0.4.4"
 readme = "README.md"
-description = "A cli tool to install tools based on your device info directly from github releases and keep them updated."
+description = "Simple package manager to easily install, update and manage any command-line(CLI) tool directly from github releases"
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
 packages = [
   { include = "InstallRelease" }
 ]
-homepage = "https://github.com/Rishang/install-releases"
+homepage = "https://github.com/Rishang/install-release"
 classifiers = [
   "Topic :: Software Development :: Build Tools",
   "Topic :: Software Development :: Libraries :: Python Modules"
@@ -25,6 +25,7 @@ typer = ">=0.9.0,<0.14.0"
 
 [tool.poetry.scripts]
 install-release = "InstallRelease.cli:app"
+ir = "InstallRelease.cli:app"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2"
