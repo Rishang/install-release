@@ -12,6 +12,7 @@ packages = [
 ]
 homepage = "https://github.com/Rishang/install-release"
 classifiers = [
+  "Topic :: Software Development :: CLI Tools",
   "Topic :: Software Development :: Build Tools",
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
