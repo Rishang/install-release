@@ -1,5 +1,5 @@
 # Install Release 🚀
-[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.11-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/ir?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/ir)
+[![Python Version](https://img.shields.io/badge/Python-3.8_to_3.11-xx.svg)](https://shields.io/) [![Downloads](https://static.pepy.tech/personalized-badge/ir?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/install-release)
 
 
 `ir` is a CLI tool to install any tool for your device directly from their GitHub releases and keep them updated. Consider it as a small package manager to install tools from GitHub releases.
@@ -26,7 +26,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
       - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
       - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
       - [Config tool installation path 🗂️](#config-tool-installation-path-️)
-      - [Config updates for pre-release versions �](#config-updates-for-pre-release-versions-)
+      - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
       - [Configure GitHub token for higher rate limit 🔑](#configure-github-token-for-higher-rate-limit-)
 
 ## Getting started ⚡
