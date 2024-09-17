@@ -4,7 +4,6 @@ from tempfile import TemporaryDirectory
 import platform
 
 # pipi
-import requests
 from rich.progress import track
 from rich.console import Console
 
