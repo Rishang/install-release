@@ -11,7 +11,7 @@
   </a>
 <p>
 
-**Install Release** is a CLI tool by name `ir` to install any tool for your device(Linux/MacOS/WSL) directly from their GitHub releases and keep them updated. Consider it as a small package manager to install tools from GitHub releases.
+**Install Release** is a CLI tool by name `ir` to install any tool for your device(Linux/MacOS/WSL) directly from their GitHub releases and keep them updated. Consider it as a small package manager to install single binary tools from GitHub releases.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on GitHub releases.
 
