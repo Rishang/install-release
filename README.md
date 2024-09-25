@@ -45,17 +45,17 @@ This can be any tool you want to install, which is pre-compiled for your device 
 pip install -U ir
 ```
 
-```
-# Example Installation a tool named `gron` directly from its GitHub releases
+Example Installation a tool named [deno](https://github.com/denoland/deno)(A modern runtime for JavaScript and TypeScript) directly from its GitHub releases.
 
+```bash
 # ir get [GITHUB-URL]
 
-❯ ir get https://github.com/tomnomnom/gron
+❯ ir get https://github.com/denoland/deno
 ```
 
 ![demo](https://raw.githubusercontent.com/Rishang/install-release/main/.github/images/demo.png)
 
-Checking for gron is installed by `install-release`:
+Checking for deno is installed by `install-release`:
 
 ```
 ❯ which deno
