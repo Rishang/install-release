@@ -59,7 +59,7 @@ Checking for deno is installed by `install-release`:
 
 ```
 ❯ which deno
-/home/noobi/bin/deno
+~/bin/deno
 
 ❯ deno --version
 deno 1.46.3 (stable, release, x86_64-unknown-linux-gnu)
