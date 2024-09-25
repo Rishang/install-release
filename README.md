@@ -58,12 +58,13 @@ pip install -U ir
 Checking for gron is installed by `install-release`:
 
 ```
-❯ which gron
-/home/noobi/bin/gron
+❯ which deno
+/home/noobi/bin/deno
 
-❯ gron --help
-Transform JSON (from a file, URL, or stdin) into discrete assignments to make it greppable
-... # more
+❯ deno --version
+deno 1.46.3 (stable, release, x86_64-unknown-linux-gnu)
+v8 12.9.202.5-rusty
+typescript 5.5.2
 ```
 
 ## Prerequisites 📋
