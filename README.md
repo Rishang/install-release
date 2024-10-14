@@ -42,7 +42,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 ```bash
 # Install ir
-pip install -U ir
+pip install -U install-release
 ```
 
 Example Installation a tool named [deno](https://github.com/denoland/deno)(A modern runtime for JavaScript and TypeScript) directly from its GitHub releases.
