@@ -4,11 +4,12 @@ on:
     types: [published, edited]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.8"]
+        platform: [amd64, arm64]
     steps:
       - uses: actions/checkout@v3
 
@@ -26,11 +27,53 @@ jobs:
           python -m pip install --upgrade pip
           poetry install
 
-      - name: Build 
-        run: |
-          poetry build
+      - name: Build Wheel
+        run: poetry build
 
-      - name: publish
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build Executable
         run: |
-          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
-          poetry publish
+          if [ "${{ matrix.platform }}" == "amd64" ]; then
+            pyinstaller --onefile --distpath dist/amd64 InstallRelease/cli.py
+          elif [ "${{ matrix.platform }}" == "arm64" ]; then
+            pyinstaller --onefile --distpath dist/arm64 InstallRelease/cli.py
+          fi
+
+      - name: Upload Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: cli-${{ matrix.platform }}
+          path: dist/${{ matrix.platform }}/cli
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts for amd64
+      uses: actions/download-artifact@v2
+      with:
+        name: cli-amd64
+        path: dist/amd64
+
+    - name: Download artifacts for arm64
+      uses: actions/download-artifact@v2
+      with:
+        name: cli-arm64
+        path: dist/arm64
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/amd64/cli
+          dist/arm64/cli
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish to PyPI
+      run: |
+        poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+        poetry publish
