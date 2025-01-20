@@ -39,8 +39,10 @@ jobs:
       - name: Build Executable
         run: |
           if [ "${{ matrix.platform }}" == "amd64" ]; then
+            poetry shell
             pyinstaller --onefile --distpath dist/amd64 InstallRelease/cli.py
           elif [ "${{ matrix.platform }}" == "arm64" ]; then
+            poetry shell
             pyinstaller --onefile --distpath dist/arm64 InstallRelease/cli.py
           fi
 
@@ -48,7 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cli-${{ matrix.platform }}
-          path: dist/${{ matrix.platform }}/cli
+          path: dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }}
 
   release:
     needs: build
@@ -71,8 +73,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          dist/amd64/cli
-          dist/arm64/cli
+          dist/amd64/install-release-${{ runner.os }}-amd64
+          dist/arm64/install-release-${{ runner.os }}-arm64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
