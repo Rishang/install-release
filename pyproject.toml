@@ -33,6 +33,7 @@ mypy = "*"
 black = "*"
 types-requests = "*"
 toml = "*"
+pyinstaller = "6.11.1"
 types-toml = "*"
 types-setuptools = "*"
 
