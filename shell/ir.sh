@@ -76,11 +76,14 @@ parse_arguments() {
 
   # Automatically detect platform and architecture
   platform=$(uname | tr '[:upper:]' '[:lower:]')
+
   arch=$(uname -m)
 
   # Normalize architecture names
   case "$arch" in
     x86_64) arch="amd64" ;;
+    arm64) arch="arm64" ;;
+    amd64) arch="amd64" ;;
     aarch64) arch="arm64" ;;
     armv7l) arch="armv7" ;;
   esac
@@ -93,7 +96,7 @@ query_github_api() {
   release_info=$(curl -s https://api.github.com/repos/$repo/releases/tags/$release)
 
   # Extract the download URL for the desired platform and architecture
-  url=$(echo $release_info | jq -r ".assets[] | select(.name | test(\"$platform.*$arch\")) | .browser_download_url")
+  url=$(echo $release_info | jq -r ".assets[] | select(.name | test(\"(?i)$platform.*$arch\")) | .browser_download_url")
 
   if [ -z "$url" ]; then
     echo "No suitable release found for $platform and $arch"
