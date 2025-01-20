@@ -45,6 +45,11 @@ jobs:
           elif [ "${{ matrix.platform }}" == "arm64" ]; then
             pyinstaller --onefile --distpath dist/arm64 InstallRelease/cli.py
           fi
+          
+          # test the executable
+          deactivate
+          chmod +x dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }}
+          ./dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }} --help
 
       - name: Upload Executable
         uses: actions/upload-artifact@v4
