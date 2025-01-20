@@ -69,10 +69,11 @@ jobs:
       with:
         name: install-release-${{ runner.os }}-amd64
         path: dist/amd64
-    - name: Check artifacts
+
+    - name: Rename artifacts Before Upload
       run: |
-        ls -l dist/amd64
-        ls -l dist/arm64
+        mv dist/amd64/cli dist/amd64/install-release-${{ runner.os }}-amd64
+        mv dist/arm64/cli dist/arm64/install-release-${{ runner.os }}-arm64
 
     - name: Create GitHub Release
       id: create_release
