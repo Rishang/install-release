@@ -38,13 +38,7 @@ jobs:
 
       - name: Build Executable
         run: |
-          bash -c "source $(poetry env info --path)/bin/activate"
-          pip install pyinstaller==6.11.1
-          if [ "${{ matrix.platform }}" == "amd64" ]; then
-            pyinstaller --onefile --distpath dist/amd64 InstallRelease/cli.py
-          elif [ "${{ matrix.platform }}" == "arm64" ]; then
-            pyinstaller --onefile --distpath dist/arm64 InstallRelease/cli.py
-          fi
+          bash -c "source $(poetry env info --path)/bin/activate; pip install pyinstaller==6.11.1; pyinstaller --onefile --distpath dist/${{ matrix.platform }} InstallRelease/cli.py"
           
           # test the executable
           chmod +x dist/${{ matrix.platform }}/cli
