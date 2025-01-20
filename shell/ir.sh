@@ -174,6 +174,7 @@ main() {
     download_and_extract $release_file_url
   else
     url=$(query_github_api)
+    echo $url | grep -i "No " && exit 1
     download_and_extract $url
   fi
   find_executable
