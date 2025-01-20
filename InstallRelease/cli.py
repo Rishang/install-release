@@ -235,7 +235,7 @@ def me(
     _v = install_release_version._local_version
 
     if update:
-        _cmd = f"{sys.executable} -m pip install -U install-release"
+        _cmd = f"ir get https://github.com/Rishang/install-release"
         pprint(f"Running: {_cmd}")
 
         os.system(_cmd)
