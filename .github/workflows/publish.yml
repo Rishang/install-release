@@ -51,7 +51,7 @@ jobs:
       - name: Upload Executable
         uses: actions/upload-artifact@v4
         with:
-          name: cli-${{ matrix.platform }}
+          name: install-release-${{ runner.os }}-${{ matrix.platform }}
           path: dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }}
 
   release:
