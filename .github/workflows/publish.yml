@@ -58,17 +58,17 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Download artifacts for amd64
-      uses: actions/download-artifact@v4
-      with:
-        name: cli-amd64
-        path: dist/amd64
-
     - name: Download artifacts for arm64
       uses: actions/download-artifact@v4
       with:
-        name: cli-arm64
+        name: install-release-${{ runner.os }}-arm64
         path: dist/arm64
+
+    - name: Download artifacts for amd64
+      uses: actions/download-artifact@v4
+      with:
+        name: install-release-${{ runner.os }}-amd64
+        path: dist/amd64
 
     - name: Create GitHub Release
       id: create_release
