@@ -47,9 +47,8 @@ jobs:
           fi
           
           # test the executable
-
-          chmod +x dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }}
-          ./dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }} --help
+          chmod +x dist/${{ matrix.platform }}/cli
+          ./dist/${{ matrix.platform }}/cli --help
 
       - name: Upload Executable
         uses: actions/upload-artifact@v4
