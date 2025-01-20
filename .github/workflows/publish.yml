@@ -58,6 +58,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
+
     - name: Download artifacts for arm64
       uses: actions/download-artifact@v4
       with:
@@ -75,8 +77,7 @@ jobs:
         mv dist/amd64/cli dist/amd64/install-release-${{ runner.os }}-amd64
         mv dist/arm64/cli dist/arm64/install-release-${{ runner.os }}-arm64
 
-    - name: Create GitHub Release
-      id: create_release
+    - name: Upload GitHub Release Assets
       uses: softprops/action-gh-release@v2
       with:
         files: |
