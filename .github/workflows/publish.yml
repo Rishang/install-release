@@ -47,7 +47,7 @@ jobs:
           fi
           
           # test the executable
-          deactivate
+
           chmod +x dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }}
           ./dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }} --help
 
