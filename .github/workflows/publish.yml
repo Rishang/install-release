@@ -38,11 +38,11 @@ jobs:
 
       - name: Build Executable
         run: |
+          bash -c "source $(poetry env info --path)/bin/activate"
+          pip install pyinstaller==6.11.1
           if [ "${{ matrix.platform }}" == "amd64" ]; then
-            bash -c "source $(poetry env info --path)/bin/activate"
             pyinstaller --onefile --distpath dist/amd64 InstallRelease/cli.py
           elif [ "${{ matrix.platform }}" == "arm64" ]; then
-            bash -c "source $(poetry env info --path)/bin/activate"
             pyinstaller --onefile --distpath dist/arm64 InstallRelease/cli.py
           fi
 
