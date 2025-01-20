@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-release-${{ runner.os }}-${{ matrix.platform }}
-          path: dist/${{ matrix.platform }}/install-release-${{ runner.os }}-${{ matrix.platform }}
+          path: dist/${{ matrix.platform }}/cli
 
   release:
     needs: build
