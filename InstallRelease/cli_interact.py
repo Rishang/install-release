@@ -19,7 +19,7 @@ from InstallRelease.utils import (
     pprint,
     logger,
     show_table,
-    isNone,
+    is_none,
     threads,
     PackageVersion,
     requests_session,
@@ -106,7 +106,7 @@ def get(
         logger.error(f"No releases found: {repo.repo_url}")
         return
 
-    if isNone(name):
+    if is_none(name):
         toolname = releases[0].name
     else:
         toolname = name
@@ -321,7 +321,7 @@ def pull_state(url: str = "", override: bool = False):
     """
     logger.debug(url)
 
-    if isNone(url):
+    if is_none(url):
         return
 
     r: dict = requests_session.get(url=url).json()

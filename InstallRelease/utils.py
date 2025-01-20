@@ -125,7 +125,7 @@ def FilterDataclass(data: dict, obj):
     return obj(**out)
 
 
-def isNone(val):
+def is_none(val):
     if val == None:
         return True
     elif isinstance(val, str) and val != "":

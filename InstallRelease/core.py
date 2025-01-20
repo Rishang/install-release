@@ -10,7 +10,7 @@ from requests.auth import HTTPBasicAuth
 from magic.compat import detect_from_filename
 
 # locals
-from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh, isNone
+from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh, is_none
 from InstallRelease.data import (
     GithubRelease,
     GithubReleaseAssets,
@@ -53,7 +53,7 @@ class GithubInfo:
         self.info: GithubRepoInfo = GithubRepoInfo(**self._req(self.api))
 
     def _req(self, url):
-        if not isNone(self.token):
+        if not is_none(self.token):
             auth = HTTPBasicAuth("user", self.token)
         else:
             logger.debug("Token not set")

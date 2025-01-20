@@ -2,8 +2,8 @@ name: PyPy Release
 on:
   release:
     types: [published, edited]
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
 
 jobs:
   build:

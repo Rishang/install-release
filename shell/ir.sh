@@ -1,5 +1,10 @@
 #!/bin/bash
 # set -x
+
+# Example Usage via curl:
+# 1. curl -sL https://raw.githubusercontent.com/Rishang/install-release/main/ir.sh | bash -s -- --repo tomnomnom/gron --release 1.0.0 --name gron --binary-path /usr/local/bin --binary-name gron
+# 2. curl -sL https://raw.githubusercontent.com/Rishang/install-release/main/ir.sh | bash -s -- --release-file-url https://github.com/Rishang/install-release/releases/download/v4.5/install-release-Linux-amd64 --binary-path ./ --binary-name test
+
 # Function to print usage
 print_usage() {
   echo "Install a release from a GitHub repository"
@@ -9,9 +14,11 @@ print_usage() {
   echo "  --repo REPO        GitHub repository (e.g. tomnomnom/gron)"
   echo "  --release RELEASE  Release version (e.g. 1.0.0)"
   echo "  --name NAME        Binary name (default to repo name)"
-  echo ""
-  echo "Usage: $0 --repo REPO --release RELEASE [--name NAME]"
-  echo "Example: $0 --repo tomnomnom/gron --release 1.0.0 [--name gron]"
+  echo "  --release-file-url URL  Release file URL (e.g. https://github.com/Rishang/install-release/releases/download/v0.1.0/install-release-linux-amd64)"
+  echo "  --binary-path PATH  Binary path (e.g. /usr/local/bin)"
+  echo "  --binary-name NAME  Binary name (e.g. gron)"
+  echo "Usage: $0 --repo REPO --release RELEASE [--name NAME] [--release-file-url URL] [--binary-path PATH] [--binary-name NAME]"
+  echo "Example: $0 --repo tomnomnom/gron --release 1.0.0 [--name gron] [--binary-path /usr/local/bin] [--binary-name gron]"
   exit 1
 }
 
@@ -25,6 +32,15 @@ parse_arguments() {
       --release ) shift
         release=$1
         ;;
+      --release-file-url ) shift
+        release_file_url=$1
+        ;;
+      --binary-path ) shift
+        binary_path=$1
+        ;;
+      --binary-name ) shift
+        binary_name=$1
+        ;;
       --name ) shift
         name=$1
         ;;
@@ -35,13 +51,27 @@ parse_arguments() {
   done
 
   # Check if all required arguments are provided
-  if [ -z "$repo" ] || [ -z "$release" ]; then
+  if [ -z "$repo" ] || [ -z "$release" ] && [ -z "$release_file_url" ]; then
     print_usage
   fi
 
   # Default to repo name if name is not provided
   if [ -z "$name" ]; then
-    name=$(basename $repo)
+    if [ -n "$repo" ]; then
+      name=$(basename $repo)
+    else
+      name=$binary_name  # Provide a default name if repo is not set
+    fi
+  fi
+
+  # Default binary path if not provided
+  if [ -z "$binary_path" ]; then
+    binary_path="/usr/local/bin"
+  fi
+
+  # Default binary name if not provided
+  if [ -z "$binary_name" ]; then
+    binary_name=$name
   fi
 
   # Automatically detect platform and architecture
@@ -77,7 +107,7 @@ query_github_api() {
 download_and_extract() {
   local url=$1
   # echo $url
-
+  echo "Downloading $url"
   file_name=$(basename $url)
   tmp_dir=$(mktemp -d -t ${name}_${platform}_${arch}_XXXXXXXXXX)
   curl -L $url -o $tmp_dir/$file_name
@@ -89,6 +119,9 @@ download_and_extract() {
   elif [[ $file_name == *.tar* || $file_name == *.tgz ]]; then
     tar -xzvf $tmp_dir/$file_name -C $tmp_dir
     rm $tmp_dir/$file_name
+  # check if file is binary executable via file command
+  elif [[ $(file $tmp_dir/$file_name | grep -i "executable") ]]; then
+    echo "File is binary executable"
   else
     # check if file is binary executable via file command
     echo "Unknown file format"
@@ -111,7 +144,11 @@ find_executable() {
 
 # Function to install the binary
 install_binary() {
-  install $binary /usr/local/bin/$name
+  local binary_path=$1
+  local binary_name=$2
+  # Create binary path directory if it doesn't exist
+  mkdir -p $binary_path
+  install $binary $binary_path/$binary_name
 }
 
 # Function to clean up temporary directory
@@ -121,11 +158,11 @@ cleanup() {
 
 # Function to test the installation
 test_installation() {
-  if command -v ${name} &> /dev/null; then
-    echo "${name} installed successfully in /usr/local/bin"
-    ${name} --version
+  if [ -x "$binary_path/$binary_name" ]; then
+    echo "${binary_name} installed successfully at $binary_path/$binary_name"
+    $binary_path/$binary_name --version
   else
-    echo "Failed to install ${name}"
+    echo "Failed to install ${binary_name} at $binary_path/$binary_name"
     exit 1
   fi
 }
@@ -133,10 +170,14 @@ test_installation() {
 # Main function
 main() {
   parse_arguments "$@"
-  url=$(query_github_api)
-  download_and_extract $url
+  if [ -n "$release_file_url" ]; then
+    download_and_extract $release_file_url
+  else
+    url=$(query_github_api)
+    download_and_extract $url
+  fi
   find_executable
-  install_binary
+  install_binary $binary_path $binary_name
   cleanup
   test_installation
 }

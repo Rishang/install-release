@@ -5,7 +5,7 @@ from typing import Dict
 import dataclasses
 
 # locals
-from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass, isNone
+from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass, is_none
 
 
 def platform_path(paths: dict, alt: str = ""):
@@ -13,7 +13,7 @@ def platform_path(paths: dict, alt: str = ""):
 
     system = platform.system().lower()
 
-    if not isNone(alt) and alt != "null":
+    if not is_none(alt) and alt != "null":
         return alt
 
     elif paths.get(system):
