@@ -38,7 +38,11 @@ jobs:
 
       - name: Build Executable
         run: |
-          bash -c "source $(poetry env info --path)/bin/activate; pip install pyinstaller==6.11.1; pyinstaller --onefile --distpath dist/${{ matrix.platform }} InstallRelease/cli.py"
+          bash -c '
+          source $(poetry env info --path)/bin/activate; 
+          pip install pyinstaller==6.11.1; 
+          pyinstaller --onefile --distpath dist/${{ matrix.platform }} InstallRelease/cli.py
+          '
           
           # test the executable
           chmod +x dist/${{ matrix.platform }}/cli
