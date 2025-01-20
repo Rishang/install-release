@@ -69,6 +69,10 @@ jobs:
       with:
         name: install-release-${{ runner.os }}-amd64
         path: dist/amd64
+    - name: Check artifacts
+      run: |
+        ls -l dist/amd64
+        ls -l dist/arm64
 
     - name: Create GitHub Release
       id: create_release
