@@ -1,4 +1,3 @@
-import sys
 import logging
 import os
 
@@ -24,9 +23,7 @@ from InstallRelease.cli_interact import (
 
 def see_help(arg: str = ""):
     pprint(
-        "This command required arguments, use "
-        f"[yellow]{arg} --help[reset]"
-        " to see them"
+        f"This command required arguments, use [yellow]{arg} --help[reset] to see them"
     )
     exit(1)
 
@@ -48,7 +45,7 @@ def setLogger(quite: bool = None, debug: bool = None):
 if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
-app = typer.Typer(help=f"Github Release Installer, based on your system")
+app = typer.Typer(help="Github Release Installer, based on your system")
 
 
 @app.command()
@@ -72,7 +69,6 @@ def get(
     if url is None or url == "":
         see_help("get")
 
-    
     _url = url
     url = "/".join(_url.split("/")[:5])
 
@@ -101,7 +97,7 @@ def upgrade(
     logger.debug(f"latest_version: {latest_version}")
     if local_version != latest_version:
         pprint(
-            f"[bold]***INFO: New version of install-release is available, "
+            "[bold]***INFO: New version of install-release is available, "
             "run [yellow]ir me --upgrade[reset] to update. ***\n"
         )
     _upgrade(force=force, skip_prompt=skip_prompt)
@@ -113,7 +109,7 @@ def ls(
         False,
         "--hold",
         help="list of tools which are kept on hold",
-    )
+    ),
 ):
     """
     | List all installed releases, cli tools
@@ -235,7 +231,7 @@ def me(
     _v = install_release_version._local_version
 
     if update:
-        _cmd = f"ir get https://github.com/Rishang/install-release"
+        _cmd = "ir get https://github.com/Rishang/install-release"
         pprint(f"Running: {_cmd}")
 
         os.system(_cmd)
@@ -248,7 +244,7 @@ def me(
         pprint(_v)
     else:
         pprint(f"Version: {_v}")
-        pprint(f"Repo:    https://github.com/Rishang/install-release")
+        pprint("Repo:    https://github.com/Rishang/install-release")
 
 
 if __name__ == "__main__":

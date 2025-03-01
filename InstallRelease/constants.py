@@ -54,7 +54,7 @@ def platform_words() -> list:
 
         if platform.system().lower() != sys_alias:
             words.append(sys_alias)
-    except:
+    except Exception:
         ...
 
     return words

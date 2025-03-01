@@ -59,7 +59,7 @@ def load_config():
     """
     config: ToolConfig = cache_config.state.get("config")
 
-    if config != None:
+    if config is not None:
         return config
     else:
         cache_config.set("config", ToolConfig())
@@ -97,8 +97,8 @@ def get(
     try:
         logger.debug(f"Platform version: {platform.version()}")
         logger.debug(f"Platform release: {platform.release()}")
-    except:
-        ...
+    except Exception as e:
+        logger.error(f"Error getting platform info: {e}")
 
     releases = repo.release(tag_name=tag_name, pre_release=config.pre_release)
 
@@ -117,10 +117,10 @@ def get(
 
     logger.debug(_gr)
 
-    if _gr == False:
+    if _gr is False:
         return
     else:
-        if prompt != False:
+        if prompt is not False:
             pprint(
                 f"\n[green bold]📑 Repo     : {repo.info.full_name}"
                 f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
@@ -183,7 +183,7 @@ def upgrade(force: bool = False, skip_prompt: bool = False):
         i = irKey(k)
 
         try:
-            if state[k].hold_update == True:
+            if state[k].hold_update is True:
                 return
         except AttributeError:
             ...
@@ -192,7 +192,7 @@ def upgrade(force: bool = False, skip_prompt: bool = False):
         pprint(f"Fetching: {k}")
         releases = repo.release(pre_release=config.pre_release)
 
-        if releases[0].published_dt() > state[k].published_dt() or force == True:
+        if releases[0].published_dt() > state[k].published_dt() or force is True:
             upgrades[i.name] = repo
 
     threads(task, data=[k for k in state], max_workers=20, return_result=False)
@@ -203,7 +203,7 @@ def upgrade(force: bool = False, skip_prompt: bool = False):
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
         pprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
-        if skip_prompt == False:
+        if skip_prompt is False:
             r = input()
             if r.lower() != "y":
                 return
@@ -240,7 +240,7 @@ def list_install(
     """
     | List all installed tools
     """
-    if state == None:
+    if state is None:
         state_info()
         state = cache.state
 
@@ -249,7 +249,7 @@ def list_install(
     for key in state:
         i = irKey(key)
         if hold_update:
-            if state[key].hold_update == True:
+            if state[key].hold_update is True:
                 _hold_table.append(
                     {
                         "Name": i.name,
@@ -263,8 +263,8 @@ def list_install(
             {
                 "Name": i.name,
                 "Version": (
-                    state[key].tag_name + f"[yellow] *HOLD_UPDATE*[/yellow]"
-                    if state[key].hold_update == True
+                    state[key].tag_name + "[yellow] *HOLD_UPDATE*[/yellow]"
+                    if state[key].hold_update is True
                     else state[key].tag_name
                 ),
                 "Url": state[key].url,
@@ -334,12 +334,12 @@ def pull_state(url: str = "", override: bool = False):
     for key in data:
         try:
             i = irKey(key)
-        except:
+        except Exception:
             logger.warning(f"Invalid input: {key}")
             continue
 
-        if state.get(key) != None:
-            if state[key].tag_name == data[key].tag_name or override == False:
+        if state.get(key) is not None:
+            if state[key].tag_name == data[key].tag_name or override is False:
                 logger.debug(f"Skipping: {key}")
                 continue
             else:
@@ -363,7 +363,7 @@ def pull_state(url: str = "", override: bool = False):
     for key in temp:
         try:
             i = irKey(key)
-        except:
+        except Exception:
             logger.warning(f"Invalid input: {key}")
             continue
         get(

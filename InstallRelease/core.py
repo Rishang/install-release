@@ -10,7 +10,14 @@ from requests.auth import HTTPBasicAuth
 from magic.compat import detect_from_filename
 
 # locals
-from InstallRelease.utils import logger, listItemsMatcher, extract, download, sh, is_none
+from InstallRelease.utils import (
+    logger,
+    listItemsMatcher,
+    extract,
+    download,
+    sh,
+    is_none,
+)
 from InstallRelease.data import (
     GithubRelease,
     GithubReleaseAssets,
@@ -79,7 +86,7 @@ class GithubInfo:
     def release(self, tag_name: str = "", pre_release: bool = False):
         if tag_name == "":
             api = (
-                self.api + "/releases" + f"{'/latest' if pre_release == False else ''}"
+                self.api + "/releases" + f"{'/latest' if pre_release is False else ''}"
             )
         else:
             api = self.api + "/releases/tags/" + tag_name
@@ -179,7 +186,7 @@ def get_release(releases: List[GithubRelease], repo_url: str, extra_words: list 
         return False
 
     for release in releases:
-        if len(release.assets) == 0 or release.prerelease == True:
+        if len(release.assets) == 0 or release.prerelease is True:
             continue
         else:
             break

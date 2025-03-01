@@ -42,13 +42,13 @@ console = Console()
 
 
 def _logger(flag: str = "", format: str = ""):
-    if format == "" or format == None:
+    if format == "" or format is None:
         format = "%(levelname)s|%(name)s| %(message)s"
 
     # message
     logger = logging.getLogger(__name__)
 
-    if os.environ.get(flag) != None:
+    if os.environ.get(flag) is not None:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
@@ -96,7 +96,7 @@ class PackageVersion:
 
     def latest_version(self):
         try:
-            if self._latest_version != None:
+            if self._latest_version is not None:
                 return self._latest_version
 
             response = requests_session.get(self.url)
@@ -126,7 +126,7 @@ def FilterDataclass(data: dict, obj):
 
 
 def is_none(val):
-    if val == None:
+    if val is None:
         return True
     elif isinstance(val, str) and val != "":
         return False
@@ -243,12 +243,29 @@ def extract(path: str, at: str):
             elif system == "windows":
                 # 'C:\Program Files\\7-zip\\7z.exe'
                 ...
+        elif file_info.mime_type == "application/x-bzip2" or path.endswith(
+            (".bz2", ".tbz")
+        ):
+            import bz2
+            import tarfile
+
+            logger.debug(f"Extracting bzip2 file: {path}")
+            if path.endswith(".bz2") and not path.endswith(".tar.bz2"):
+                # Single file compressed with bz2
+                with bz2.open(path, "rb") as f_in:
+                    output_file = os.path.join(at, os.path.basename(path)[:-4])
+                    with open(output_file, "wb") as f_out:
+                        f_out.write(f_in.read())
+            else:
+                # Tar archive compressed with bz2
+                with tarfile.open(path, "r:bz2") as tar:
+                    tar.extractall(path=at)
         else:
             shutil.unpack_archive(path, at)
 
         return True
-    except:
-        logger.error(f"can't extract: {path}")
+    except Exception as e:
+        logger.error(f"can't extract: {path}, error: {e}")
         raise Exception("Invalid file")
 
 
@@ -273,7 +290,7 @@ def threads(funct, data, max_workers=5, return_result: bool = True):
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future = executor.map(funct, data)
-        if return_result == True:
+        if return_result is True:
             for i in future:
                 results.append(i)
     return results
