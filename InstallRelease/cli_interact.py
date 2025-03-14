@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, Union
 from tempfile import TemporaryDirectory
 import platform
 
@@ -9,7 +9,7 @@ from rich.console import Console
 
 # locals
 from InstallRelease.state import State, platform_path
-from InstallRelease.data import GithubRelease, ToolConfig, irKey
+from InstallRelease.data import GithubRelease, GitlabRelease, ToolConfig, irKey
 
 from InstallRelease.data import TypeState
 
@@ -25,7 +25,13 @@ from InstallRelease.utils import (
     requests_session,
 )
 
-from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
+from InstallRelease.core import (
+    get_release,
+    extract_release,
+    install_bin,
+    create_repo_info,
+    RepoInfo,
+)
 
 
 console = Console(width=40)
@@ -44,7 +50,7 @@ else:
 
 cache = State(
     file_path=platform_path(paths=state_path, alt=__spath["state_path"]),
-    obj=GithubRelease,
+    obj=GithubRelease,  # We use GithubRelease as base type, but we'll handle GitlabRelease in code
 )
 
 cache_config = State(
@@ -81,14 +87,14 @@ def state_info():
 
 
 def get(
-    repo: GithubInfo,
+    repo: RepoInfo,
     tag_name: str = "",
     local: bool = True,
     prompt: bool = False,
     name: str = None,
 ):
     """
-    | Get a release from a github repository
+    | Get a release from a GitHub or GitLab repository
     """
     state_info()
 
@@ -158,13 +164,6 @@ def get(
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
 
-    # """For ignoring holds in get too"""
-    # check_key = cache.get(f"{repo.repo_url}#{toolname}")
-
-    # if isinstance(check_key, GithubRelease) and check_key.hold_update == True:
-    #     logger.debug(f"hold_update={check_key.hold_update}")
-    #     releases[0].hold_update = True
-
     cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()
 
@@ -177,7 +176,7 @@ def upgrade(force: bool = False, skip_prompt: bool = False):
 
     state: TypeState = cache.state
 
-    upgrades: Dict[str, GithubInfo] = {}
+    upgrades: Dict[str, RepoInfo] = {}
 
     def task(k: str):
         i = irKey(k)
@@ -188,7 +187,7 @@ def upgrade(force: bool = False, skip_prompt: bool = False):
         except AttributeError:
             ...
 
-        repo = GithubInfo(i.url, token=config.token)
+        repo = create_repo_info(i.url, token=config.token)
         pprint(f"Fetching: {k}")
         releases = repo.release(pre_release=config.pre_release)
 
@@ -326,10 +325,17 @@ def pull_state(url: str = "", override: bool = False):
 
     r: dict = requests_session.get(url=url).json()
 
-    data: dict = {k: GithubRelease(**r[k]) for k in r}
+    # Determine if it's GitHub or GitLab based on URL
+    data: dict = {}
+    for k in r:
+        if "gitlab.com" in r[k].get("url", ""):
+            data[k] = GitlabRelease(**r[k])
+        else:
+            data[k] = GithubRelease(**r[k])
+
     state: TypeState = cache.state
 
-    temp: Dict[str, GithubRelease] = {}
+    temp: Dict[str, Union[GithubRelease, GitlabRelease]] = {}
 
     for key in data:
         try:
@@ -367,7 +373,7 @@ def pull_state(url: str = "", override: bool = False):
             logger.warning(f"Invalid input: {key}")
             continue
         get(
-            GithubInfo(i.url, token=config.token),
+            create_repo_info(i.url, token=config.token),
             tag_name=temp[key].tag_name,
             prompt=False,
             name=i.name,

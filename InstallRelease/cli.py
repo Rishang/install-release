@@ -7,7 +7,6 @@ import typer
 # locals
 from InstallRelease.utils import pprint, logger
 from InstallRelease.cli_interact import (
-    GithubInfo,
     pull_state,
     get as _get,
     upgrade as _upgrade,
@@ -19,6 +18,7 @@ from InstallRelease.cli_interact import (
     config,
     install_release_version,
 )
+from InstallRelease.core import create_repo_info
 
 
 def see_help(arg: str = ""):
@@ -52,7 +52,7 @@ app = typer.Typer(help="Github Release Installer, based on your system")
 def get(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
-    url: str = typer.Argument(None, help="[URL] of github repository "),
+    url: str = typer.Argument(None, help="[URL] of github or gitlab repository "),
     tag_name: str = typer.Option("", "-t", help="get a specific tag version."),
     name: str = typer.Option(
         "",
@@ -62,7 +62,7 @@ def get(
     approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
 ):
     """
-    | Install GitHub release, cli tool
+    | Install GitHub or GitLab release, cli tool
     """
 
     setLogger(quite, debug)
@@ -73,7 +73,7 @@ def get(
     url = "/".join(_url.split("/")[:5])
 
     _get(
-        GithubInfo(url, token=config.token),
+        create_repo_info(url, token=config.token),
         tag_name=tag_name,
         prompt=not approve,
         name=name,

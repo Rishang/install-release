@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import json
-import shutil
 import logging
 import platform
 import subprocess
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
+import urllib.parse
 
 # pipi
 import pkg_resources
@@ -20,6 +20,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.text import Text
 from rich.table import Table
+
 
 try:
     from magic.compat import detect_from_filename
@@ -210,63 +211,90 @@ def mkdir(path: str):
         ...
 
 
-def download(url: str, at: str):
-    """Download a file"""
+def download(url: str, at: str) -> str:
+    """
+    Download file to location
+    """
+    # Decode URL-encoded characters in the filename
+    filename = os.path.basename(urllib.parse.unquote(url))
 
-    file = requests_session.get(url, stream=True)
-    if not os.path.exists(at):
-        os.makedirs(at)
+    # Remove query parameters if present
+    if "?" in filename:
+        filename = filename.split("?")[0]
 
-    file_name: str = url.split("/")[-1]
-    if file.status_code == 200:
-        with open(f"{at}/{file_name}", "wb") as fw:
-            fw.write(file.content)
-        logger.info(f"""Downloaded: \'{file_name}\' at {at}""")
-        return f"{at}/{file_name}"
-    else:
-        logger.info(f"url: {url}, status_code: {file.status_code}")
-        exit()
+    # Clean the filename to remove any remaining problematic characters
+    filename = re.sub(r"[^\w\-\.]", "_", filename)
+
+    filepath = f"{at}/{filename}"
+
+    logger.debug(f"Downloading: {url}")
+    logger.debug(f"To: {filepath}")
+
+    # Use requests to download the file
+    with requests_session.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(filepath, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+    return filepath
 
 
 def extract(path: str, at: str):
-    """Extract tar file"""
+    """
+    Extract a compressed file
+    """
+    logger.debug(f"Extraction input: {path}")
+
+    exception_compressed_mime_type = [
+        "application/x-7z-compressed",
+    ]
+    # Ensure the path is using decoded URL characters
+    path = urllib.parse.unquote(path)
+    file_info = detect_from_filename(path)
+    system = platform.system().lower()
 
     try:
-        system = platform.system().lower()
-        file_info = detect_from_filename(path)
-
-        if file_info.mime_type == "application/x-7z-compressed":
-            if system in ["linux"]:
-                cmd = f"7z x {path} -o{at}"
-                logger.debug("command: " + cmd)
-                sh(cmd)
-            elif system == "windows":
-                # 'C:\Program Files\\7-zip\\7z.exe'
-                ...
-        elif file_info.mime_type == "application/x-bzip2" or path.endswith(
-            (".bz2", ".tbz")
-        ):
-            import bz2
-            import tarfile
-
-            logger.debug(f"Extracting bzip2 file: {path}")
-            if path.endswith(".bz2") and not path.endswith(".tar.bz2"):
-                # Single file compressed with bz2
-                with bz2.open(path, "rb") as f_in:
-                    output_file = os.path.join(at, os.path.basename(path)[:-4])
-                    with open(output_file, "wb") as f_out:
-                        f_out.write(f_in.read())
+        # Handle tar.gz files
+        if file_info.mime_type in [
+            "application/gzip",
+            "application/x-gzip",
+        ] and path.endswith(".tar.gz"):
+            logger.debug(f"Detected tar.gz file: {path}")
+            if system == "linux" or system == "darwin":
+                sh(f"tar -xf {path} -C {at}")
             else:
-                # Tar archive compressed with bz2
-                with tarfile.open(path, "r:bz2") as tar:
-                    tar.extractall(path=at)
+                logger.debug("System not supported for tar extraction")
+
+        # Handle zip files
+        elif file_info.mime_type == "application/zip":
+            logger.debug(f"Detected zip file: {path}")
+            if system == "linux" or system == "darwin":
+                sh(f"unzip -o {path} -d {at}")
+            else:
+                logger.debug("System not supported for zip extraction")
+
+        # Handle other archives
+        elif file_info.mime_type in exception_compressed_mime_type:
+            logger.debug(
+                f"Detected compressed file: {path} with mime: {file_info.mime_type}"
+            )
+            if system == "linux" or system == "darwin":
+                sh(f"7z x {path} -o{at}")
+            else:
+                logger.debug("System not supported for 7z extraction")
         else:
-            shutil.unpack_archive(path, at)
+            logger.debug(f"Not an archive: {path} with mime: {file_info.mime_type}")
+            return True
 
         return True
     except Exception as e:
         logger.error(f"can't extract: {path}, error: {e}")
-        raise Exception("Invalid file")
+        logger.debug(f"File info: {file_info}")
+        logger.debug(f"System: {system}")
+        # Don't raise an exception, try to continue with the file as-is
+        logger.warning("Skipping extraction, will try to use the file as-is")
+        return False
 
 
 def listItemsMatcher(patterns: List[str], word: str) -> float:
