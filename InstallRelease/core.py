@@ -43,6 +43,7 @@ class RepoInfo:
     api = ""
     token = ""
     data = {}
+    info: RepositoryInfo = RepositoryInfo()
 
     def _req(self, url):
         pass

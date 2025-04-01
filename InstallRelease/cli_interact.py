@@ -128,7 +128,7 @@ def get(
             pprint(
                 f"\n[green bold]📑 Repo     : {repo.info.full_name}"
                 f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
-                f"\n[magenta]🔮 Language : {repo.info.language}"
+                f"\n[magenta]🔮 Language : {repo.info.language if repo.info.language else 'N/A'}"
                 f"\n[yellow]🔥 Title    : {repo.info.description}"
             )
             show_table(
@@ -137,8 +137,10 @@ def get(
                         "Name": toolname,
                         "Selected Item": _gr.name,
                         "Version": releases[0].tag_name,
-                        "Size Mb": _gr.size_mb(),
-                        "Downloads": _gr.download_count,
+                        "Size Mb": _gr.size_mb() if _gr.size_mb() else "N/A",
+                        "Downloads": _gr.download_count
+                        if _gr.download_count
+                        else "N/A",
                     }
                 ],
                 title=f"🚀 Install: {toolname}",
