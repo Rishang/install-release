@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 
 # pipi
 import typer
@@ -35,7 +36,13 @@ __optionForce = typer.Option(False, "-F", help="set force.")
 __optionSkipPrompt = typer.Option(False, "-y", help="skip confirmation (y/n) prompt.")
 
 
-def setLogger(quite: bool = None, debug: bool = None):
+def setLogger(quite: Optional[bool] = None, debug: Optional[bool] = None) -> None:
+    """Set logger level based on verbosity options
+
+    Args:
+        quite: Enable quiet mode (fewer messages)
+        debug: Enable debug mode (more messages)
+    """
     if debug:
         logger.setLevel(logging.DEBUG)
     elif quite:
