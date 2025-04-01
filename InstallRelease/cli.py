@@ -102,11 +102,11 @@ def upgrade(
     latest_version = install_release_version.latest_version()
     logger.debug(f"local_version: {local_version}")
     logger.debug(f"latest_version: {latest_version}")
-    if local_version != latest_version:
-        pprint(
-            "[bold]***INFO: New version of install-release is available, "
-            "run [yellow]ir me --upgrade[reset] to update. ***\n"
-        )
+    # if local_version != latest_version:
+    #     pprint(
+    #         "[bold]***INFO: New version of install-release is available, "
+    #         "run [yellow]ir me --upgrade[reset] to update. ***\n"
+    #     )
     _upgrade(force=force, skip_prompt=skip_prompt)
 
 
