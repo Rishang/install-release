@@ -21,7 +21,7 @@ class OsInfo:
 
 
 @dataclass
-class GithubRepoInfo:
+class RepositoryInfo:
     name: str
     full_name: str
     html_url: str
@@ -37,7 +37,7 @@ class GithubRepoInfo:
 
 
 @dataclass
-class GithubReleaseAssets:
+class ReleaseAssets:
     browser_download_url: str
     content_type: str
     created_at: str
@@ -63,28 +63,46 @@ class GithubReleaseAssets:
 
 
 @dataclass
-class GithubRelease:
+class Release:
     url: str
     name: str
     tag_name: str
     prerelease: bool
     published_at: str
-    assets: List[GithubReleaseAssets]
+    assets: List[ReleaseAssets]
     hold_update: Optional[bool] = field(default=False)
     # author: dict
     # draft: bool
     # target_commitish: str
 
     def __post_init__(self):
-        self.assets = [GithubReleaseAssets(**a) for a in self.assets]
+        # Handle both dictionary and ReleaseAssets objects in the assets list
+        processed_assets = []
+        for a in self.assets:
+            if isinstance(a, ReleaseAssets):
+                processed_assets.append(a)
+            elif isinstance(a, dict):
+                processed_assets.append(ReleaseAssets(**a))
+            else:
+                raise TypeError(f"Unsupported asset type: {type(a)}")
+        self.assets = processed_assets
 
     def published_dt(self):
-        return datetime.strptime(self.published_at, "%Y-%m-%dT%H:%M:%SZ")
+        # Try different date formats commonly used by GitHub and GitLab
+        for fmt in ["%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%fZ"]:
+            try:
+                return datetime.strptime(self.published_at, fmt)
+            except ValueError:
+                continue
+
+        # If all formats fail, raise an exception with helpful message
+        raise ValueError(f"Cannot parse date: {self.published_at}")
 
 
 @dataclass
 class ToolConfig:
     token: Optional[str] = field(default_factory=str)
+    gitlab_token: Optional[str] = field(default_factory=str)
     path: Optional[str] = field(default_factory=str)
     pre_release: Optional[bool] = field(default=False)
 
@@ -97,4 +115,4 @@ class irKey:
 
 # ---------- Type Aliases ----------- #
 
-TypeState = Dict[str, GithubRelease]
+TypeState = Dict[str, Release]

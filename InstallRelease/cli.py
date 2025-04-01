@@ -7,7 +7,6 @@ import typer
 # locals
 from InstallRelease.utils import pprint, logger
 from InstallRelease.cli_interact import (
-    GithubInfo,
     pull_state,
     get as _get,
     upgrade as _upgrade,
@@ -19,6 +18,7 @@ from InstallRelease.cli_interact import (
     config,
     install_release_version,
 )
+from InstallRelease.core import get_repo_info
 
 
 def see_help(arg: str = ""):
@@ -45,14 +45,14 @@ def setLogger(quite: bool = None, debug: bool = None):
 if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
-app = typer.Typer(help="Github Release Installer, based on your system")
+app = typer.Typer(help="GitHub/GitLab Release Installer, based on your system")
 
 
 @app.command()
 def get(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
-    url: str = typer.Argument(None, help="[URL] of github repository "),
+    url: str = typer.Argument(None, help="[URL] of GitHub/GitLab repository"),
     tag_name: str = typer.Option("", "-t", help="get a specific tag version."),
     name: str = typer.Option(
         "",
@@ -62,7 +62,7 @@ def get(
     approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
 ):
     """
-    | Install GitHub release, cli tool
+    | Install GitHub/GitLab release, cli tool
     """
 
     setLogger(quite, debug)
@@ -73,7 +73,7 @@ def get(
     url = "/".join(_url.split("/")[:5])
 
     _get(
-        GithubInfo(url, token=config.token),
+        get_repo_info(url, token=config.token, gitlab_token=config.gitlab_token),
         tag_name=tag_name,
         prompt=not approve,
         name=name,
@@ -136,7 +136,12 @@ def _config(
     token: str = typer.Option(
         "",
         "--token",
-        help="set your GitHub token to solve GitHub API rate-limiting issue",
+        help="set your GitHub token to solve API rate-limiting issue",
+    ),
+    gitlab_token: str = typer.Option(
+        "",
+        "--gitlab-token",
+        help="set your GitLab token to solve API rate-limiting issue",
     ),
     path: str = typer.Option(
         "",
@@ -157,7 +162,10 @@ def _config(
 
     if token != "":
         config.token = token
-        logger.info("Updated token")
+        logger.info("Updated GitHub token")
+    if gitlab_token != "":
+        config.gitlab_token = gitlab_token
+        logger.info("Updated GitLab token")
     if path != "":
         config.path = path
         logger.info(f"Updated path to {path}")
