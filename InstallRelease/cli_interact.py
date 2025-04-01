@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, Optional, cast
 from tempfile import TemporaryDirectory
 import platform
 
@@ -9,9 +9,7 @@ from rich.console import Console
 
 # locals
 from InstallRelease.state import State, platform_path
-from InstallRelease.data import GithubRelease, ToolConfig, irKey
-
-from InstallRelease.data import TypeState
+from InstallRelease.data import Release, ToolConfig, irKey, TypeState, ReleaseAssets
 
 from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import (
@@ -25,7 +23,13 @@ from InstallRelease.utils import (
     requests_session,
 )
 
-from InstallRelease.core import get_release, extract_release, install_bin, GithubInfo
+from InstallRelease.core import (
+    get_release,
+    extract_release,
+    install_bin,
+    get_repo_info,
+    RepoInfo,
+)
 
 
 console = Console(width=40)
@@ -44,7 +48,7 @@ else:
 
 cache = State(
     file_path=platform_path(paths=state_path, alt=__spath["state_path"]),
-    obj=GithubRelease,
+    obj=Release,
 )
 
 cache_config = State(
@@ -53,23 +57,28 @@ cache_config = State(
 )
 
 
-def load_config():
-    """
-    Load config from cache_config
-    """
-    config: ToolConfig = cache_config.state.get("config")
+def load_config() -> ToolConfig:
+    """Load config from cache_config
 
-    if config is not None:
+    Returns:
+        The loaded configuration object or a new one if not found
+    """
+    config = cache_config.state.get("config")
+
+    if config is not None and isinstance(config, ToolConfig):
         return config
     else:
-        cache_config.set("config", ToolConfig())
+        new_config = ToolConfig()
+        cache_config.set("config", new_config)
         cache_config.save()
-        return ToolConfig()
+        return new_config
 
 
 config: ToolConfig = load_config()
 
-dest = platform_path(paths=bin_path, alt=config.path)
+# Handle the path, ensuring it's a string
+config_path_str = str(config.path) if config.path is not None else ""
+dest = platform_path(paths=bin_path, alt=config_path_str)
 
 # ------- cli ----------
 
@@ -81,14 +90,20 @@ def state_info():
 
 
 def get(
-    repo: GithubInfo,
+    repo: RepoInfo,
     tag_name: str = "",
     local: bool = True,
     prompt: bool = False,
-    name: str = None,
-):
-    """
-    | Get a release from a github repository
+    name: Optional[str] = None,
+) -> None:
+    """Get a release from a GitHub/GitLab repository
+
+    Args:
+        repo: Repository information handler
+        tag_name: Specific tag to fetch, or empty for latest
+        local: Whether to install locally
+        prompt: Whether to prompt for confirmation
+        name: Optional name to give the installed tool
     """
     state_info()
 
@@ -100,56 +115,70 @@ def get(
     except Exception as e:
         logger.error(f"Error getting platform info: {e}")
 
-    releases = repo.release(tag_name=tag_name, pre_release=config.pre_release)
+    # Ensure pre_release is boolean
+    pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
+    releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
     if not len(releases) > 0:
         logger.error(f"No releases found: {repo.repo_url}")
         return
 
-    if is_none(name):
+    # Determine tool name from release info or provided name
+    if name is None:
         toolname = releases[0].name
     else:
         toolname = name
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    _gr = get_release(releases=releases, repo_url=repo.repo_url, extra_words=[toolname])
+    result = get_release(
+        releases=releases, repo_url=repo.repo_url, extra_words=[toolname]
+    )
 
-    logger.debug(_gr)
+    logger.debug(result)
 
-    if _gr is False:
+    # Handle the case where get_release returns False
+    if result is False:
+        logger.error("No suitable release assets found")
         return
-    else:
-        if prompt is not False:
-            pprint(
-                f"\n[green bold]📑 Repo     : {repo.info.full_name}"
-                f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
-                f"\n[magenta]🔮 Language : {repo.info.language}"
-                f"\n[yellow]🔥 Title    : {repo.info.description}"
-            )
-            show_table(
-                data=[
-                    {
-                        "Name": toolname,
-                        "Selected Item": _gr.name,
-                        "Version": releases[0].tag_name,
-                        "Size Mb": _gr.size_mb(),
-                        "Downloads": _gr.download_count,
-                    }
-                ],
-                title=f"🚀 Install: {toolname}",
-            )
-            pprint(f"[color(6)]\nPath: {dest}")
-            pprint("[color(34)]Install this tool (Y/n): ", end="")
-            yn = input()
-            if yn.lower() != "y":
-                return
-            else:
-                pprint("\n[magenta]Downloading...[/magenta]")
 
-        extract_release(item=_gr, at=at.name)
+    # At this point, result must be a ReleaseAssets object
+    # Using cast to tell mypy that we've already checked the type
+    asset = cast(ReleaseAssets, result)
 
-    releases[0].assets = [_gr]
+    if prompt is not False:
+        pprint(
+            f"\n[green bold]📑 Repo     : {repo.info.full_name}"
+            f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
+            f"\n[magenta]🔮 Language : {repo.info.language if repo.info.language else 'N/A'}"
+            f"\n[yellow]🔥 Title    : {repo.info.description}"
+        )
+        show_table(
+            data=[
+                {
+                    "Name": toolname,
+                    "Selected Item": asset.name,
+                    "Version": releases[0].tag_name,
+                    "Size Mb": asset.size_mb() if hasattr(asset, "size_mb") else "N/A",
+                    "Downloads": asset.download_count
+                    if hasattr(asset, "download_count")
+                    else "N/A",
+                }
+            ],
+            title=f"🚀 Install: {toolname}",
+        )
+        pprint(f"[color(6)]\nPath: {dest}")
+        pprint("[color(34)]Install this tool (Y/n): ", end="")
+        yn = input()
+        if yn.lower() != "y":
+            return
+        else:
+            pprint("\n[magenta]Downloading...[/magenta]")
+
+    extract_release(item=asset, at=at.name)
+
+    # Update the releases with the selected asset
+    releases[0].assets = [asset]
 
     # hold update if tag_name is not empty
     if tag_name != "":
@@ -169,28 +198,37 @@ def get(
     cache.save()
 
 
-def upgrade(force: bool = False, skip_prompt: bool = False):
-    """
-    | Upgrade all tools
+def upgrade(force: bool = False, skip_prompt: bool = False) -> None:
+    """Upgrade all installed tools
+
+    Args:
+        force: Whether to force upgrade even if not newer
+        skip_prompt: Whether to skip confirmation prompt
     """
     state_info()
 
     state: TypeState = cache.state
 
-    upgrades: Dict[str, GithubInfo] = {}
+    upgrades: Dict[str, RepoInfo] = {}
 
-    def task(k: str):
+    def task(k: str) -> None:
         i = irKey(k)
 
         try:
             if state[k].hold_update is True:
                 return
         except AttributeError:
-            ...
+            pass
 
-        repo = GithubInfo(i.url, token=config.token)
+        repo = get_repo_info(
+            i.url, token=config.token, gitlab_token=config.gitlab_token
+        )
         pprint(f"Fetching: {k}")
-        releases = repo.release(pre_release=config.pre_release)
+        # Ensure pre_release is boolean
+        pre_release = (
+            bool(config.pre_release) if hasattr(config, "pre_release") else False
+        )
+        releases = repo.release(pre_release=pre_release)
 
         if releases[0].published_dt() > state[k].published_dt() or force is True:
             upgrades[i.name] = repo
@@ -235,10 +273,16 @@ def show_state():
 
 
 def list_install(
-    state: TypeState = None, title: str = "Installed tools", hold_update=False
-):
-    """
-    | List all installed tools
+    state: Optional[TypeState] = None,
+    title: str = "Installed tools",
+    hold_update: bool = False,
+) -> None:
+    """List all installed tools
+
+    Args:
+        state: Optional state data to list, defaults to global state
+        title: Title to display for the list
+        hold_update: Whether to show only tools with updates on hold
     """
     if state is None:
         state_info()
@@ -280,23 +324,42 @@ def list_install(
 def remove(name: str):
     """
     | Remove any cli tool.
+
+    Args:
+        name: The name of the tool to remove
+
+    Returns:
+        None
     """
     state_info()
     state: TypeState = cache.state
     popKey = ""
 
+    # Find the tool in the state
     for key in state:
         i = irKey(key)
         if i.name == name:
             popKey = key
-            if os.path.exists(f"{dest}/{name}"):
-                os.remove(f"{dest}/{name}")
+            try:
+                # Remove the executable
+                tool_path = f"{dest}/{name}"
+                if os.path.exists(tool_path):
+                    os.remove(tool_path)
+                    logger.debug(f"Removed file: {tool_path}")
+            except OSError as e:
+                logger.error(f"Failed to remove file: {e}")
             break
 
-    if popKey != "":
-        del state[popKey]
-        cache.save()
-        logger.info(f"Removed: {name}")
+    # Remove from state if found
+    if popKey:
+        try:
+            del state[popKey]
+            cache.save()
+            logger.info(f"Removed: {name}")
+        except Exception as e:
+            logger.error(f"Failed to update state: {e}")
+    else:
+        logger.warning(f"Tool not found: {name}")
 
 
 def hold(name: str, hold_update: bool):
@@ -326,10 +389,10 @@ def pull_state(url: str = "", override: bool = False):
 
     r: dict = requests_session.get(url=url).json()
 
-    data: dict = {k: GithubRelease(**r[k]) for k in r}
+    data: dict = {k: Release(**r[k]) for k in r}
     state: TypeState = cache.state
 
-    temp: Dict[str, GithubRelease] = {}
+    temp: Dict[str, Release] = {}
 
     for key in data:
         try:
@@ -367,7 +430,7 @@ def pull_state(url: str = "", override: bool = False):
             logger.warning(f"Invalid input: {key}")
             continue
         get(
-            GithubInfo(i.url, token=config.token),
+            get_repo_info(i.url, token=config.token, gitlab_token=config.gitlab_token),
             tag_name=temp[key].tag_name,
             prompt=False,
             name=i.name,

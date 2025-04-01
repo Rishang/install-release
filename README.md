@@ -11,9 +11,9 @@
   </a>
 <p>
 
-**Install Release** is a CLI tool by name `ir` to install any single-binary executable package for your device(Linux/MacOS/WSL) directly from their GitHub releases and keep them updated. Consider it as a small package manager to install single binary tools from GitHub releases.
+**Install Release** is a CLI tool by name `ir` to install any single-binary executable package for your device(Linux/MacOS/WSL) directly from their GitHub or GitLab releases and keep them updated. Consider it as a small package manager to install single binary tools from GitHub/GitLab releases.
 
-This can be any tool you want to install, which is pre-compiled for your device and present on GitHub releases.
+This can be any tool you want to install, which is pre-compiled for your device and present on GitHub or GitLab releases.
 
 > INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman, brew` etc.
 
@@ -28,7 +28,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 - [Updating `install-release` 🔄](#updating-install-release-)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
     - [Install completion for cli 🎠](#install-completion-for-cli-)
-    - [Install tool from GitHub releases 🌈](#install-tool-from-github-releases-)
+    - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
     - [List installed tools 📋](#list-installed-tools-)
     - [Remove installed release ❌](#remove-installed-release-)
     - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-️)
@@ -36,7 +36,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
     - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
     - [Config tool installation path 🗂️](#config-tool-installation-path-️)
     - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
-    - [Configure GitHub token for higher rate limit 🔑](#configure-github-token-for-higher-rate-limit-)
+    - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
 
 ## Getting started ⚡
 
@@ -48,9 +48,15 @@ pip install -U install-release
 Example Installation a tool named [deno](https://github.com/denoland/deno)(A modern runtime for JavaScript and TypeScript) directly from its GitHub releases.
 
 ```bash
-# ir get [GITHUB-URL]
+# ir get [GITHUB-URL or GITLAB-URL]
 
+# Example install deno tool from github
 ❯ ir get https://github.com/denoland/deno
+
+# Or for GitLab repositories
+
+# Example install glab tool from gitlab
+❯ ir get https://gitlab.com/gitlab-org/cli -n glab
 ```
 
 ![demo](https://raw.githubusercontent.com/Rishang/install-release/main/.github/images/demo.png)
@@ -112,7 +118,7 @@ Usage: ir [OPTIONS] COMMAND [ARGS]...
   GitHub Release Installer, based on your system
 
   Commands:
-    get      | Install GitHub release, cli tool
+    get      | Install GitHub/GitLab release, cli tool
     ls       | list all installed releases, cli tools
     rm       | remove any installed release, cli tools
     upgrade  | Upgrade all installed releases, cli tools
@@ -135,7 +141,7 @@ Example: `ir get --help`
 ir --install-completion zsh
 ```
 
-#### Install tool from GitHub releases 🌈
+#### Install tool from GitHub/GitLab releases 🌈
 
 ```bash
 ❯ ir get "https://github.com/ahmetb/kubectx"
@@ -268,11 +274,20 @@ This is useful when you want to install pre-release versions of tools like beta 
 ❯ ir config --pre-release
 ```
 
-#### Configure GitHub token for higher rate limit 🔑
+#### Configure GitHub/GitLab tokens for higher rate limit 🔑
 
+For GitHub:
 ```bash
 ❯ ir config --token [your github token]
 
-INFO: Update token
+INFO: Updated GitHub token
+INFO: Done.
+```
+
+For GitLab:
+```bash
+❯ ir config --gitlab-token [your gitlab token]
+
+INFO: Updated GitLab token
 INFO: Done.
 ```

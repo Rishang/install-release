@@ -5,22 +5,34 @@ from typing import Dict
 import dataclasses
 
 # locals
-from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass, is_none
+from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass
 
 
-def platform_path(paths: dict, alt: str = ""):
-    """provide path base on platform"""
+def platform_path(paths: Dict[str, str], alt: str = "") -> str:
+    """Provide path based on platform
 
+    Args:
+        paths: Dictionary mapping platform names to paths
+        alt: Alternative path to use if provided
+
+    Returns:
+        The selected path for the current platform
+
+    Raises:
+        SystemExit: If no path is configured for the current platform
+    """
     system = platform.system().lower()
 
-    if not is_none(alt) and alt != "null":
+    if alt and alt != "null":
         return alt
 
-    elif paths.get(system):
-        p = paths.get(system)
+    elif system in paths:
+        p = paths[system]
 
-        if not os.path.exists(os.path.dirname(p)):
-            os.makedirs(os.path.dirname(p))
+        # Check and create directory if needed
+        dir_path = os.path.dirname(p)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path)
         return p
     else:
         logger.error(f"No state dir path set for {system}")
