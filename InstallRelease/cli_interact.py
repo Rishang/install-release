@@ -124,10 +124,10 @@ def get(
         return
 
     # Determine tool name from release info or provided name
-    if name is None:
-        toolname = releases[0].name
+    if is_none(name):
+        toolname = repo.repo_name.lower()
     else:
-        toolname = name
+        toolname = name.lower()
 
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
