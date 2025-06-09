@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
+from importlib.metadata import version, metadata, PackageNotFoundError
 
 # pipi
-import pkg_resources
 import requests
 from rich import print as pprint
 from rich.console import Console
@@ -89,9 +89,9 @@ class PackageVersion:
 
     def local_version(self):
         try:
-            version = pkg_resources.get_distribution(self.package_name).version
-            return version
-        except pkg_resources.DistributionNotFound:
+            _version = version(self.package_name)
+            return _version
+        except PackageNotFoundError:
             return None
 
     def latest_version(self):
