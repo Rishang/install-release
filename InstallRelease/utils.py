@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
-from importlib.metadata import version, metadata, PackageNotFoundError
+from importlib.metadata import version, PackageNotFoundError
 
 # pipi
 import requests
