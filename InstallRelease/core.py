@@ -14,7 +14,6 @@ from magic.compat import detect_from_filename
 # locals
 from InstallRelease.utils import (
     logger,
-    listItemsMatcher,
     extract,
     download,
     sh,
@@ -23,8 +22,8 @@ from InstallRelease.data import (
     Release,
     ReleaseAssets,
     RepositoryInfo,
-    _platform_words,
 )
+from InstallRelease.release_scorer import ReleaseScorer
 from InstallRelease.constants import HOME
 
 # --------------- CODE ------------------
@@ -637,60 +636,53 @@ def get_release(
     """
     # Initialize empty list if None
     extra_words = extra_words or []
-    selected = 0.0
-    name = ""
 
-    # temp fix: install not configured for distro based on platform
-    platform_words = _platform_words + ["(.tar|.zip)"]
+    # Create scorer with platform words and extra words
+    scorer = ReleaseScorer(extra_words=extra_words, debug=False)
 
-    logger.debug(msg=("platform_words: ", platform_words))
+    # Log scorer information
+    scorer_info = scorer.get_info()
+    logger.debug("=== USING NEW RELEASE SCORER ===")
+    logger.debug(f"platform_words: {scorer_info['all_patterns']}")
+    logger.debug(f"glibc_system: {scorer_info['is_glibc_system']}")
 
     if len(releases) == 0:
         logger.warning(f"No releases found for: {repo_url}")
         return False
 
+    # Find the first release with assets that is not a prerelease
+    target_release = None
     for release in releases:
-        if len(release.assets) == 0 or release.prerelease is True:
-            continue
-        else:
+        if len(release.assets) > 0 and not release.prerelease:
+            target_release = release
             break
 
-    if len(release.assets) == 0:
-        logger.warning(f"No release assets found for: {repo_url}")
+    if not target_release:
+        logger.warning("No suitable release found (non-prerelease with assets)")
         return False
 
-    _index: int = int()
-    for index, e in enumerate(release.assets):
-        match = listItemsMatcher(
-            patterns=platform_words + extra_words, word=e.name.lower()
-        )
-        logger.debug(f"name: '{e.name}', chances: {match}")
-
-        if match > 0:
-            if selected == 0:
-                selected = match
-                name = e.name
-                _index = index
-            elif match > selected:
-                selected = match
-                name = e.name
-                _index = index
-
-    if name == "":
-        logger.warn(f"No match release prefix match found for {repo_url}")
+    if not target_release.assets:
+        logger.warning("No release assets found")
         return False
 
-    item = release.assets[_index]
-    logger.debug(
-        "Selected file: \n"
-        f"File: '{item.name}', content_type: '{item.content_type}', chances: {selected}"
-    )
-    if selected < 0.2:
-        logger.warning(
-            f"Final Selected item has low probability"
-            f"Object: {item.name}, content_type: {item.content_type}, chances: {selected}"
-        )
-    return item
+    # Extract asset names and score them
+    asset_names = [asset.name for asset in target_release.assets]
+    best_name = scorer.select_best(asset_names)
+
+    if not best_name:
+        logger.warning(f"No matching release found for {repo_url}")
+        return False
+
+    # Find the asset with the best name
+    for asset in target_release.assets:
+        if asset.name == best_name:
+            logger.debug(
+                f"Selected file: \n"
+                f"File: '{asset.name}', content_type: '{asset.content_type}'"
+            )
+            return asset
+
+    return False
 
 
 def extract_release(item: ReleaseAssets, at: str) -> bool:

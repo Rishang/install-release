@@ -2,11 +2,6 @@ from datetime import datetime
 from typing import List, Dict, Optional
 from dataclasses import dataclass, fields, field
 
-# locals
-from InstallRelease.constants import platform_words
-
-_platform_words = platform_words()
-
 
 exception_compressed_mime_type = [
     "application/x-7z-compressed",

@@ -3,7 +3,7 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.4.9"
+version = "0.5.0"
 readme = "README.md"
 description = "Simple package manager to easily install, update and manage any command-line(CLI) tool directly from github releases"
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
@@ -19,7 +19,7 @@ python = ">=3.8,<4.0"
 rich = "*"
 requests = "*"
 python-magic = "^0.4.27"
-typer = ">=0.9.0,<0.14.0"
+typer = "^0.16.0"
 
 [tool.poetry.scripts]
 install-release = "InstallRelease.cli:app"
