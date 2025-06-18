@@ -16,12 +16,11 @@ class ReleaseScorer:
             extra_words: Additional words to match against
             debug: Whether to print debug information
         """
-        self.platform_words = self._platform_words()
-        self.extra_words = extra_words or []
-        self.debug = debug
-        self.is_glibc_system = self._detect_glibc()
         self.platform = platform.system().lower()
         self.architecture = platform.machine()
+        self.is_glibc_system = self._detect_glibc()
+        self.platform_words = self._platform_words()
+        self.extra_words = extra_words or []
 
         # Combine all patterns for matching
         self.all_patterns = self.platform_words + self.extra_words + ["(.tar|.zip)"]
@@ -49,19 +48,8 @@ class ReleaseScorer:
         except Exception:
             pass
 
-        try:
-            result = subprocess.run(
-                ["ldd", "--version"], capture_output=True, text=True
-            )
-            output = result.stdout + result.stderr
-            if "musl" in output:
-                words.append("musl")
-            elif "glibc" in output or "GNU libc" in output:
-                # Not adding glibc to the words list as this word is not much used in release names
-                pass
-
-        except Exception:
-            pass
+        if not self.is_glibc_system:
+            words.append("musl")
 
         return words
 
@@ -71,8 +59,8 @@ class ReleaseScorer:
             result = subprocess.run(
                 ["ldd", "--version"], capture_output=True, text=True
             )
-            output = result.stdout + result.stderr
-            return "glibc" in output or "GNU libc" in output
+            output = (result.stdout + result.stderr).lower()
+            return "glibc" in output or "gnu" in output
         except Exception:
             return False
 
