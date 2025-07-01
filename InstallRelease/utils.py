@@ -2,6 +2,9 @@ import os
 import re
 import sys
 import json
+import bz2
+import tarfile
+import gzip
 import shutil
 import logging
 import platform
@@ -246,9 +249,6 @@ def extract(path: str, at: str):
         elif file_info.mime_type == "application/x-bzip2" or path.endswith(
             (".bz2", ".tbz")
         ):
-            import bz2
-            import tarfile
-
             logger.debug(f"Extracting bzip2 file: {path}")
             if path.endswith(".bz2") and not path.endswith(".tar.bz2"):
                 # Single file compressed with bz2
@@ -260,6 +260,16 @@ def extract(path: str, at: str):
                 # Tar archive compressed with bz2
                 with tarfile.open(path, "r:bz2") as tar:
                     tar.extractall(path=at)
+
+        elif path.endswith(".gz") and not path.endswith((".tar.gz", ".tgz")):
+            # Single file compressed with gzip
+            logger.debug(f"Extracting gzip file: {path}")
+            with gzip.open(path, "rb") as f_in:
+                # Remove .gz extension for output filename
+                output_file = os.path.join(at, os.path.basename(path)[:-3])
+                with open(output_file, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                logger.debug(f"Extracted to: {output_file}")
         else:
             shutil.unpack_archive(path, at)
 

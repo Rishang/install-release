@@ -3,7 +3,7 @@ in-project = true
 
 [tool.poetry]
 name = "install-release"
-version = "0.5.1"
+version = "0.5.2"
 readme = "README.md"
 description = "Simple package manager to easily install, update and manage any command-line(CLI) tool directly from github releases"
 authors = ["Rishang <rishangbhavsarcs@gmail.com>"]
