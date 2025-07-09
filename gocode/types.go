@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -84,13 +85,35 @@ type IrKey struct {
 	URL  string
 }
 
-// ParseIrKey parses an ir key from a string
-func ParseIrKey(value string) *IrKey {
-	// Implementation would parse the key format
-	// This is a simplified version
+// NewIrKey creates a new IrKey from a repository URL and tool name
+func NewIrKey(url, name string) *IrKey {
 	return &IrKey{
-		Name: value, // Simplified parsing
-		URL:  value,
+		Name: name,
+		URL:  url,
+	}
+}
+
+// String returns the key in the format "url#name"
+func (k *IrKey) String() string {
+	return fmt.Sprintf("%s#%s", k.URL, k.Name)
+}
+
+// ParseIrKey parses an ir key from a string in format "url#name"
+func ParseIrKey(value string) *IrKey {
+	parts := strings.Split(value, "#")
+	if len(parts) < 2 {
+		// If no # found, treat the whole string as the name and URL as empty
+		return &IrKey{
+			Name: value,
+			URL:  "",
+		}
+	}
+
+	// Everything before the last # is the URL, everything after is the name
+	lastHash := strings.LastIndex(value, "#")
+	return &IrKey{
+		URL:  value[:lastHash],
+		Name: value[lastHash+1:],
 	}
 }
 

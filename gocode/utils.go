@@ -238,9 +238,69 @@ func IsExecutable(path string) bool {
 	return info.Mode().IsRegular() && (info.Mode()&0111) != 0
 }
 
+// IsBinaryExecutable checks if a file is a binary executable by reading its header
+func IsBinaryExecutable(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	// Read the first 16 bytes to check for executable signatures
+	header := make([]byte, 16)
+	n, err := file.Read(header)
+	if err != nil || n < 4 {
+		return false
+	}
+
+	// Check for common executable formats
+
+	// ELF (Linux/Unix) - starts with 0x7F, 'E', 'L', 'F'
+	if n >= 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F' {
+		return true
+	}
+
+	// PE (Windows) - starts with 'MZ'
+	if n >= 2 && header[0] == 'M' && header[1] == 'Z' {
+		return true
+	}
+
+	// Mach-O (macOS) - various magic numbers
+	if n >= 4 {
+		// Mach-O 32-bit: 0xFEEDFACE, 0xCEFAEDFE
+		// Mach-O 64-bit: 0xFEEDFACF, 0xCFFAEDFE
+		magic := uint32(header[0])<<24 | uint32(header[1])<<16 | uint32(header[2])<<8 | uint32(header[3])
+		if magic == 0xFEEDFACE || magic == 0xCEFAEDFE || magic == 0xFEEDFACF || magic == 0xCFFAEDFE {
+			return true
+		}
+	}
+
+	// Check if it starts with a shebang (#!/...) - this is a script, not a binary
+	if n >= 2 && header[0] == '#' && header[1] == '!' {
+		return false
+	}
+
+	// Check if it looks like text (all printable ASCII characters in first few bytes)
+	// This helps filter out shell scripts, completion scripts, etc.
+	for i := 0; i < n && i < 8; i++ {
+		if header[i] < 32 || header[i] > 126 {
+			// Contains non-printable characters, likely binary
+			// But we need to be more strict about what we consider binary executables
+			break
+		}
+		if i == 7 {
+			// First 8 bytes are all printable ASCII, likely a text file
+			return false
+		}
+	}
+
+	return false
+}
+
 // FindExecutable finds an executable file in a directory
 func FindExecutable(dir string) (string, error) {
 	// Use filepath.Walk to search recursively
+	var binaryExecutables []string
 	var executableFiles []string
 	var candidateFiles []string
 	var allFiles []string
@@ -275,7 +335,20 @@ func FindExecutable(dir string) (string, error) {
 			return nil
 		}
 
-		// Prioritize files that are already executable
+		// Skip completion scripts and common script directories
+		if strings.Contains(path, "completion/") ||
+			strings.Contains(path, "/completion/") ||
+			strings.HasPrefix(name, "_") { // zsh completion files often start with underscore
+			return nil
+		}
+
+		// First priority: Files that are binary executables
+		if IsBinaryExecutable(path) {
+			binaryExecutables = append(binaryExecutables, path)
+			return nil
+		}
+
+		// Second priority: Files that are executable (may be scripts)
 		if IsExecutable(path) {
 			executableFiles = append(executableFiles, path)
 			return nil
@@ -309,30 +382,45 @@ func FindExecutable(dir string) (string, error) {
 		return "", fmt.Errorf("error walking directory: %v", err)
 	}
 
-	// First, try executable files
-	if len(executableFiles) > 0 {
-		return executableFiles[0], nil
+	// First priority: Binary executables
+	if len(binaryExecutables) > 0 {
+		return binaryExecutables[0], nil
 	}
 
-	// Then try candidate files
-	if len(candidateFiles) > 0 {
-		// Make it executable just in case
-		if err := os.Chmod(candidateFiles[0], 0755); err != nil {
-			return "", fmt.Errorf("error setting executable permissions: %v", err)
+	// Second priority: Other executable files (scripts), but validate them first
+	for _, path := range executableFiles {
+		// Make sure it's not a completion script that somehow got through
+		name := filepath.Base(path)
+		if !strings.HasPrefix(name, "_") &&
+			!strings.Contains(path, "completion") &&
+			!strings.Contains(path, "bash_completion") {
+			return path, nil
 		}
-		return candidateFiles[0], nil
 	}
 
-	// If we still haven't found anything and there's only one file, it might be the binary
+	// Third priority: Candidate files (check if they are binaries)
+	for _, path := range candidateFiles {
+		if IsBinaryExecutable(path) {
+			// Make it executable just in case
+			if err := os.Chmod(path, 0755); err != nil {
+				return "", fmt.Errorf("error setting executable permissions: %v", err)
+			}
+			return path, nil
+		}
+	}
+
+	// Last resort: If we still haven't found anything and there's only one file, check if it's a binary
 	if len(allFiles) == 1 {
-		// Make it executable just in case
-		if err := os.Chmod(allFiles[0], 0755); err != nil {
-			return "", fmt.Errorf("error setting executable permissions: %v", err)
+		if IsBinaryExecutable(allFiles[0]) {
+			// Make it executable just in case
+			if err := os.Chmod(allFiles[0], 0755); err != nil {
+				return "", fmt.Errorf("error setting executable permissions: %v", err)
+			}
+			return allFiles[0], nil
 		}
-		return allFiles[0], nil
 	}
 
-	return "", fmt.Errorf("no executable found in directory")
+	return "", fmt.Errorf("no binary executable found in directory")
 }
 
 // CopyFile copies a file from src to dst

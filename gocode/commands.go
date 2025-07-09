@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -158,13 +159,11 @@ func getCmd() *cobra.Command {
 				return fmt.Errorf("error installing binary: %v", err)
 			}
 
-			// Save to state
+			// Save to state - matches Python pattern: cache[key] = release
+			// Only store the selected asset (like Python version)
+			releases[0].Assets = []ReleaseAssets{*asset}
 			state := NewStateManager()
-			if err := state.Load(); err != nil {
-				return fmt.Errorf("error loading state: %v", err)
-			}
-
-			state.Set(destName, releases[0])
+			state.SetByName(url, destName, releases[0])
 
 			return nil
 		},
@@ -202,104 +201,181 @@ func upgradeCmd() *cobra.Command {
 
 			items := state.Items()
 			if len(items) == 0 {
-				fmt.Println("No installed tools found")
+				PrintInfo("No installed tools found")
 				return nil
 			}
 
-			fmt.Printf("Found %d installed tools\n", len(items))
+			// Track upgrades available
+			type UpgradeInfo struct {
+				name           string
+				currentVersion string
+				newVersion     string
+				release        *Release
+				asset          *ReleaseAssets
+				repoURL        string
+				key            string
+			}
 
-			for name, release := range items {
+			var availableUpgrades []UpgradeInfo
+
+			// Check all tools for updates with concurrency control (max 5 concurrent)
+			const maxConcurrent = 5
+			semaphore := make(chan struct{}, maxConcurrent)
+			var wg sync.WaitGroup
+			var mu sync.Mutex
+
+			for key, release := range items {
+				// Extract tool name from key
+				var toolName string
+				if strings.Contains(key, "#") {
+					parts := strings.Split(key, "#")
+					toolName = parts[len(parts)-1]
+				} else {
+					toolName = key
+				}
+
 				if release.HoldUpdate {
-					fmt.Printf("Skipping %s (on hold)\n", name)
 					continue
 				}
 
-				fmt.Printf("Checking for updates: %s\n", name)
+				wg.Add(1)
+				go func(key string, release *Release, toolName string) {
+					defer wg.Done()
 
-				// Get repository info
-				repo, err := GetRepoInfo(release.URL, config.GetToken(), config.GetGitlabToken())
-				if err != nil {
-					fmt.Printf("Error getting repository info for %s: %v\n", name, err)
-					continue
+					// Acquire semaphore
+					semaphore <- struct{}{}
+					defer func() { <-semaphore }()
+
+					fmt.Printf("Fetching: %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("12")).Render(key))
+
+					// Get repository info
+					repo, err := GetRepoInfo(release.URL, config.GetToken(), config.GetGitlabToken())
+					if err != nil {
+						return
+					}
+
+					// Get latest release
+					releases, err := repo.Release("", config.GetPreRelease())
+					if err != nil {
+						return
+					}
+
+					if len(releases) == 0 {
+						return
+					}
+
+					latestRelease := releases[0]
+
+					// Check if update is available (compare versions or force)
+					if latestRelease.TagName != release.TagName || force {
+						// Find the best asset
+						asset, err := GetRelease(releases, release.URL, nil)
+						if err != nil {
+							return
+						}
+
+						// Thread-safe append to availableUpgrades
+						mu.Lock()
+						availableUpgrades = append(availableUpgrades, UpgradeInfo{
+							name:           toolName,
+							currentVersion: release.TagName,
+							newVersion:     latestRelease.TagName,
+							release:        latestRelease,
+							asset:          asset,
+							repoURL:        release.URL,
+							key:            key,
+						})
+						mu.Unlock()
+					}
+				}(key, release, toolName)
+			}
+
+			// Wait for all goroutines to complete
+			wg.Wait()
+
+			// Show available upgrades and ask for confirmation (like Python version)
+			if len(availableUpgrades) > 0 {
+				fmt.Printf("\nFollowing tool will get upgraded.\n\n")
+
+				// Show tool names in one line like Python version
+				toolNames := make([]string, len(availableUpgrades))
+				for i, upgrade := range availableUpgrades {
+					toolNames[i] = upgrade.name
 				}
+				toolNamesStr := strings.Join(toolNames, " ")
+				fmt.Printf("%s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Bold(true).Render(toolNamesStr))
 
-				// Get latest release
-				releases, err := repo.Release("", config.GetPreRelease())
-				if err != nil {
-					fmt.Printf("Error getting releases for %s: %v\n", name, err)
-					continue
-				}
-
-				if len(releases) == 0 {
-					fmt.Printf("No releases found for %s\n", name)
-					continue
-				}
-
-				latestRelease := releases[0]
-				if latestRelease.TagName == release.TagName {
-					fmt.Printf("%s is already up to date\n", name)
-					continue
-				}
-
-				fmt.Printf("Updating %s from %s to %s\n", name, release.TagName, latestRelease.TagName)
-
-				// Find the best asset
-				asset, err := GetRelease(releases, release.URL, nil)
-				if err != nil {
-					fmt.Printf("Error finding release for %s: %v\n", name, err)
-					continue
-				}
-
-				// Ask for confirmation
-				if !skipPrompt && !force {
-					fmt.Printf("Update %s to %s? (Y/n): ", name, latestRelease.TagName)
+				if !skipPrompt {
+					prompt := lipgloss.NewStyle().Foreground(lipgloss.Color("117")).Bold(true).Render("Upgrade these tools, (Y/n): ")
+					fmt.Printf("\n%s", prompt)
 					reader := bufio.NewReader(os.Stdin)
 					response, err := reader.ReadString('\n')
 					if err != nil {
-						fmt.Printf("Error reading input: %v\n", err)
-						continue
+						return fmt.Errorf("error reading input: %v", err)
 					}
 
 					response = strings.TrimSpace(strings.ToLower(response))
 					if response != "" && response != "y" && response != "yes" {
-						fmt.Printf("Skipping %s\n", name)
-						continue
+						fmt.Println("Upgrade cancelled")
+						return nil
 					}
 				}
 
-				// Create temporary directory for extraction
-				tempDir := filepath.Join(GetTempDir(), "install-release", "extract")
-				if err := Mkdir(tempDir); err != nil {
-					fmt.Printf("Error creating temp directory: %v\n", err)
-					continue
+				// Perform upgrades
+				for _, upgrade := range availableUpgrades {
+					fmt.Printf("Updating: %s, %s => %s\n", upgrade.name, upgrade.currentVersion, upgrade.newVersion)
+
+					// Show download progress
+					downloadMsg := fmt.Sprintf("ℹ️  Downloading: %s", upgrade.asset.Name)
+					fmt.Printf("%s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render(downloadMsg))
+
+					// Create temporary directory for extraction
+					tempDir := filepath.Join(GetTempDir(), "install-release", "extract", upgrade.name)
+					if err := Mkdir(tempDir); err != nil {
+						fmt.Printf("Error creating temp directory for %s: %v\n", upgrade.name, err)
+						continue
+					}
+					defer RemoveDir(tempDir)
+
+					// Extract the release
+					if err := ExtractRelease(upgrade.asset, tempDir); err != nil {
+						fmt.Printf("Error extracting release for %s: %v\n", upgrade.name, err)
+						continue
+					}
+
+					// Show download complete
+					downloadedMsg := fmt.Sprintf("✅ Downloaded: %s", upgrade.asset.Name)
+					fmt.Printf("%s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render(downloadedMsg))
+
+					// Show extraction progress
+					extractMsg := fmt.Sprintf("ℹ️  Extracting: %s", upgrade.asset.Name)
+					fmt.Printf("%s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render(extractMsg))
+
+					// Find the executable
+					executable, err := FindExecutable(tempDir)
+					if err != nil {
+						fmt.Printf("Error finding executable for %s: %v\n", upgrade.name, err)
+						continue
+					}
+
+					// Install the executable
+					installPath := config.GetPath()
+					destPath := filepath.Join(installPath, upgrade.name)
+					if err := InstallBin(executable, destPath, false, upgrade.name); err != nil {
+						fmt.Printf("Error installing binary for %s: %v\n", upgrade.name, err)
+						continue
+					}
+
+					// Update state - only store the selected asset (like Python version)
+					upgrade.release.Assets = []ReleaseAssets{*upgrade.asset}
+					state.SetItem(upgrade.key, upgrade.release)
+
+					// Show success message in bold blue
+					successMsg := fmt.Sprintf("Installed: %s", upgrade.name)
+					fmt.Printf("%s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("12")).Bold(true).Render(successMsg))
 				}
-				defer RemoveDir(tempDir)
-
-				// Extract the release
-				if err := ExtractRelease(asset, tempDir); err != nil {
-					fmt.Printf("Error extracting release for %s: %v\n", name, err)
-					continue
-				}
-
-				// Find the executable
-				executable, err := FindExecutable(tempDir)
-				if err != nil {
-					fmt.Printf("Error finding executable for %s: %v\n", name, err)
-					continue
-				}
-
-				// Install the executable
-				installPath := config.GetPath()
-				destPath := filepath.Join(installPath, name)
-				if err := InstallBin(executable, destPath, false, name); err != nil {
-					fmt.Printf("Error installing binary for %s: %v\n", name, err)
-					continue
-				}
-
-				// Update state
-				state.Set(name, latestRelease)
-
-				fmt.Printf("Updated %s to %s\n", name, latestRelease.TagName)
+			} else {
+				fmt.Printf("All tools are onto latest version\n")
 			}
 
 			return nil
@@ -407,21 +483,10 @@ func removeCmd() *cobra.Command {
 				return fmt.Errorf("error loading config: %v", err)
 			}
 
-			// Try direct match first
-			key := name
-			if !state.Has(key) {
-				// Try to find by tool name (after #)
-				found := false
-				for k := range state.Items() {
-					if idx := strings.LastIndex(k, "#"); idx != -1 && k[idx+1:] == name {
-						key = k
-						found = true
-						break
-					}
-				}
-				if !found {
-					return fmt.Errorf("tool %s not found", name)
-				}
+			// Try to find by tool name using the new methods
+			_, key, found := state.GetByName(name)
+			if !found {
+				return fmt.Errorf("tool %s not found", name)
 			}
 
 			// Remove the executable
@@ -434,7 +499,7 @@ func removeCmd() *cobra.Command {
 			}
 
 			// Remove from state
-			state.Delete(key)
+			state.DelItem(key)
 
 			PrintSuccess("Removed: " + name)
 			return nil
@@ -578,8 +643,8 @@ func holdCmd() *cobra.Command {
 				return fmt.Errorf("error loading state: %v", err)
 			}
 
-			// Check if tool exists
-			release, exists := state.Get(name)
+			// Check if tool exists using GetByName
+			release, _, exists := state.GetByName(name)
 			if !exists {
 				return fmt.Errorf("tool %s not found", name)
 			}
@@ -592,7 +657,9 @@ func holdCmd() *cobra.Command {
 				fmt.Printf("Held updates for %s\n", name)
 			}
 
-			state.Set(name, release)
+			// Update the release in state using the existing key
+			_, key, _ := state.GetByName(name)
+			state.SetItem(key, release)
 
 			return nil
 		},

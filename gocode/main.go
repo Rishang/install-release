@@ -7,10 +7,9 @@ import (
 )
 
 var (
-	debug   bool
-	quiet   bool
-	force   bool
-	approve bool
+	debug bool
+	quiet bool
+	force bool
 )
 
 func main() {
@@ -24,7 +23,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "v", false, "set verbose mode")
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "set quiet mode")
 	rootCmd.PersistentFlags().BoolVarP(&force, "force", "F", false, "set force")
-	rootCmd.PersistentFlags().BoolVarP(&approve, "approve", "y", false, "skip confirmation (y/n) prompt")
+	// Note: -y flag is command-specific, not global
 
 	// Add commands
 	rootCmd.AddCommand(getCmd())

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 var (
@@ -31,46 +32,63 @@ var Colors = map[string]string{
 	"purple":      "#8782E9 bold",
 }
 
-// StatePath returns the state file path for the current platform
-func StatePath() string {
+// Platform paths mapping - matches Python version structure
+var StatePaths = map[string]string{
+	"linux":  filepath.Join(HOME, ".config", StateAt),
+	"darwin": filepath.Join(HOME, "Library", ".config", StateAt),
+}
+
+var ConfigPaths = map[string]string{
+	"linux":  filepath.Join(HOME, ".config", ConfigAt),
+	"darwin": filepath.Join(HOME, "Library", ".config", ConfigAt),
+}
+
+var BinPaths = map[string]string{
+	"linux":  filepath.Join(HOME, BinAt),
+	"darwin": filepath.Join(HOME, BinAt),
+}
+
+// PlatformPath provides path based on platform - matches Python version logic
+func PlatformPath(paths map[string]string, alt string) string {
 	system := getSystem()
-	switch system {
-	case "linux":
-		return filepath.Join(HOME, ".config", StateAt)
-	case "darwin":
-		return filepath.Join(HOME, "Library", ".config", StateAt)
-	default:
+
+	if alt != "" && alt != "null" {
+		return alt
+	}
+
+	if path, exists := paths[system]; exists {
+		// Check and create directory if needed
+		dirPath := filepath.Dir(path)
+		if dirPath != "" {
+			if err := os.MkdirAll(dirPath, 0755); err != nil {
+				// Log error but don't exit - let the calling code handle it
+				return path
+			}
+		}
+		return path
+	} else {
+		// Return a default path instead of exiting
 		return filepath.Join(HOME, ".config", StateAt)
 	}
+}
+
+// StatePath returns the state file path for the current platform
+func StatePath() string {
+	return PlatformPath(StatePaths, "")
 }
 
 // ConfigPath returns the config file path for the current platform
 func ConfigPath() string {
-	system := getSystem()
-	switch system {
-	case "linux":
-		return filepath.Join(HOME, ".config", ConfigAt)
-	case "darwin":
-		return filepath.Join(HOME, "Library", ".config", ConfigAt)
-	default:
-		return filepath.Join(HOME, ".config", ConfigAt)
-	}
+	return PlatformPath(ConfigPaths, "")
 }
 
 // BinPath returns the binary installation path for the current platform
 func BinPath() string {
-	system := getSystem()
-	switch system {
-	case "linux":
-		return filepath.Join(HOME, BinAt)
-	case "darwin":
-		return filepath.Join(HOME, BinAt)
-	default:
-		return filepath.Join(HOME, BinAt)
-	}
+	return PlatformPath(BinPaths, "")
 }
 
 // getSystem returns the current operating system
 func getSystem() string {
-	return os.Getenv("GOOS")
+	// Use runtime.GOOS instead of env var for more reliable detection
+	return runtime.GOOS
 }
