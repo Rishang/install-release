@@ -12,10 +12,18 @@ import (
 // RepositoryError represents repository operation errors
 type RepositoryError struct {
 	Message string
+	Err     error
 }
 
 func (e RepositoryError) Error() string {
-	return e.Message
+	if e.Err != nil {
+		return fmt.Sprintf("repository error: %s: %v", e.Message, e.Err)
+	}
+	return fmt.Sprintf("repository error: %s", e.Message)
+}
+
+func (e RepositoryError) Unwrap() error {
+	return e.Err
 }
 
 // UnsupportedRepositoryError represents unsupported repository errors

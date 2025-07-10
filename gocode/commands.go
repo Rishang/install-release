@@ -79,7 +79,7 @@ func getCmd() *cobra.Command {
 			}
 
 			// Show information
-			fmt.Printf("📑 Repo     : %s\n", repoInfo.FullName)
+			fmt.Printf("\n📑 Repo     : %s\n", repoInfo.FullName)
 			fmt.Printf("🌟 Stars    : %d\n", repoInfo.StargazersCount)
 			fmt.Printf("✨ Language : %s\n", repoInfo.Language)
 			fmt.Printf("🔥 Title    : %s\n", repoInfo.Description)
