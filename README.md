@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://shields.io/">
-    <img src="https://img.shields.io/badge/Python-3.8_to_3.13-xx.svg" alt="Python Version" />
+    <img src="https://img.shields.io/badge/Python-3.9_to_3.13-xx.svg" alt="Python Version" />
   </a>
   <a href="https://pepy.tech/project/install-release">
     <img src="https://static.pepy.tech/personalized-badge/install-release?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads" alt="Downloads" />

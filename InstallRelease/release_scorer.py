@@ -4,6 +4,10 @@ import subprocess
 from typing import List, Optional, Tuple, Dict, Any
 from InstallRelease.utils import logger
 
+platform_arch_aliases = {
+    "x86_64": ["x86", "x64", "amd64", "amd", "x86_64"],
+    "aarch64": ["arm64", "aarch64", "arm"],
+}
 
 class ReleaseScorer:
     """Simple class to score release names based on platform compatibility"""
@@ -22,23 +26,43 @@ class ReleaseScorer:
         self.platform_words = self._platform_words()
         self.extra_words = extra_words or []
 
-        # Combine all patterns for matching
-        self.all_patterns = self.platform_words + self.extra_words + ["(.tar|.zip)"]
+        # Combine all patterns for matching with weights
+        self.pattern_weights = {}
+        self.all_patterns = []
+
+        # Platform words get highest weight (5x for OS, 3x for arch)
+        for word in self.platform_words:
+            self.all_patterns.append(word)
+            # Give OS platform higher weight than architecture
+            if word == self.platform:
+                self.pattern_weights[word] = 5.0  # OS gets highest priority
+            elif any(word in aliases for aliases in platform_arch_aliases.values()):
+                self.pattern_weights[word] = 3.0  # Architecture aliases get medium weight
+            elif word in ['64bit', '32bit'] or 'bit' in word:
+                self.pattern_weights[word] = 1.0  # Architecture bits get lower weight
+            else:
+                self.pattern_weights[word] = 2.0  # Other platform words
+
+        # Extra words get medium weight (2x)
+        for word in self.extra_words:
+            self.all_patterns.append(word)
+            self.pattern_weights[word] = 2.0
+
+        # Archive extensions get normal weight (1x)
+        archive_pattern = r"\.(tar|zip|gz|bz2|xz|7z|rar)"
+        self.all_patterns.append(archive_pattern)
+        self.pattern_weights[archive_pattern] = 1.0
 
         logger.debug(f"ReleaseScorer initialized with patterns: {self.all_patterns}")
+        logger.debug(f"Pattern weights: {self.pattern_weights}")
         logger.debug(f"Is glibc system: {self.is_glibc_system}")
 
     def _platform_words(self) -> list:
-        aliases = {
-            "x86_64": ["x86", "x64", "amd64", "amd", "x86_64"],
-            "aarch64": ["arm64", "aarch64", "arm"],
-        }
-
         words = [platform.system().lower(), platform.architecture()[0]]
 
-        for alias in aliases:
-            if platform.machine().lower() in aliases[alias]:
-                words += aliases[alias]
+        for alias in platform_arch_aliases:
+            if platform.machine().lower() in platform_arch_aliases[alias]:
+                words += platform_arch_aliases[alias]
 
         try:
             sys_alias = platform.platform().split("-")[0].lower()
@@ -65,25 +89,29 @@ class ReleaseScorer:
             return False
 
     def _calculate_pattern_match_score(self, release_name: str) -> float:
-        """Calculate base score based on pattern matching
+        """Calculate base score based on weighted pattern matching
 
         Args:
             release_name: Name of the release
 
         Returns:
-            Score between 0 and 1 based on pattern matches
+            Weighted score based on pattern matches
         """
-        count = 0
+        total_weight = 0.0
+        matched_weight = 0.0
         release_name_lower = release_name.lower()
 
         for pattern in self.all_patterns:
-            if re.search(pattern.lower(), release_name_lower):
-                count += 1
+            weight = self.pattern_weights.get(pattern, 1.0)
+            total_weight += weight
 
-        if count == 0:
+            if re.search(pattern.lower(), release_name_lower):
+                matched_weight += weight
+
+        if total_weight == 0:
             return 0.0
 
-        return count / len(self.all_patterns)
+        return matched_weight / total_weight
 
     def _apply_penalties_and_bonuses(self, score: float, release_name: str) -> float:
         """Apply penalties and bonuses to the base score
@@ -195,6 +223,7 @@ class ReleaseScorer:
             "platform_words": self.platform_words,
             "extra_words": self.extra_words,
             "all_patterns": self.all_patterns,
+            "pattern_weights": self.pattern_weights,
             "is_glibc_system": self.is_glibc_system,
             "platform": self.platform,
             "architecture": self.architecture,

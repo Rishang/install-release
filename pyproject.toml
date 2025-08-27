@@ -15,11 +15,12 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.9,<4.0"
 rich = "*"
 requests = "*"
 python-magic = "^0.4.27"
 typer = "^0.16.0"
+zstandard = "^0.24.0"
 
 [tool.poetry.scripts]
 install-release = "InstallRelease.cli:app"
