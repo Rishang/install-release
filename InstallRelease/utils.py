@@ -18,6 +18,7 @@ from importlib.metadata import version, PackageNotFoundError
 
 # pipi
 import requests
+import zstandard as zstd
 from rich import print as pprint
 from rich.console import Console
 from rich.logging import RichHandler
@@ -232,7 +233,7 @@ def download(url: str, at: str):
 
 
 def extract(path: str, at: str):
-    """Extract tar file"""
+    """Extract tar/archived files, including .pkg.tar.zst"""
 
     try:
         system = platform.system().lower()
@@ -244,8 +245,8 @@ def extract(path: str, at: str):
                 logger.debug("command: " + cmd)
                 sh(cmd)
             elif system == "windows":
-                # 'C:\Program Files\\7-zip\\7z.exe'
-                ...
+                # 'C:\\Program Files\\7-zip\\7z.exe'
+                pass
         elif file_info.mime_type == "application/x-bzip2" or path.endswith(
             (".bz2", ".tbz")
         ):
@@ -264,12 +265,24 @@ def extract(path: str, at: str):
         elif path.endswith(".gz") and not path.endswith((".tar.gz", ".tgz")):
             # Single file compressed with gzip
             logger.debug(f"Extracting gzip file: {path}")
+            # Single file compressed with gzip
             with gzip.open(path, "rb") as f_in:
                 # Remove .gz extension for output filename
                 output_file = os.path.join(at, os.path.basename(path)[:-3])
                 with open(output_file, "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
                 logger.debug(f"Extracted to: {output_file}")
+
+        elif path.endswith((".pkg.tar.zst", ".tar.zst")):
+            logger.debug(f"Extracting zstd tar file: {path}")
+            dctx = zstd.ZstdDecompressor()
+            with open(path, "rb") as compressed:
+                with dctx.stream_reader(compressed) as reader:
+                    # Wrap the stream in tarfile
+                    with tarfile.open(fileobj=reader, mode="r|") as tar:
+                        tar.extractall(path=at)
+            logger.debug(f"Extracted to: {at}")
+
         else:
             shutil.unpack_archive(path, at)
 
