@@ -27,7 +27,7 @@ install-release = "InstallRelease.cli:app"
 ir = "InstallRelease.cli:app"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.9.9"
+ruff = ">=0.9.9,<0.13.0"
 pytest = "^7.2"
 mypy = "*"
 black = "*"
