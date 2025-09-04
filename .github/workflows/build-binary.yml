@@ -1,0 +1,78 @@
+name: Build Binary Executable
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform to build"
+        required: true
+        default: "ubuntu-latest"
+        type: string
+        options: [ubuntu-latest, windows-latest, macos-latest]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            executable: install-release-linux
+            pkg_deps: patchelf
+            build_args: ""
+          - os: windows-latest
+            executable: install-release-windows.exe
+            pkg_deps: ""
+            build_args: "--windows-disable-console --assume-yes-for-downloads"
+          - os: macos-latest
+            executable: install-release-darwin
+            pkg_deps: patchelf
+            build_args: "--onefile-tempdir-spec=/tmp/nuitka-extract/install-release"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry==1.8.4
+          poetry install
+
+      - name: Install Nuitka
+        run: pip install nuitka
+
+      - name: Install dependencies
+        if: matrix.pkg_deps != ''
+        run: task pkg:install NAMES="${{ matrix.pkg_deps }}"
+
+      - name: Build CLI
+        run: task build:cli FILENAME=${{ matrix.executable }} ARGS="${{ matrix.build_args }}"
+      
+      - name: Patch executable for macos
+        if: matrix.os == 'macos-latest'
+        run: |
+          xattr -d com.apple.quarantine ./dist/${{ matrix.executable }} || echo "Failed to remove quarantine"
+
+      - name: Test executable
+        run: |
+          chmod +x ./dist/${{ matrix.executable }}
+          ./dist/${{ matrix.executable }} --help
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-release-${{ matrix.os }}
+          path: dist/${{ matrix.executable }}
