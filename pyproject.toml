@@ -28,7 +28,7 @@ ir = "InstallRelease.cli:app"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.9.9"
-pytest = "^7.2"
+pytest = ">=7.2,<9.0"
 mypy = "*"
 black = "*"
 types-requests = "*"
