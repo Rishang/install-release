@@ -20,7 +20,7 @@ rich = "*"
 requests = "*"
 python-magic = "^0.4.27"
 typer = "^0.16.0"
-zstandard = "^0.24.0"
+zstandard = ">=0.24,<0.26"
 
 [tool.poetry.scripts]
 install-release = "InstallRelease.cli:app"
