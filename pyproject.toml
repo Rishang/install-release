@@ -19,7 +19,7 @@ python = ">=3.9,<4.0"
 rich = "*"
 requests = "*"
 python-magic = "^0.4.27"
-typer = "^0.16.0"
+typer = ">=0.16,<0.20"
 zstandard = "^0.24.0"
 
 [tool.poetry.scripts]
