@@ -49,7 +49,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: uv sync --all-groups --dev
 
       - name: Install system dependencies
         if: matrix.pkg_deps != ''
