@@ -2,16 +2,16 @@ name: Build Binary Executable
 on:
   workflow_dispatch:
     inputs:
-      platform:
-        description: "Platform to build"
-        required: true
-        default: "ubuntu-latest"
+      upload_to_release:
+        description: "Upload to release (provide tag name, e.g., v1.0.0)"
+        required: false
         type: string
-        options: [ubuntu-latest, macos-latest]
+  release:
+    types: [published]
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -19,7 +19,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            executable: install-release-linux
+            executable: install-release-linux-x86_64
+            pkg_deps: patchelf
+            build_args: ""
+          - os: ubuntu-24.04-arm
+            executable: install-release-linux-aarch64
             pkg_deps: patchelf
             build_args: ""
           # - os: windows-latest
@@ -73,3 +77,22 @@ jobs:
         with:
           name: install-release-${{ matrix.os }}
           path: dist/${{ matrix.executable }}
+
+      - name: Get latest release tag
+        if: github.event_name == 'workflow_dispatch' && inputs.upload_to_release == ''
+        id: latest_release
+        run: |
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload GitHub Release Assets
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.upload_to_release || steps.latest_release.outputs.tag || github.ref_name }}
+          files: |
+            dist/${{ matrix.executable }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
