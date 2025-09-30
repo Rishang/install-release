@@ -28,7 +28,7 @@ jobs:
           #   build_args: "--windows-disable-console --assume-yes-for-downloads"
           - os: macos-latest
             executable: install-release-darwin
-            pkg_deps: patchelf
+            pkg_deps: patchelf libmagic
             build_args: "--onefile-tempdir-spec=/tmp/nuitka-extract/install-release"
     runs-on: ${{ matrix.os }}
     steps:
