@@ -7,7 +7,7 @@ on:
         required: true
         default: "ubuntu-latest"
         type: string
-        options: [ubuntu-latest, windows-latest, macos-latest]
+        options: [ubuntu-latest, macos-latest]
 
 permissions:
   id-token: write
@@ -22,10 +22,10 @@ jobs:
             executable: install-release-linux
             pkg_deps: patchelf
             build_args: ""
-          - os: windows-latest
-            executable: install-release-windows.exe
-            pkg_deps: ""
-            build_args: "--windows-disable-console --assume-yes-for-downloads"
+          # - os: windows-latest
+          #   executable: install-release-windows.exe
+          #   pkg_deps: ""
+          #   build_args: "--windows-disable-console --assume-yes-for-downloads"
           - os: macos-latest
             executable: install-release-darwin
             pkg_deps: patchelf
