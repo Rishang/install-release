@@ -55,11 +55,6 @@ jobs:
         if: matrix.pkg_deps != ''
         run: task pkg:install NAMES="${{ matrix.pkg_deps }}"
 
-      - name: Verify files
-        run: |
-          ls -la
-          ls -la cli/ || echo "cli directory not found"
-
       - name: Build CLI
         run: task build:cli FILENAME=${{ matrix.executable }} ARGS="${{ matrix.build_args }}"
       
