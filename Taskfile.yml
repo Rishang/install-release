@@ -1,0 +1,39 @@
+version: 3
+
+tasks:
+  pkg:install:
+    desc: Install dependencies with available package manager
+    requires:
+      vars: [NAMES]
+    vars:
+      MANAGERS: ["yum", "apt-get", "dnf", "apk", "brew", "pacman"]
+    cmds:
+      - |
+        for PM in {{range .MANAGERS}}{{.}} {{end}}; do
+          if command -v $PM >/dev/null 2>&1; then
+            echo "Using $PM to install {{.NAMES}}"
+            case $PM in
+              yum) sudo yum install -y {{.NAMES}} ;;
+              apt-get) sudo apt-get install -y {{.NAMES}} ;;
+              dnf) sudo dnf install -y {{.NAMES}} ;;
+              apk) sudo apk add {{.NAMES}} ;;
+              brew) brew install {{.NAMES}} ;;
+              pacman) sudo pacman -S {{.NAMES}} ;;
+            esac
+            exit 0
+          fi
+        done
+        echo "No supported package manager found" >&2
+        exit 1
+
+  build:cli:
+    dir: ./
+    desc: Build the CLI
+    vars:
+      FILENAME: '{{ .FILENAME | default "install-release" }}'
+      ARGS: '{{ .ARGS | default "" }}'
+    cmds:
+      - mkdir -p dist
+      - uv run python -m nuitka --standalone --onefile {{.ARGS}} --follow-imports cli/__main__.py --output-filename={{.FILENAME}}
+      - rm -rf __main__.build __main__.onefile-build
+      - mv {{.FILENAME}} dist/

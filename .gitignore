@@ -27,11 +27,13 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+# Nuitka
 #  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+#  before Nuitka builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+*.build
+*.onefile-build
 
 # Installer logs
 pip-log.txt
@@ -134,3 +136,4 @@ tmp-*
 tmp
 temp
 temp-*
+__main__.*
