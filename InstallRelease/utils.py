@@ -365,4 +365,4 @@ def show_table(
 
 def to_words(text: str) -> List[str]:
     text = text.lower().replace("_", "-").split("-")
-    return list(filter(None, text))
+    return [re.sub(r"\d", "", w) for w in text if re.sub(r"\d", "", w)]

@@ -2,7 +2,6 @@ import os
 from typing import Dict, Optional, cast
 from tempfile import TemporaryDirectory
 import platform
-import re
 
 # pipi
 from rich.progress import track
@@ -123,8 +122,7 @@ def get(
     extracted_words = None
     if not is_none(release_file):
         filename = release_file.rsplit(".", 1)[0]
-        words = to_words(filename.replace(".", "-"))
-        extracted_words = [w for w in words if not re.match(r"^v?\d+(\.\d+)*$", w)]
+        extracted_words = to_words(filename.replace(".", "-"))
 
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
