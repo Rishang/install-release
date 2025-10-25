@@ -295,16 +295,16 @@ INFO: Done.
 
 #### Configure custom release file 🖋️
 
-In few rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name from the GitHub or GitLab release page.
+In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name from the GitHub or GitLab release page.
 
 - The tool will parse the release file name into keywords (removing version numbers and file extensions), then store these keywords in the state file to match the release file name during future tool upgrades.
 
-Way to use:
+Usage:
 ```bash
 ❯ ir get [GITHUB-URL or GITLAB-URL] -r [release file]
 ```
 
-Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. here the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
+Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
 
 ```bash
 ❯ ir get https://github.com/ekzhang/bore -r bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
