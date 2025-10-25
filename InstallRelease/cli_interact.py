@@ -119,10 +119,10 @@ def get(
         logger.error(f"Error getting platform info: {e}")
 
     # Extract words from release filename if provided
-    extracted_words = None
+    custom_release_words = None
     if not is_none(release_file):
         filename = release_file.rsplit(".", 1)[0]
-        extracted_words = to_words(filename.replace(".", "-"))
+        custom_release_words = to_words(filename.replace(".", "-"))
 
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
@@ -135,7 +135,7 @@ def get(
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
     # Use extracted words or cached words or toolname
-    extra_words = extracted_words or [toolname]
+    extra_words = custom_release_words or [toolname]
     cached_release = cache.get(f"{repo.repo_url}#{toolname}")
 
     if (
@@ -146,7 +146,7 @@ def get(
         extra_words = cached_release.user_release_words
 
     is_user_pattern = False
-    if extracted_words or (
+    if custom_release_words or (
         cached_release and hasattr(cached_release, "user_release_words")
     ):
         is_user_pattern = True
@@ -210,8 +210,8 @@ def get(
         releases[0].hold_update = False
 
     # Store extracted or cached words
-    if extracted_words:
-        releases[0].user_release_words = extracted_words
+    if custom_release_words:
+        releases[0].user_release_words = custom_release_words
     elif cached_release and hasattr(cached_release, "user_release_words"):
         releases[0].user_release_words = cached_release.user_release_words
 
