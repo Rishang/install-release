@@ -37,7 +37,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
     - [Config tool installation path 🗂️](#config-tool-installation-path-️)
     - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
     - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
-    - [Configure custom release file 🖋️](#configure-custom-release-file-)
+    - [Configure custom release file 🔦](#configure-custom-release-file-)
 
 ## Getting started ⚡
 
@@ -293,7 +293,7 @@ INFO: Updated GitLab token
 INFO: Done.
 ```
 
-#### Configure custom release file 🖋️
+#### Configure custom release file 🔦
 
 In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name from the GitHub or GitLab release page.
 
