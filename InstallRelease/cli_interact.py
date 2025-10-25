@@ -122,7 +122,9 @@ def get(
     custom_release_words = None
     if not is_none(release_file):
         filename = release_file.rsplit(".", 1)[0]
-        custom_release_words = to_words(filename.replace(".", "-"))
+        custom_release_words = to_words(
+            filename.replace(".", "-"), ignore_words=["v", "unknown"]
+        )
 
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
@@ -151,11 +153,15 @@ def get(
     ):
         is_user_pattern = True
 
+    logger.debug(f"extra_words: {extra_words}")
+    logger.debug(f"is_user_pattern: {is_user_pattern}")
+    logger.debug(f"custom_release_words: {custom_release_words}")
+    logger.debug(f"cached_release: {cached_release}")
+
     result = get_release(
         releases=releases,
         repo_url=repo.repo_url,
         extra_words=extra_words,
-        user_pattern=is_user_pattern,
     )
 
     logger.debug(result)

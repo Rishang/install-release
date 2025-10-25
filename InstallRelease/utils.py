@@ -363,6 +363,12 @@ def show_table(
     console.print(table)
 
 
-def to_words(text: str) -> List[str]:
+def to_words(text: str, ignore_words: List[str] = []) -> List[str]:
     text = text.lower().replace("_", "-").split("-")
-    return [re.sub(r"\d", "", w) for w in text if re.sub(r"\d", "", w)]
+    words = []
+    for w in text:
+        if w not in ignore_words:
+            w = re.sub(r"\d", "", w)
+            if w != "":
+                words.append(w)
+    return words
