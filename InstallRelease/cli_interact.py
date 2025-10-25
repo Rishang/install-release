@@ -153,8 +153,6 @@ def get(
     ):
         is_user_pattern = True
 
-    logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"is_user_pattern: {is_user_pattern}")
     logger.debug(f"custom_release_words: {custom_release_words}")
     logger.debug(f"cached_release: {cached_release}")
 
@@ -162,6 +160,7 @@ def get(
         releases=releases,
         repo_url=repo.repo_url,
         extra_words=extra_words,
+        is_user_pattern=is_user_pattern,
     )
 
     logger.debug(result)

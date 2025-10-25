@@ -52,7 +52,10 @@ def setLogger(quite: Optional[bool] = None, debug: Optional[bool] = None) -> Non
 if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
-app = typer.Typer(help="GitHub/GitLab Release Installer, based on your system")
+app = typer.Typer(
+    help="GitHub/GitLab Release Installer, based on your system",
+    pretty_exceptions_enable=False,
+)
 
 
 @app.command()
