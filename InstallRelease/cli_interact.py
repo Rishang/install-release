@@ -121,7 +121,7 @@ def get(
 
     # Extract words from release filename if provided
     extracted_words = None
-    if release_file and "." in release_file and "-" in release_file:
+    if not is_none(release_file):
         filename = release_file.rsplit(".", 1)[0]
         words = to_words(filename.replace(".", "-"))
         extracted_words = [w for w in words if not re.match(r"^v?\d+(\.\d+)*$", w)]
