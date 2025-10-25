@@ -66,7 +66,7 @@ class Release:
     published_at: str
     assets: List[ReleaseAssets]
     hold_update: Optional[bool] = field(default=False)
-    user_release_words: Optional[List[str]] = field(default=None)
+    custom_release_words: Optional[List[str]] = field(default=None)
     # author: dict
     # draft: bool
     # target_commitish: str

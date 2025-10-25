@@ -143,13 +143,13 @@ def get(
     if (
         not extra_words
         and cached_release
-        and hasattr(cached_release, "user_release_words")
+        and hasattr(cached_release, "custom_release_words")
     ):
-        extra_words = cached_release.user_release_words
+        extra_words = cached_release.custom_release_words
 
     is_user_pattern = False
     if custom_release_words or (
-        cached_release and hasattr(cached_release, "user_release_words")
+        cached_release and hasattr(cached_release, "custom_release_words")
     ):
         is_user_pattern = True
 
@@ -216,9 +216,9 @@ def get(
 
     # Store extracted or cached words
     if custom_release_words:
-        releases[0].user_release_words = custom_release_words
-    elif cached_release and hasattr(cached_release, "user_release_words"):
-        releases[0].user_release_words = cached_release.user_release_words
+        releases[0].custom_release_words = custom_release_words
+    elif cached_release and hasattr(cached_release, "custom_release_words"):
+        releases[0].custom_release_words = cached_release.custom_release_words
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)
