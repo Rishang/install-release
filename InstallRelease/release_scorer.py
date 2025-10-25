@@ -9,6 +9,7 @@ platform_arch_aliases = {
     "aarch64": ["arm64", "aarch64", "arm"],
 }
 
+
 class ReleaseScorer:
     """Simple class to score release names based on platform compatibility"""
 
@@ -37,8 +38,10 @@ class ReleaseScorer:
             if word == self.platform:
                 self.pattern_weights[word] = 5.0  # OS gets highest priority
             elif any(word in aliases for aliases in platform_arch_aliases.values()):
-                self.pattern_weights[word] = 3.0  # Architecture aliases get medium weight
-            elif word in ['64bit', '32bit'] or 'bit' in word:
+                self.pattern_weights[word] = (
+                    3.0  # Architecture aliases get medium weight
+                )
+            elif word in ["64bit", "32bit"] or "bit" in word:
                 self.pattern_weights[word] = 1.0  # Architecture bits get lower weight
             else:
                 self.pattern_weights[word] = 2.0  # Other platform words

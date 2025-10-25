@@ -2,6 +2,7 @@ import os
 from typing import Dict, Optional, cast
 from tempfile import TemporaryDirectory
 import platform
+import re
 
 # pipi
 from rich.progress import track
@@ -21,6 +22,7 @@ from InstallRelease.utils import (
     threads,
     PackageVersion,
     requests_session,
+    to_words,
 )
 
 from InstallRelease.core import (
@@ -92,6 +94,7 @@ def state_info():
 def get(
     repo: RepoInfo,
     tag_name: str = "",
+    release_file: str = "",
     local: bool = True,
     prompt: bool = False,
     name: Optional[str] = None,
@@ -100,7 +103,8 @@ def get(
 
     Args:
         repo: Repository information handler
-        tag_name: Specific tag to fetch, or empty for latest
+        tag_name: Specific tag to fetch
+        release_file: Filename pattern to extract words from
         local: Whether to install locally
         prompt: Whether to prompt for confirmation
         name: Optional name to give the installed tool
@@ -115,24 +119,45 @@ def get(
     except Exception as e:
         logger.error(f"Error getting platform info: {e}")
 
-    # Ensure pre_release is boolean
+    # Extract words from release filename if provided
+    extracted_words = None
+    if release_file and "." in release_file and "-" in release_file:
+        filename = release_file.rsplit(".", 1)[0]
+        words = to_words(filename.replace(".", "-"))
+        extracted_words = [w for w in words if not re.match(r"^v?\d+(\.\d+)*$", w)]
+
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
-    if not len(releases) > 0:
+    if not releases:
         logger.error(f"No releases found: {repo.repo_url}")
         return
 
-    # Determine tool name from release info or provided name
-    if is_none(name):
-        toolname = repo.repo_name.lower()
-    else:
-        toolname = name.lower()
-
+    toolname = repo.repo_name.lower() if is_none(name) else name.lower()
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
+    # Use extracted words or cached words or toolname
+    extra_words = extracted_words or [toolname]
+    cached_release = cache.get(f"{repo.repo_url}#{toolname}")
+
+    if (
+        not extra_words
+        and cached_release
+        and hasattr(cached_release, "user_release_words")
+    ):
+        extra_words = cached_release.user_release_words
+
+    is_user_pattern = False
+    if extracted_words or (
+        cached_release and hasattr(cached_release, "user_release_words")
+    ):
+        is_user_pattern = True
+
     result = get_release(
-        releases=releases, repo_url=repo.repo_url, extra_words=[toolname]
+        releases=releases,
+        repo_url=repo.repo_url,
+        extra_words=extra_words,
+        user_pattern=is_user_pattern,
     )
 
     logger.debug(result)
@@ -180,9 +205,17 @@ def get(
     # Update the releases with the selected asset
     releases[0].assets = [asset]
 
-    # hold update if tag_name is not empty
-    if tag_name != "":
+    # Lock to specific version if tag was provided, unlock if release_file was used
+    if tag_name:
         releases[0].hold_update = True
+    else:
+        releases[0].hold_update = False
+
+    # Store extracted or cached words
+    if extracted_words:
+        releases[0].user_release_words = extracted_words
+    elif cached_release and hasattr(cached_release, "user_release_words"):
+        releases[0].user_release_words = cached_release.user_release_words
 
     mkdir(dest)
     install_bin(src=at.name, dest=dest, local=local, name=toolname)

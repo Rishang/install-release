@@ -61,6 +61,7 @@ def get(
     quite: bool = __optionQuite,
     url: str = typer.Argument(None, help="[URL] of GitHub/GitLab repository"),
     tag_name: str = typer.Option("", "-t", help="get a specific tag version."),
+    release_file: str = typer.Option("", "-r", help="get release by filename pattern."),
     name: str = typer.Option(
         "",
         "-n",
@@ -84,6 +85,7 @@ def get(
     _get(
         repo,
         tag_name=tag_name,
+        release_file=release_file,
         prompt=not approve,
         name=name,
     )

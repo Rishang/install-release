@@ -622,64 +622,72 @@ class InstallRelease:
 
 
 def get_release(
-    releases: List[Release], repo_url: str, extra_words: Optional[List[str]] = None
+    releases: List[Release],
+    repo_url: str,
+    extra_words: Optional[List[str]] = None,
+    user_pattern: bool = False,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
 
     Args:
         releases: List of releases to choose from
         repo_url: The repository URL
-        extra_words: Additional keywords to match against
+        extra_words: Keywords to match against
+        user_pattern: If True, match only assets containing all extra_words
 
     Returns:
         The best matching ReleaseAssets or False if no match found
     """
-    # Initialize empty list if None
     extra_words = extra_words or []
-
-    # Create scorer with platform words and extra words
-    scorer = ReleaseScorer(extra_words=extra_words, debug=False)
-
-    # Log scorer information
-    scorer_info = scorer.get_info()
-    logger.debug("=== USING NEW RELEASE SCORER ===")
-    logger.debug(f"platform_words: {scorer_info['all_patterns']}")
-    logger.debug(f"glibc_system: {scorer_info['is_glibc_system']}")
 
     if len(releases) == 0:
         logger.warning(f"No releases found for: {repo_url}")
         return False
 
-    # Find the first release with assets that is not a prerelease
     target_release = None
     for release in releases:
         if len(release.assets) > 0 and not release.prerelease:
             target_release = release
             break
 
-    if not target_release:
-        logger.warning("No suitable release found (non-prerelease with assets)")
+    if not target_release or not target_release.assets:
+        logger.warning("No suitable release found")
         return False
 
-    if not target_release.assets:
-        logger.warning("No release assets found")
+    if user_pattern and extra_words:
+        for asset in target_release.assets:
+            if all(word.lower() in asset.name.lower() for word in extra_words):
+                logger.debug(f"Selected: {asset.name}")
+                return asset
+        logger.warning(f"No asset found with words: {extra_words}")
         return False
 
-    # Extract asset names and score them
-    asset_names = [asset.name for asset in target_release.assets]
+    candidate_assets = target_release.assets
+
+    if extra_words:
+        filtered = [
+            a
+            for a in target_release.assets
+            if all(word.lower() in a.name.lower() for word in extra_words)
+        ]
+        if filtered:
+            candidate_assets = filtered
+
+    search_words = extra_words.copy()
+    if target_release.user_release_words:
+        search_words.extend(target_release.user_release_words)
+
+    scorer = ReleaseScorer(extra_words=search_words, debug=False)
+    asset_names = [asset.name for asset in candidate_assets]
     best_name = scorer.select_best(asset_names)
 
     if not best_name:
         logger.warning(f"No matching release found for {repo_url}")
         return False
 
-    # Find the asset with the best name
-    for asset in target_release.assets:
+    for asset in candidate_assets:
         if asset.name == best_name:
-            logger.debug(
-                f"Selected file: \n"
-                f"File: '{asset.name}', content_type: '{asset.content_type}'"
-            )
+            logger.debug(f"Selected: {asset.name}")
             return asset
 
     return False

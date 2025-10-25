@@ -361,3 +361,8 @@ def show_table(
 
     console = Console()
     console.print(table)
+
+
+def to_words(text: str) -> List[str]:
+    text = text.lower().replace("_", "-").split("-")
+    return list(filter(None, text))
