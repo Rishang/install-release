@@ -299,6 +299,8 @@ In rare cases where install-release does not automatically find the correct rele
 
 - The tool will parse the release file name into keywords (removing version numbers and file extensions), then store these keywords in the state file to match the release file name during future tool upgrades.
 
+> Note: Even though this fixes the issue where `install release` fails to identify correct release package for your system, It will be helpful if you raise Github Issue in this case to make this tool better over the time.
+
 Usage:
 ```bash
 ❯ ir get [GITHUB-URL or GITLAB-URL] -r [release file]
