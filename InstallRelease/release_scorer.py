@@ -9,22 +9,26 @@ platform_arch_aliases = {
     "aarch64": ["arm64", "aarch64", "arm"],
 }
 
+
 class ReleaseScorer:
     """Simple class to score release names based on platform compatibility"""
 
-    def __init__(self, extra_words: Optional[List[str]] = None, debug: bool = False):
+    def __init__(
+        self, extra_words: Optional[List[str]] = None, disable_penalties: bool = False
+    ):
         """Initialize the scorer with platform words and extra matching words
 
         Args:
             platform_words: List of platform-specific words to match
             extra_words: Additional words to match against
-            debug: Whether to print debug information
+            disable_penalties: Whether to disable penalties
         """
         self.platform = platform.system().lower()
         self.architecture = platform.machine()
         self.is_glibc_system = self._detect_glibc()
         self.platform_words = self._platform_words()
         self.extra_words = extra_words or []
+        self.disable_penalties = disable_penalties
 
         # Combine all patterns for matching with weights
         self.pattern_weights = {}
@@ -37,8 +41,10 @@ class ReleaseScorer:
             if word == self.platform:
                 self.pattern_weights[word] = 5.0  # OS gets highest priority
             elif any(word in aliases for aliases in platform_arch_aliases.values()):
-                self.pattern_weights[word] = 3.0  # Architecture aliases get medium weight
-            elif word in ['64bit', '32bit'] or 'bit' in word:
+                self.pattern_weights[word] = (
+                    3.0  # Architecture aliases get medium weight
+                )
+            elif word in ["64bit", "32bit"] or "bit" in word:
                 self.pattern_weights[word] = 1.0  # Architecture bits get lower weight
             else:
                 self.pattern_weights[word] = 2.0  # Other platform words
@@ -161,7 +167,10 @@ class ReleaseScorer:
             Score between 0 and 1, higher is better
         """
         base_score = self._calculate_pattern_match_score(release_name)
-        final_score = self._apply_penalties_and_bonuses(base_score, release_name)
+        if not self.disable_penalties and self.extra_words != []:
+            final_score = self._apply_penalties_and_bonuses(base_score, release_name)
+        else:
+            final_score = base_score
 
         logger.debug(
             f"name: '{release_name}', base_score: {base_score}, final_score: {final_score}"

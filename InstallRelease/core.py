@@ -622,7 +622,10 @@ class InstallRelease:
 
 
 def get_release(
-    releases: List[Release], repo_url: str, extra_words: Optional[List[str]] = None
+    releases: List[Release],
+    repo_url: str,
+    extra_words: Optional[List[str]] = None,
+    is_user_pattern: bool = False,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
 
@@ -630,15 +633,17 @@ def get_release(
         releases: List of releases to choose from
         repo_url: The repository URL
         extra_words: Additional keywords to match against
-
+        is_user_pattern: Whether to use user pattern mode
     Returns:
         The best matching ReleaseAssets or False if no match found
     """
     # Initialize empty list if None
     extra_words = extra_words or []
+    logger.debug(f"extra_words: {extra_words}")
+    logger.debug(f"is_user_pattern: {is_user_pattern}")
 
     # Create scorer with platform words and extra words
-    scorer = ReleaseScorer(extra_words=extra_words, debug=False)
+    scorer = ReleaseScorer(extra_words=extra_words, disable_penalties=is_user_pattern)
 
     # Log scorer information
     scorer_info = scorer.get_info()
