@@ -277,7 +277,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 
 #### Configure GitHub/GitLab tokens for higher rate limit 🔑
 
-For GitHub:
+> For GitHub:
 ```bash
 ❯ ir config --token [your github token]
 
@@ -285,7 +285,7 @@ INFO: Updated GitHub token
 INFO: Done.
 ```
 
-For GitLab:
+> For GitLab:
 ```bash
 ❯ ir config --gitlab-token [your gitlab token]
 
