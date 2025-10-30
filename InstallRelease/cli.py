@@ -53,7 +53,7 @@ if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
 app = typer.Typer(
-    help="GitHub/GitLab Release Installer, based on your system",
+    help="GitHub / GitLab release installer based on your system (Linux/MacOS). Repo: https://github.com/Rishang/install-release",
     pretty_exceptions_enable=False,
 )
 
@@ -73,7 +73,7 @@ def get(
     approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
 ):
     """
-    | Install GitHub/GitLab release, cli tool
+    | Install GitHub/GitLab repository CLI tool from its releases
     """
 
     setLogger(quite, debug)
@@ -102,7 +102,7 @@ def upgrade(
     skip_prompt: bool = __optionSkipPrompt,
 ):
     """
-    | Upgrade all installed release, cli tools
+    | Upgrade all installed CLI tools from their repositories
     """
     setLogger(quite, debug)
     local_version = install_release_version.local_version()
@@ -126,7 +126,7 @@ def ls(
     ),
 ):
     """
-    | List all installed releases, cli tools
+    | List all installed CLI tools
     """
     list_install(hold_update=hold)
 
@@ -137,7 +137,7 @@ def rm(
     debug: bool = __optionDebug,
 ):
     """
-    | Remove any installed releases, cli tools
+    | Remove any installed CLI tool
     """
     setLogger(debug=debug)
 
@@ -167,7 +167,7 @@ def _config(
     ),
 ):
     """
-    | Set configs for tool
+    | Set configs for Install-Release
     """
 
     setLogger(debug=debug)
@@ -193,7 +193,7 @@ def _config(
 @app.command()
 def state(debug: bool = __optionDebug):
     """
-    | Show the current stored state
+    | Show the current stored state of Install-Release
     """
     setLogger(debug=debug)
     show_state()
@@ -205,16 +205,16 @@ def pull(
     url: str = typer.Option(
         "",
         "--url",
-        help="install tools from the remote state",
+        help="Install tools from the remote state URL",
     ),
     override: bool = typer.Option(
         False,
         "-O",
-        help="Enable Override local tool version with remote state version.",
+        help="Enable Override local tool version with remote install-release state version.",
     ),
 ):
     """
-    | Install tools from the remote state
+    | Install tools from the remote install-release state URL
     """
     setLogger(debug=debug)
 
@@ -227,12 +227,12 @@ def pull(
 @app.command(name="hold")
 def _hold(
     name: str = typer.Argument(
-        None, help="Name of tool for which updates will be kept on hold"
+        None, help="Name of CLI tool for which updates will be kept on hold"
     ),
     unset: bool = typer.Option(True, "--unset", help="unset from hold."),
 ):
     """
-    | Keep updates a tool on hold.
+    | Keep updates an installed CLI tool on hold.
     """
     hold(name, hold_update=unset)
 
@@ -240,14 +240,14 @@ def _hold(
 @app.command(name="me")
 def me(
     update: bool = typer.Option(
-        False, "--upgrade", "-U", help="Update tool, install-release."
+        False, "--upgrade", "-U", help="Update Install-Release tool."
     ),
     version: bool = typer.Option(
-        False, "--version", help="print version this tool, install-release."
+        False, "--version", help="print version of Install-Release tool."
     ),
 ):
     """
-    | Update install-release tool.
+    | Update Install-Release tool.
     """
 
     _v = install_release_version._local_version

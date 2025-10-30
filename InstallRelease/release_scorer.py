@@ -2,7 +2,7 @@ import re
 import platform
 import subprocess
 from typing import List, Optional, Tuple, Dict, Any
-from InstallRelease.utils import logger
+from InstallRelease.utils import logger, to_words
 
 platform_arch_aliases = {
     "x86_64": ["x86", "x64", "amd64", "amd", "x86_64"],
@@ -131,6 +131,16 @@ class ReleaseScorer:
         """
         adjusted_score = score
         release_name_lower = release_name.lower()
+        penalty_words = [
+            "debug",
+            "dbg",
+            ".json",
+            ".txt",
+            ".yaml",
+            ".yml",
+            ".md",
+            ".jsonl",
+        ]
 
         # Apply penalty for musl releases on glibc systems
         if self.is_glibc_system and "musl" in release_name_lower:
@@ -149,8 +159,8 @@ class ReleaseScorer:
                 f"Applied glibc bonus to '{release_name}': {score} -> {adjusted_score}"
             )
 
-        # Apply penalty for debug releases
-        if any(word in release_name_lower for word in ["debug", "dbg"]):
+        # Apply penalty for debug releases or unwanted words
+        if any(word in release_name_lower for word in penalty_words):
             adjusted_score *= 0.8  # 20% penalty
 
             logger.debug(f"Applied debug penalty to '{release_name}': {adjusted_score}")
@@ -205,6 +215,7 @@ class ReleaseScorer:
             return None
 
         scored = self.score_multiple(release_names)
+        logger.debug(f"Scored: {scored}")
 
         # Filter out releases with zero score
         valid_scores = [item for item in scored if item[1] > 0]
@@ -213,6 +224,17 @@ class ReleaseScorer:
             return None
 
         best_name, best_score = valid_scores[0]
+
+        # If penalties are disabled, check if the best match has the same number of words as the extra words
+        # extra words will be the user manual input of release file name pattern
+        if self.disable_penalties:
+            for name, score in valid_scores:
+                words = to_words(name)
+                if len(words) == len(self.extra_words):
+                    logger.debug("Overwritten best name and score")
+                    best_name = name
+                    best_score = score
+                    break
 
         logger.debug(f"Selected: '{best_name}' with score: {best_score}")
         if best_score < min_score:
