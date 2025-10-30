@@ -56,7 +56,7 @@ Example Installation a tool named [deno](https://github.com/denoland/deno)(A mod
 
 # Or for GitLab repositories
 
-# Example install glab tool from gitlab
+# Example: Install gitlab cli tool from gitlab as binary name `glab`
 ❯ ir get https://gitlab.com/gitlab-org/cli -n glab
 ```
 
