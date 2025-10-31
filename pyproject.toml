@@ -44,6 +44,7 @@ Changelog = "https://github.com/Rishang/install-release/release"
 dev = [
   "mypy>=1.17.1",
   "nuitka>=2.7.13",
+  "pre-commit>=4.3.0",
   "ruff>=0.12.12",
   "setuptools",
   "types-requests>=2.32.4.20250809",
