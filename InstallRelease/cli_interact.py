@@ -148,9 +148,7 @@ def get(
         extra_words = cached_release.custom_release_words
 
     is_user_pattern = False
-    if custom_release_words or (
-        cached_release and hasattr(cached_release, "custom_release_words")
-    ):
+    if custom_release_words:
         is_user_pattern = True
 
     logger.debug(f"custom_release_words: {custom_release_words}")
