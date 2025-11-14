@@ -7,3 +7,8 @@ repos:
     - id: ruff-check
     # Run the formatter.
     - id: ruff-format
+
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: v0.24.1
+  hooks:
+    - id: validate-pyproject
