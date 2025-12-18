@@ -28,7 +28,7 @@ from InstallRelease.constants import HOME
 
 # --------------- CODE ------------------
 
-__exec_pattern = r"application\/x-(\w+-)?(executable|binary)"
+__exec_pattern = r"application\/(x-(\w+-)?(executable|binary)|javascript)"
 
 
 class RepositoryError(Exception):
