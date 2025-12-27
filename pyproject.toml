@@ -1,6 +1,6 @@
 [project]
 name = "install-release"
-version = "0.5.8"
+version = "0.5.9"
 readme = "README.md"
 description = "Simple package manager to easily install, update and manage any command-line(CLI) tool directly from github releases"
 authors = [
