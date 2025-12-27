@@ -238,6 +238,9 @@ def extract(path: str, at: str):
     try:
         system = platform.system().lower()
         file_info = detect_from_filename(path)
+        logger.debug(file_info)
+        if file_info.mime_type == "application/javascript":
+            return True
 
         if file_info.mime_type == "application/x-7z-compressed":
             if system in ["linux"]:
