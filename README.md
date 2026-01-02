@@ -17,6 +17,10 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 > INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman, brew` etc.
 
+<p align="center">
+  <img src=".github/images/flow.png" alt="How it works" width="800">
+</p>
+
 <!-- Table of content -->
 
 ## Table of Contents 📚
