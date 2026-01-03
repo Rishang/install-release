@@ -194,13 +194,13 @@ In rare cases where install-release does not automatically find the correct rele
 Usage:
 
 ```bash
-❯ ir get [GITHUB-URL or GITLAB-URL] -r [release file]
+❯ ir get [GITHUB-URL or GITLAB-URL] -a [release asset filename]
 ```
 
 Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
 
 ```bash
-❯ ir get https://github.com/ekzhang/bore -r bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
+❯ ir get https://github.com/ekzhang/bore -a bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
 ```
 
 #### List installed tools 📋
