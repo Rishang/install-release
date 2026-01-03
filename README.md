@@ -27,18 +27,18 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 - [Table of Contents 📚](#table-of-contents-)
 - [Getting started ⚡](#getting-started-)
+    - [Manage your tools 🛠️](#manage-your-tools-)
 - [Prerequisites 📋](#prerequisites-)
-- [Install `install-release` package 📦](#install-install-release-package-)
 - [Updating `install-release` 🔄](#updating-install-release-)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
     - [Install completion for cli 🎠](#install-completion-for-cli-)
     - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
     - [List installed tools 📋](#list-installed-tools-)
     - [Remove installed release ❌](#remove-installed-release-)
-    - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-️)
+    - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
     - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
     - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
-    - [Config tool installation path 🗂️](#config-tool-installation-path-️)
+    - [Config tool installation path 🗂️](#config-tool-installation-path-)
     - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
     - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
     - [Configure custom release file 🔦](#configure-custom-release-file-)
@@ -50,52 +50,59 @@ This can be any tool you want to install, which is pre-compiled for your device 
 pip install -U install-release
 ```
 
-Example Installation a tool named [deno](https://github.com/denoland/deno)(A modern runtime for JavaScript and TypeScript) directly from its GitHub releases.
+Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
 ```bash
-# ir get [GITHUB-URL or GITLAB-URL]
-
-# Example install deno tool from github
+# Usage: ir get [GITHUB-URL or GITLAB-URL]
 ❯ ir get https://github.com/denoland/deno
-
-# Or for GitLab repositories
-
-# Example: Install gitlab cli tool from gitlab as binary name `glab`
-❯ ir get https://gitlab.com/gitlab-org/cli -n glab
 ```
 
-![demo](https://raw.githubusercontent.com/Rishang/install-release/main/.github/images/demo.png)
+Verify the installation:
 
-Checking for deno is installed by `install-release`:
-
-```
+```bash
 ❯ which deno
 ~/bin/deno
 
 ❯ deno --version
-deno 1.46.3 (stable, release, x86_64-unknown-linux-gnu)
-v8 12.9.202.5-rusty
-typescript 5.5.2
+deno 1.46.3 ...
 ```
+
+Example: Installing [GitLab CLI](https://gitlab.com/gitlab-org/cli) with a custom binary name `glab`
+
+```bash
+❯ ir get https://gitlab.com/gitlab-org/cli -n glab
+```
+
+Verify the installation:
+
+```bash
+❯ which glab
+~/bin/glab
+
+❯ glab --version
+glab 1.80.0 ...
+```
+
+### Manage your tools 🛠️
+
+Once installed, you can manage your tools with these simple commands:
+
+- **List**: `ir ls` — See all installed tools and versions.
+- **Update**: `ir upgrade` — Upgrade all installed tools to their latest releases.
+- **Remove**: `ir rm deno` — Remove a tool from your system.
+
+For more details, check the [Table of Contents](#table-of-contents-).
+
 
 ## Prerequisites 📋
 
 - python3.8 or higher
-
 - [libmagic](https://github.com/ahupp/python-magic#installation)
-- Default releases Installation Path is: `~/bin/`,
-  This is the path where installed tools will get stored.
-
-- In order to run installed tools, you need to add the following line to your `~/.bashrc` or `~/.zshrc` file:
+- Default installation path: `~/bin/` (Ensure this is in your `PATH`)
 
 ```bash
+# Add this to your ~/.bashrc or ~/.zshrc
 export PATH=$HOME/bin:$PATH
-```
-
-## Install `install-release` package 📦
-
-```bash
-pip install -U install-release
 ```
 
 ## Updating `install-release` 🔄
