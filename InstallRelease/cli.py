@@ -24,16 +24,16 @@ from InstallRelease.core import get_repo_info
 
 def see_help(arg: str = ""):
     pprint(
-        f"This command required arguments, use [yellow]{arg} --help[reset] to see them"
+        f"This command requires arguments, use [yellow]{arg} --help[reset] to see them"
     )
     exit(1)
 
 
 # cli debug type alias
-__optionDebug = typer.Option(False, "-v", help="set verbose mode.")
-__optionQuite = typer.Option(False, "-q", help="set quite mode.")
-__optionForce = typer.Option(False, "-F", help="set force.")
-__optionSkipPrompt = typer.Option(False, "-y", help="skip confirmation (y/n) prompt.")
+__optionDebug = typer.Option(False, "-v", help="Enable verbose mode.")
+__optionQuite = typer.Option(False, "-q", help="Enable quiet mode.")
+__optionForce = typer.Option(False, "-F", help="Enable force mode.")
+__optionSkipPrompt = typer.Option(False, "-y", help="Skip confirmation (y/n) prompt.")
 
 
 def setLogger(quite: Optional[bool] = None, debug: Optional[bool] = None) -> None:
@@ -63,16 +63,16 @@ def get(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
     url: str = typer.Argument(None, help="[URL] of GitHub/GitLab repository"),
-    tag_name: str = typer.Option("", "-t", help="select specific release version."),
+    tag_name: str = typer.Option("", "-t", help="Select a specific release version."),
     asset_file: str = typer.Option(
-        "", "-a", help="select specific release asset filename."
+        "", "-a", help="Select a specific release asset filename."
     ),
     name: str = typer.Option(
         "",
         "-n",
-        help="tool name you want, Only for releases having different tools in releases",
+        help="Custom name to save the tool as.",
     ),
-    approve: bool = typer.Option(False, "-y", help="Approve without Prompt"),
+    approve: bool = typer.Option(False, "-y", help="Approve without prompt."),
 ):
     """
     | Install GitHub/GitLab repository CLI tool from its releases
@@ -124,7 +124,7 @@ def ls(
     hold: bool = typer.Option(
         False,
         "--hold",
-        help="list of tools which are kept on hold",
+        help="List tools that are kept on hold.",
     ),
 ):
     """
@@ -152,20 +152,20 @@ def _config(
     token: str = typer.Option(
         "",
         "--token",
-        help="set your GitHub token to solve API rate-limiting issue",
+        help="Set your GitHub token to solve API rate-limiting issues.",
     ),
     gitlab_token: str = typer.Option(
         "",
         "--gitlab-token",
-        help="set your GitLab token to solve API rate-limiting issue",
+        help="Set your GitLab token to solve API rate-limiting issues.",
     ),
     path: str = typer.Option(
         "",
         "--path",
-        help="set install path",
+        help="Set install path.",
     ),
     pre_release: bool = typer.Option(
-        False, "--pre-release", help="Also include pre-releases while checking updates."
+        False, "--pre-release", help="Include pre-releases when checking for updates."
     ),
 ):
     """
@@ -207,12 +207,12 @@ def pull(
     url: str = typer.Option(
         "",
         "--url",
-        help="Install tools from the remote state URL",
+        help="Install tools from a remote state URL.",
     ),
     override: bool = typer.Option(
         False,
         "-O",
-        help="Enable Override local tool version with remote install-release state version.",
+        help="Override local tool version with remote install-release state version.",
     ),
 ):
     """
@@ -229,12 +229,12 @@ def pull(
 @app.command(name="hold")
 def _hold(
     name: str = typer.Argument(
-        None, help="Name of CLI tool for which updates will be kept on hold"
+        None, help="Name of CLI tool for which updates will be kept on hold."
     ),
-    unset: bool = typer.Option(True, "--unset", help="unset from hold."),
+    unset: bool = typer.Option(True, "--unset", help="Remove from hold."),
 ):
     """
-    | Keep updates an installed CLI tool on hold.
+    | Keep an installed CLI tool's updates on hold.
     """
     hold(name, hold_update=unset)
 
@@ -242,14 +242,14 @@ def _hold(
 @app.command(name="me")
 def me(
     update: bool = typer.Option(
-        False, "--upgrade", "-U", help="Update Install-Release tool."
+        False, "--upgrade", "-U", help="Update the Install-Release tool."
     ),
     version: bool = typer.Option(
-        False, "--version", help="print version of Install-Release tool."
+        False, "--version", help="Print version of the Install-Release tool."
     ),
 ):
     """
-    | Update Install-Release tool.
+    | Update the Install-Release tool.
     """
 
     _v = install_release_version._local_version
