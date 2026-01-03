@@ -67,7 +67,7 @@ Verify the installation:
 deno 1.46.3 ...
 ```
 
-Example: Installing [GitLab CLI](https://gitlab.com/gitlab-org/cli) with a custom binary name `glab`
+Example: Installing [GitLab CLI](https://gitlab.com/gitlab-org/cli) with a custom binary name `glab`:
 
 ```bash
 ❯ ir get https://gitlab.com/gitlab-org/cli -n glab
@@ -126,18 +126,18 @@ ir me --upgrade
 ❯ ir --help
 Usage: ir [OPTIONS] COMMAND [ARGS]...
 
-  GitHub Release Installer, based on your system
+  GitHub / GitLab release installer based on your system (Linux/MacOS)
 
   Commands:
-    get      | Install GitHub/GitLab release, cli tool
-    ls       | list all installed releases, cli tools
-    rm       | remove any installed release, cli tools
-    upgrade  | Upgrade all installed releases, cli tools
-    state    | show currently stored state
-    config   | Set configs for tool
-    pull     | Install tools from a remote state
-    hold     | Keep updates a tool on hold.
-    me       | Update ir tool.
+    get      | Install GitHub/GitLab repository CLI tool from its releases
+    ls       | List all installed CLI tools
+    rm       | Remove any installed CLI tool
+    upgrade  | Upgrade all installed CLI tools from their repositories
+    state    | Show the current stored state of Install-Release
+    config   | Set configs for Install-Release
+    pull     | Install tools from the remote install-release state URL
+    hold     | Keep an installed CLI tool's updates on hold.
+    me       | Update the Install-Release tool.
 ```
 
 For sub-command help use: `ir <sub-command> --help`
@@ -189,7 +189,7 @@ In rare cases where install-release does not automatically find the correct rele
 
 - The tool will parse the release file name into keywords (removing version numbers and file extensions), then store these keywords in the state file to match the release file name during future tool upgrades.
 
-> Note: Even though this fixes the issue where `install release` fails to identify correct release package for your system, It will be helpful if you raise Github Issue in this case to make this tool better over the time.
+> Note: Even though this fixes the issue where `install-release` fails to identify the correct release package for your system, it would be helpful if you raise a GitHub issue in this case to make this tool better over time.
 
 Usage:
 
@@ -240,7 +240,7 @@ Following tools will be upgraded:
 
 terrascan
 
-Upgrade these tools, (Y/n): y
+Upgrade these tools (Y/n): y
 
 Updating: terrascan, v1.15.0 => v1.15.2
  INFO     Downloaded: 'terrascan_1.15.2_Linux_x86_64.tar.gz' at /tmp/dn_terrascan_0as71a6v
@@ -252,7 +252,7 @@ Progress... ━━━━━━━━━━━━━━━━━━━━━━�
 
 #### Pull state templates for installing tools 📄
 
-You can push your state to somewhere like GitHub and use it for any other device, to make a sync for tools installed via ir
+You can push your state to somewhere like GitHub and use it on any other device to sync the tools installed via ir.
 
 ```bash
 ❯ ir pull --url https://raw.githubusercontent.com/Rishang/dotFiles/main/templates/install-release/state.json
@@ -260,16 +260,16 @@ You can push your state to somewhere like GitHub and use it for any other device
 
 #### Hold Update to specific installed tool ✋
 
-In case you want to hold an update to the specific tool, you can use `hold {tool-name}` command which will pause update for that tool.
+In case you want to hold an update for a specific tool, you can use the `hold {tool-name}` command which will pause updates for that tool.
 
-Example: keep tool named [k9s](https://github.com/derailed/k9s) update on hold
+Example: Keep tool named [k9s](https://github.com/derailed/k9s) update on hold:
 
 ```bash
 ❯ ir hold k9s
  INFO     Update on hold for, k9s to True
 ```
 
-You can list tools on hold updates by `ls --hold` command
+You can list tools on hold updates by using the `ls --hold` command:
 
 ```bash
 ❯ ir ls --hold
@@ -281,7 +281,7 @@ You can list tools on hold updates by `ls --hold` command
 └──────┴─────────┴───────────────────────────────────┘
 ```
 
-In case you want to unhold update to the specific tool, you can use `hold --unset {tool-name}` command by which it will pause update for that tool.
+In case you want to remove the update hold for a specific tool, you can use the `hold --unset {tool-name}` command:
 
 ```
 ❯ ir hold --unset k9s
@@ -293,13 +293,13 @@ In case you want to unhold update to the specific tool, you can use `hold --unse
 ```bash
 ❯ ir config --path ~/.local/bin
 
-INFO   updated path to:  ~/.local/bin
+INFO   Updated path to:  ~/.local/bin
 INFO   Done
 ```
 
 #### Config updates for pre-release versions 🔌
 
-This is useful when you want to install pre-release versions of tools like beta or alpha releases. By default, it is set to `False` in which case it will only check for latest release.
+This is useful when you want to install pre-release versions of tools like beta or alpha releases. By default, it is set to `False`, in which case it will only check for the latest stable release.
 
 ```bash
 ❯ ir config --pre-release
