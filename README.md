@@ -27,7 +27,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 - [Table of Contents 📚](#table-of-contents-)
 - [Getting started ⚡](#getting-started-)
-  - [Manage your tools 🛠️](#manage-your-tools-)
+  - [Manage your tools](#manage-your-tools)
 - [Prerequisites 📋](#prerequisites-)
 - [Updating `install-release` 🔄](#updating-install-release-)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
@@ -83,7 +83,7 @@ Verify the installation:
 glab 1.80.0 ...
 ```
 
-### Manage your tools 🛠️
+### Manage your tools
 
 Once installed, you can manage your tools with these simple commands:
 
