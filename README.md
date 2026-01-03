@@ -27,21 +27,21 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 - [Table of Contents 📚](#table-of-contents-)
 - [Getting started ⚡](#getting-started-)
-    - [Manage your tools 🛠️](#manage-your-tools-)
+  - [Manage your tools 🛠️](#manage-your-tools-)
 - [Prerequisites 📋](#prerequisites-)
 - [Updating `install-release` 🔄](#updating-install-release-)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
-    - [Install completion for cli 🎠](#install-completion-for-cli-)
-    - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
-    - [List installed tools 📋](#list-installed-tools-)
-    - [Remove installed release ❌](#remove-installed-release-)
-    - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
-    - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
-    - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
-    - [Config tool installation path 🗂️](#config-tool-installation-path-)
-    - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
-    - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
-    - [Configure custom release file 🔦](#configure-custom-release-file-)
+  - [Install completion for cli 🎠](#install-completion-for-cli-)
+  - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
+  - [Install specific release asset from GitHub/GitLab releases 🔦](#install-specific-release-asset-from-githubgitlab-releases-)
+  - [List installed tools 📋](#list-installed-tools-)
+  - [Remove installed release ❌](#remove-installed-release-)
+  - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
+  - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
+  - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
+  - [Config tool installation path 🗂️](#config-tool-installation-path-)
+  - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
+  - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
 
 ## Getting started ⚡
 
@@ -92,7 +92,6 @@ Once installed, you can manage your tools with these simple commands:
 - **Remove**: `ir rm deno` — Remove a tool from your system.
 
 For more details, check the [Table of Contents](#table-of-contents-).
-
 
 ## Prerequisites 📋
 
@@ -182,6 +181,26 @@ Install this tool (Y/n): y
 
 ❯ kubectx --version
 0.9.4
+```
+
+#### Install specific release asset from GitHub/GitLab releases 🔦
+
+In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name from the GitHub or GitLab release page.
+
+- The tool will parse the release file name into keywords (removing version numbers and file extensions), then store these keywords in the state file to match the release file name during future tool upgrades.
+
+> Note: Even though this fixes the issue where `install release` fails to identify correct release package for your system, It will be helpful if you raise Github Issue in this case to make this tool better over the time.
+
+Usage:
+
+```bash
+❯ ir get [GITHUB-URL or GITLAB-URL] -r [release file]
+```
+
+Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
+
+```bash
+❯ ir get https://github.com/ekzhang/bore -r bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
 ```
 
 #### List installed tools 📋
@@ -289,6 +308,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 #### Configure GitHub/GitLab tokens for higher rate limit 🔑
 
 > For GitHub:
+
 ```bash
 ❯ ir config --token [your github token]
 
@@ -297,28 +317,10 @@ INFO: Done.
 ```
 
 > For GitLab:
+
 ```bash
 ❯ ir config --gitlab-token [your gitlab token]
 
 INFO: Updated GitLab token
 INFO: Done.
-```
-
-#### Configure custom release file 🔦
-
-In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name from the GitHub or GitLab release page.
-
-- The tool will parse the release file name into keywords (removing version numbers and file extensions), then store these keywords in the state file to match the release file name during future tool upgrades.
-
-> Note: Even though this fixes the issue where `install release` fails to identify correct release package for your system, It will be helpful if you raise Github Issue in this case to make this tool better over the time.
-
-Usage:
-```bash
-❯ ir get [GITHUB-URL or GITLAB-URL] -r [release file]
-```
-
-Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
-
-```bash
-❯ ir get https://github.com/ekzhang/bore -r bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
 ```
