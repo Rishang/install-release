@@ -93,7 +93,7 @@ def state_info():
 def get(
     repo: RepoInfo,
     tag_name: str = "",
-    release_file: str = "",
+    asset_file: str = "",
     local: bool = True,
     prompt: bool = False,
     name: Optional[str] = None,
@@ -103,7 +103,7 @@ def get(
     Args:
         repo: Repository information handler
         tag_name: Specific tag to fetch
-        release_file: Filename pattern to extract words from
+        asset_file: Filename pattern to extract words from
         local: Whether to install locally
         prompt: Whether to prompt for confirmation
         name: Optional name to give the installed tool
@@ -120,8 +120,8 @@ def get(
 
     # Extract words from release filename if provided
     custom_release_words = None
-    if not is_none(release_file):
-        filename = release_file.rsplit(".", 1)[0]
+    if not is_none(asset_file):
+        filename = asset_file.rsplit(".", 1)[0]
         custom_release_words = to_words(
             filename.replace(".", "-"), ignore_words=["v", "unknown"]
         )
