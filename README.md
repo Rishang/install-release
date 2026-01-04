@@ -34,6 +34,8 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Install completion for cli 🎠](#install-completion-for-cli-)
   - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
   - [Install specific release asset from GitHub/GitLab releases 🔦](#install-specific-release-asset-from-githubgitlab-releases-)
+    - [Method 1: Interactive Selection (Recommended)](#method-1-interactive-selection-recommended)
+    - [Method 2: Command-line Flag](#method-2-command-line-flag)
   - [List installed tools 📋](#list-installed-tools-)
   - [Remove installed release ❌](#remove-installed-release-)
   - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
@@ -168,7 +170,7 @@ ir --install-completion zsh
 ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
 │ kubectx │ kubectx_v0.9.4_linux_x86_64.tar.gz │ v0.9.4  │ 1.0     │ 43811     │
 └─────────┴────────────────────────────────────┴─────────┴─────────┴───────────┘
-Install this tool (Y/n): y
+Install this tool (Y/n/?): y
  INFO     Downloaded: 'kubectx_v0.9.4_linux_x86_64.tar.gz' at /tmp/dn_kubectx_ph6i7dmk                                                               utils.py:159
  INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/bin/kubectx                                                                  core.py:132
  INFO     Installed: kubectx
@@ -185,13 +187,49 @@ Install this tool (Y/n): y
 
 #### Install specific release asset from GitHub/GitLab releases 🔦
 
-In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name from the GitHub or GitLab release page.
+In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name. There are two ways to do this:
 
-- The tool will parse the release file name into keywords (removing version numbers and file extensions), then store these keywords in the state file to match the release file name during future tool upgrades.
+##### Method 1: Interactive Selection (Recommended)
 
-> Note: Even though this fixes the issue where `install-release` fails to identify the correct release package for your system, it would be helpful if you raise a GitHub issue in this case to make this tool better over time.
+During the installation prompt, type `?` to view all available release assets and select the one you want:
 
-Usage:
+```bash
+❯ ir get https://github.com/ekzhang/bore
+
+📑 Repo     : ekzhang/bore
+🌟 Stars    : 8234
+✨ Language : Rust
+🔥 Title    : A simple CLI tool for making tunnels to localhost
+
+                              🚀 Install: bore
+┏━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Name ┃ Selected Item                            ┃ Version ┃ Size Mb ┃ Downloads ┃
+┡━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
+│ bore │ bore-v0.4.0-x86_64-unknown-linux-musl... │ v0.4.0  │ 1.2     │ 1523      │
+└──────┴──────────────────────────────────────────┴─────────┴─────────┴───────────┘
+
+Path: /home/noobi/bin
+Install this tool (Y/n/?): ?
+
+                    📦 Available Assets for bore
+┏━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ ID ┃ Filename                                        ┃ Size (MB) ┃ Downloads ┃
+┡━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ 1  │ bore-v0.4.0-x86_64-unknown-linux-musl.tar.gz    │ 1.2       │ 1523      │
+│ 2  │ bore-v0.4.0-x86_64-unknown-linux-gnu.rpm        │ 1.3       │ 845       │
+│ 3  │ bore-v0.4.0-aarch64-unknown-linux-musl.deb      │ 1.1       │ 234       │
+│ 4  │ bore-v0.4.0-x86_64-apple-darwin.dmg             │ 1.2       │ 456       │
+│ 5  │ bore-v0.4.0-x86_64-apple-darwin.tar.gz          │ 1.2       │ 1523      │
+└────┴─────────────────────────────────────────────────┴───────────┴───────────┘
+
+Enter your desired file ID to install (or 'n' to cancel): 3
+```
+
+The tool will automatically parse the selected filename into keywords and store them for future upgrades.
+
+##### Method 2: Command-line Flag
+
+You can also specify the release file name directly using the `-a` flag:
 
 ```bash
 ❯ ir get [GITHUB-URL or GITLAB-URL] -a [release asset filename]
@@ -202,6 +240,13 @@ Example: Installing the bore tool from GitHub with the release file name `bore-v
 ```bash
 ❯ ir get https://github.com/ekzhang/bore -a bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
 ```
+
+**How it works:**
+- The tool parses the release file name into keywords (removing version numbers and file extensions)
+- These keywords are stored in the state file to match the correct release file during future tool upgrades
+- This ensures consistent upgrades to the same release variant
+
+> Note: If `install-release` fails to identify the correct release package for your system, please raise a GitHub issue to help improve the tool.
 
 #### List installed tools 📋
 

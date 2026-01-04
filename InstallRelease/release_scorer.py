@@ -57,7 +57,7 @@ class ReleaseScorer:
         # Archive extensions get normal weight (1x)
         archive_pattern = r"\.(tar|zip|gz|bz2|xz|7z|rar)"
         self.all_patterns.append(archive_pattern)
-        self.pattern_weights[archive_pattern] = 1.0
+        self.pattern_weights[archive_pattern] = 2.0
 
         logger.debug(f"ReleaseScorer initialized with patterns: {self.all_patterns}")
         logger.debug(f"Pattern weights: {self.pattern_weights}")

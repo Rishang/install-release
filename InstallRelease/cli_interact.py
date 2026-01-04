@@ -84,6 +84,61 @@ dest = platform_path(paths=bin_path, alt=config_path_str)
 # ------- cli ----------
 
 
+def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
+    """Show all release assets in a table and let user select one by ID
+
+    Args:
+        release: The release object containing assets
+        toolname: Name of the tool being installed
+
+    Returns:
+        Selected ReleaseAssets object or None if cancelled
+    """
+    if not release.assets:
+        pprint("[red]No assets available for this release[/red]")
+        return None
+
+    # Prepare data for table display
+    assets_data = []
+    for idx, asset in enumerate(release.assets, start=1):
+        assets_data.append(
+            {
+                "ID": idx,
+                "Filename": asset.name,
+                "Size (MB)": asset.size_mb() if hasattr(asset, "size_mb") else "N/A",
+                "Downloads": asset.download_count
+                if hasattr(asset, "download_count")
+                else "N/A",
+            }
+        )
+
+    # Display table
+    show_table(assets_data, title=f"📦 Available Assets for {toolname}")
+
+    # Get user selection
+    pprint(
+        "\n[yellow]Enter your desired file ID to install (or 'n' to cancel): [/yellow]",
+        end="",
+    )
+    selection = input().strip()
+
+    if selection.lower() == "n":
+        return None
+
+    try:
+        selected_id = int(selection)
+        if 1 <= selected_id <= len(release.assets):
+            return release.assets[selected_id - 1]
+        else:
+            pprint(
+                f"[red]Invalid ID. Please select between 1 and {len(release.assets)}[/red]"
+            )
+            return None
+    except ValueError:
+        pprint("[red]Invalid input. Please enter a number or 'n' to cancel[/red]")
+        return None
+
+
 def state_info():
     logger.debug(cache.state_file)
     logger.debug(cache_config.state_file)
@@ -136,20 +191,23 @@ def get(
     toolname = repo.repo_name.lower() if is_none(name) else name.lower()
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    # Use extracted words or cached words or toolname
-    extra_words = custom_release_words or [toolname]
+    # Get cached release to check for custom_release_words
     cached_release = cache.get(f"{repo.repo_url}#{toolname}")
 
-    if (
-        not extra_words
-        and cached_release
+    # Priority: custom_release_words from asset_file > cached custom_release_words > toolname
+    if custom_release_words:
+        extra_words = custom_release_words
+        is_user_pattern = True
+    elif (
+        cached_release
         and hasattr(cached_release, "custom_release_words")
+        and cached_release.custom_release_words
     ):
         extra_words = cached_release.custom_release_words
-
-    is_user_pattern = False
-    if custom_release_words:
         is_user_pattern = True
+    else:
+        extra_words = [toolname]
+        is_user_pattern = False
 
     logger.debug(f"custom_release_words: {custom_release_words}")
     logger.debug(f"cached_release: {cached_release}")
@@ -194,9 +252,23 @@ def get(
             title=f"🚀 Install: {toolname}",
         )
         pprint(f"[color(6)]\nPath: {dest}")
-        pprint("[color(34)]Install this tool (Y/n): ", end="")
+        pprint("[color(34)]Install this tool (Y/n/?): ", end="")
         yn = input()
-        if yn.lower() != "y":
+
+        # Handle '?' to show all assets and let user select
+        if yn.lower() == "?":
+            selected_asset = _show_and_select_asset(releases[0], toolname)
+            if selected_asset is None:
+                return
+            # Update asset with user's selection
+            asset = selected_asset
+            # Extract custom_release_words from selected asset filename
+            filename = asset.name.rsplit(".", 1)[0]
+            custom_release_words = to_words(
+                filename.replace(".", "-"), ignore_words=["v", "unknown"]
+            )
+            pprint("\n[magenta]Downloading...[/magenta]")
+        elif yn.lower() != "y":
             return
         else:
             pprint("\n[magenta]Downloading...[/magenta]")
