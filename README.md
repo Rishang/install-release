@@ -355,7 +355,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 > For GitHub:
 
 ```bash
-❯ ir config --token [your github token]
+❯ ir config --github-token [your github token]
 
 INFO: Updated GitHub token
 INFO: Done.

@@ -149,9 +149,9 @@ def rm(
 @app.command(name="config")
 def _config(
     debug: bool = __optionDebug,
-    token: str = typer.Option(
+    github_token: str = typer.Option(
         "",
-        "--token",
+        "--github-token",
         help="Set your GitHub token to solve API rate-limiting issues.",
     ),
     gitlab_token: str = typer.Option(
@@ -176,8 +176,8 @@ def _config(
 
     logger.info(f"Loading config: {cache_config.state_file}")
 
-    if token != "":
-        config.token = token
+    if github_token != "":
+        config.token = github_token
         logger.info("Updated GitHub token")
     if gitlab_token != "":
         config.gitlab_token = gitlab_token
