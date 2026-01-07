@@ -333,7 +333,7 @@ In case you want to remove the update hold for a specific tool, you can use the 
  INFO     Update on hold for, k9s to False
 ```
 
-#### Config tool installation path 🗂️
+#### Config tool installation path
 
 ```bash
 ❯ ir config --path ~/.local/bin
