@@ -41,7 +41,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
   - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
   - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
-  - [Config tool installation path 🗂️](#config-tool-installation-path-)
+  - [Config tool installation path 🗂️](#config-tool-installation-path)
   - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
   - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
 
