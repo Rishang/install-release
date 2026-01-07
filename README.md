@@ -41,16 +41,9 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
   - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
   - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
-  - [Config tool installation path 🗂️](#config-tool-installation-path)
-  - [Config updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
+  - [Configure tool installation path 🗂️](#config-tool-installation-path)
+  - [Configure updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
   - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
-
-## Getting started ⚡
-
-```bash
-# Install ir
-pip install -U install-release
-```
 
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
@@ -333,7 +326,7 @@ In case you want to remove the update hold for a specific tool, you can use the 
  INFO     Update on hold for, k9s to False
 ```
 
-#### Config tool installation path
+#### Configure tool installation path
 
 ```bash
 ❯ ir config --path ~/.local/bin
@@ -342,7 +335,7 @@ INFO   Updated path to:  ~/.local/bin
 INFO   Done
 ```
 
-#### Config updates for pre-release versions 🔌
+#### Configure updates for pre-release versions 🔌
 
 This is useful when you want to install pre-release versions of tools like beta or alpha releases. By default, it is set to `False`, in which case it will only check for the latest stable release.
 
