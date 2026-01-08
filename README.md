@@ -11,7 +11,7 @@
   </a>
 <p>
 
-**Install Release** is a CLI tool by name `ir` to install any single-binary executable package for your device(Linux/MacOS/WSL) directly from their GitHub or GitLab releases and keep them updated. Consider it as a small package manager to install single binary tools from GitHub/GitLab releases.
+**Install Release** is a CLI tool by name `ir` to install any single-binary executable package for your device(Linux/MacOS/WSL) directly from their GitHub or GitLab releases and keep them updated. Consider it as a CLI to install, update and remove any single binary tools from GitHub/GitLab releases.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on GitHub or GitLab releases.
 
