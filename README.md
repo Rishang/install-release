@@ -1,5 +1,5 @@
 <h1 align="center">
-  🚀 Install Release 
+  🐧 Install Release 
 </h1>
 
 <p align="center">
