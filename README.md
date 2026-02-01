@@ -1,6 +1,11 @@
+
+<img src="./.github/images/icon.jpg" alt="icon" width="120" align="center" style="display: block; margin: 0 auto; border-radius: 25%;" />
+
 <h1 align="center">
   🐧 Install Release 
 </h1>
+
+---
 
 <p align="center">
   <a href="https://shields.io/">
