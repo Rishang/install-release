@@ -5,6 +5,7 @@ import platform
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 from abc import ABC, abstractmethod
+import os
 
 # pipi
 import requests
@@ -723,7 +724,13 @@ def extract_release(item: ReleaseAssets, at: str) -> bool:
     return True
 
 
-def install_bin(src: str, dest: str, local: bool, name: Optional[str] = None) -> bool:
+def install_bin(
+    src: str,
+    dest: str,
+    local: bool,
+    name: Optional[str] = None,
+    skip_extensions: Optional[List[str]] = ["ts"],
+) -> bool:
     """Install single binary executable file from source to destination
 
     Args:
@@ -742,6 +749,17 @@ def install_bin(src: str, dest: str, local: bool, name: Optional[str] = None) ->
         if f.name == "directory":
             continue
         elif not re.match(pattern=__exec_pattern, string=f.mime_type):
+            continue
+
+        # Skip files with script extensions
+        file_ext = os.path.splitext(file)[1].lower()
+        if file_ext in skip_extensions:
+            logger.debug(f"Skipping script file: {file}")
+            continue
+
+        # Check if file is actually executable
+        if not os.access(file, os.X_OK):
+            logger.debug(f"Skipping non-executable file: {file}")
             continue
 
         bin_files.append(file)
