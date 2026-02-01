@@ -1,11 +1,10 @@
 
 
 <h1 align="center">
-<img src="./.github/images/icon.jpg" alt="icon" width="120" align="center" style="display: block; margin: 0 auto; border-radius: 25%;" /><br>
-  🐧 Install Release 
+<img src="./.github/images/icon.jpg" alt="icon" width="120" align="center" style="display: block; margin: 0 auto; border-radius: 25%;" />
+<br>
+🐧 Install Release 
 </h1>
-
----
 
 <p align="center">
   <a href="https://shields.io/">
@@ -15,6 +14,8 @@
     <img src="https://static.pepy.tech/personalized-badge/install-release?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads" alt="Downloads" />
   </a>
 <p>
+
+<br>
 
 **Install Release** is a CLI tool by name `ir` to install any single-binary executable package for your device(Linux/MacOS/WSL) directly from their GitHub or GitLab releases and keep them updated. Consider it as a CLI to install, update and remove any single binary tools from GitHub/GitLab releases.
 
