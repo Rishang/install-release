@@ -11,6 +11,7 @@ from rich.console import Console
 from InstallRelease.state import State, platform_path
 from InstallRelease.data import Release, ToolConfig, irKey, TypeState, ReleaseAssets
 
+from InstallRelease.pkgs.main import install_package, detect_package_type
 from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import (
     mkdir,
@@ -22,6 +23,7 @@ from InstallRelease.utils import (
     PackageVersion,
     requests_session,
     to_words,
+    download,
 )
 
 from InstallRelease.core import (
@@ -152,6 +154,7 @@ def get(
     local: bool = True,
     prompt: bool = False,
     name: Optional[str] = None,
+    package_mode: bool = False,
 ) -> None:
     """Get a release from a GitHub/GitLab repository
 
@@ -159,9 +162,10 @@ def get(
         repo: Repository information handler
         tag_name: Specific tag to fetch
         asset_file: Filename pattern to extract words from
-        local: Whether to install locally
+        local: Whether to install locally (ignored for packages)
         prompt: Whether to prompt for confirmation
         name: Optional name to give the installed tool
+        package_mode: Whether to install as a package (auto-detects type)
     """
     state_info()
 
@@ -212,11 +216,21 @@ def get(
     logger.debug(f"custom_release_words: {custom_release_words}")
     logger.debug(f"cached_release: {cached_release}")
 
+    # Detect package type if in package mode
+    package_type = None
+    if package_mode:
+        package_type = detect_package_type()
+        if not package_type:
+            logger.error("Could not detect appropriate package type for your system")
+            return
+        logger.info(f"Installing as {package_type} package")
+
     result = get_release(
         releases=releases,
         repo_url=repo.repo_url,
         extra_words=extra_words,
         is_user_pattern=is_user_pattern,
+        package_type=package_type if package_mode else None,
     )
 
     logger.debug(result)
@@ -273,10 +287,34 @@ def get(
         else:
             pprint("\n[magenta]Downloading...[/magenta]")
 
-    extract_release(item=asset, at=at.name)
+    # Install based on mode
+    if package_mode:
+        package_path = download(asset.browser_download_url, at.name)
+        logger.debug(f"Downloaded package to: {package_path}")
 
-    # Update the releases with the selected asset
-    releases[0].assets = [asset]
+        # Install as package
+        success = install_package(
+            package_type=package_type,
+            name=toolname,
+            temp_dir=at.name,
+        )
+        if not success:
+            logger.error(f"Failed to install {toolname} as {package_type} package")
+            return
+
+        # Update the releases with package metadata
+        releases[0].assets = [asset]
+        releases[0].package_type = package_type
+        releases[0].install_method = "package"
+    else:
+        # For binaries, extract and install
+        extract_release(item=asset, at=at.name)
+
+        # Update the releases with the selected asset
+        releases[0].assets = [asset]
+
+        mkdir(dest)
+        install_bin(src=at.name, dest=dest, local=local, name=toolname)
 
     # Lock to specific version if tag was provided, unlock if release_file was used
     if tag_name:
@@ -290,9 +328,6 @@ def get(
     elif cached_release and hasattr(cached_release, "custom_release_words"):
         releases[0].custom_release_words = cached_release.custom_release_words
 
-    mkdir(dest)
-    install_bin(src=at.name, dest=dest, local=local, name=toolname)
-
     # """For ignoring holds in get too"""
     # check_key = cache.get(f"{repo.repo_url}#{toolname}")
 
@@ -304,12 +339,15 @@ def get(
     cache.save()
 
 
-def upgrade(force: bool = False, skip_prompt: bool = False) -> None:
+def upgrade(
+    force: bool = False, skip_prompt: bool = False, packages_only: bool = False
+) -> None:
     """Upgrade all installed tools
 
     Args:
         force: Whether to force upgrade even if not newer
         skip_prompt: Whether to skip confirmation prompt
+        packages_only: Whether to upgrade only packages (not binaries)
     """
     state_info()
 
@@ -319,6 +357,15 @@ def upgrade(force: bool = False, skip_prompt: bool = False) -> None:
 
     def task(k: str) -> None:
         i = irKey(k)
+        release = state[k]
+
+        # Filter by package type if requested
+        if packages_only:
+            if (
+                not hasattr(release, "install_method")
+                or release.install_method != "package"
+            ):
+                return
 
         try:
             if state[k].hold_update is True:
@@ -398,6 +445,8 @@ def list_install(
     _hold_table = []
     for key in state:
         i = irKey(key)
+        release = state[key]
+
         if hold_update:
             if state[key].hold_update is True:
                 _hold_table.append(
@@ -409,14 +458,18 @@ def list_install(
                 )
             continue
 
+        # Add package type info if it's a package
+        version_str = state[key].tag_name
+        if hasattr(release, "install_method") and release.install_method == "package":
+            version_str += " [cyan](pkg)[/cyan]"
+
+        if state[key].hold_update is True:
+            version_str += "[yellow] *HOLD_UPDATE*[/yellow]"
+
         _table.append(
             {
                 "Name": i.name,
-                "Version": (
-                    state[key].tag_name + "[yellow] *HOLD_UPDATE*[/yellow]"
-                    if state[key].hold_update is True
-                    else state[key].tag_name
-                ),
+                "Version": version_str,
                 "Url": state[key].url,
             }
         )
@@ -427,12 +480,13 @@ def list_install(
         show_table(_table, title=title)
 
 
-def remove(name: str):
+def remove(name: str, as_package: bool = False):
     """
     | Remove any cli tool.
 
     Args:
         name: The name of the tool to remove
+        as_package: Whether to remove as a package (use system package manager)
 
     Returns:
         None
@@ -446,14 +500,48 @@ def remove(name: str):
         i = irKey(key)
         if i.name == name:
             popKey = key
-            try:
-                # Remove the executable
-                tool_path = f"{dest}/{name}"
-                if os.path.exists(tool_path):
-                    os.remove(tool_path)
-                    logger.debug(f"Removed file: {tool_path}")
-            except OSError as e:
-                logger.error(f"Failed to remove file: {e}")
+            release = state[key]
+
+            # If as_package flag is set or if it's installed as a package, use package uninstaller
+            is_package = (
+                hasattr(release, "install_method")
+                and release.install_method == "package"
+            )
+
+            if as_package or is_package:
+                if not hasattr(release, "package_type"):
+                    logger.warning(f"{name} was not installed as a package")
+                else:
+                    package_type = release.package_type
+                    logger.info(f"Removing {name} as {package_type} package")
+
+                    try:
+                        if package_type == "deb":
+                            from InstallRelease.pkgs.deb import DebPackage
+
+                            installer = DebPackage(name)
+                            installer.uninstall()
+                        elif package_type == "rpm":
+                            from InstallRelease.pkgs.rpm import RpmPackage
+
+                            installer = RpmPackage(name)
+                            installer.uninstall()
+                        elif package_type == "appimage":
+                            from InstallRelease.pkgs.app_images import AppImageInstaller
+
+                            installer = AppImageInstaller(name)
+                            installer.uninstall()
+                    except Exception as e:
+                        logger.error(f"Failed to uninstall package: {e}")
+            else:
+                # Remove binary file (existing code)
+                try:
+                    tool_path = f"{dest}/{name}"
+                    if os.path.exists(tool_path):
+                        os.remove(tool_path)
+                        logger.debug(f"Removed file: {tool_path}")
+                except OSError as e:
+                    logger.error(f"Failed to remove file: {e}")
             break
 
     # Remove from state if found

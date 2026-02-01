@@ -73,6 +73,9 @@ def get(
         help="Custom name to save the tool as.",
     ),
     approve: bool = typer.Option(False, "-y", help="Approve without prompt."),
+    pkg: bool = typer.Option(
+        False, "--pkg", help="Install as OS package (deb/rpm/appimage)."
+    ),
 ):
     """
     | Install GitHub/GitLab repository CLI tool from its releases
@@ -93,6 +96,7 @@ def get(
         asset_file=asset_file,
         prompt=not approve,
         name=name,
+        package_mode=pkg,
     )
 
 
@@ -102,6 +106,11 @@ def upgrade(
     quite: bool = __optionQuite,
     force: bool = __optionForce,
     skip_prompt: bool = __optionSkipPrompt,
+    pkg: bool = typer.Option(
+        False,
+        "--pkg",
+        help="Upgrade only packages (not binaries).",
+    ),
 ):
     """
     | Upgrade all installed CLI tools from their repositories
@@ -116,7 +125,7 @@ def upgrade(
     #         "[bold]***INFO: New version of install-release is available, "
     #         "run [yellow]ir me --upgrade[reset] to update. ***\n"
     #     )
-    _upgrade(force=force, skip_prompt=skip_prompt)
+    _upgrade(force=force, skip_prompt=skip_prompt, packages_only=pkg)
 
 
 @app.command()
@@ -137,13 +146,18 @@ def ls(
 def rm(
     name: str = typer.Argument(None, help="name of installed tool to remove"),
     debug: bool = __optionDebug,
+    pkg: bool = typer.Option(
+        False,
+        "--pkg",
+        help="Remove as package (use system package manager).",
+    ),
 ):
     """
     | Remove any installed CLI tool
     """
     setLogger(debug=debug)
 
-    remove(name)
+    remove(name, as_package=pkg)
 
 
 @app.command(name="config")

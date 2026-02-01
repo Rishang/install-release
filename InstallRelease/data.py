@@ -6,6 +6,8 @@ from dataclasses import dataclass, fields, field
 exception_compressed_mime_type = [
     "application/x-7z-compressed",
 ]
+_valid_install_methods = ["binary", "package"]
+_valid_package_types = ["deb", "rpm", "appimage", "binary"]
 
 
 @dataclass
@@ -67,11 +69,22 @@ class Release:
     assets: List[ReleaseAssets]
     hold_update: Optional[bool] = field(default=False)
     custom_release_words: Optional[List[str]] = field(default=None)
+    # Package management fields
+    package_type: Optional[str] = field(
+        default="binary"
+    )  # "deb", "rpm", "appimage", "binary"
+    install_method: Optional[str] = field(default="binary")  # "binary" or "package"
     # author: dict
     # draft: bool
     # target_commitish: str
 
     def __post_init__(self):
+        # Validate install method and package type before processing assets
+        if self.install_method and self.install_method not in _valid_install_methods:
+            raise ValueError(f"Unsupported install method: {self.install_method}")
+        if self.package_type and self.package_type not in _valid_package_types:
+            raise ValueError(f"Unsupported package type: {self.package_type}")
+
         # Handle both dictionary and ReleaseAssets objects in the assets list
         processed_assets = []
         for a in self.assets:

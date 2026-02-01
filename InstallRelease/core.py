@@ -626,6 +626,7 @@ def get_release(
     repo_url: str,
     extra_words: Optional[List[str]] = None,
     is_user_pattern: bool = False,
+    package_type: Optional[str] = None,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
 
@@ -634,11 +635,18 @@ def get_release(
         repo_url: The repository URL
         extra_words: Additional keywords to match against
         is_user_pattern: Whether to use user pattern mode
+        package_type: If set, prioritize this package type (deb/rpm/appimage)
     Returns:
         The best matching ReleaseAssets or False if no match found
     """
     # Initialize empty list if None
     extra_words = extra_words or []
+
+    # If package_type is specified, add it to extra_words for prioritization
+    if package_type:
+        extra_words = list(extra_words) + [package_type]
+        logger.debug(f"Package mode enabled, prioritizing: {package_type}")
+
     logger.debug(f"extra_words: {extra_words}")
     logger.debug(f"is_user_pattern: {is_user_pattern}")
 
