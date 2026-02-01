@@ -60,6 +60,12 @@ cache_config = State(
 )
 
 
+def is_package(state, k):
+    return hasattr(state[k], "install_method") and (
+        state[k].install_method == "package"
+    )
+
+
 def load_config() -> ToolConfig:
     """Load config from cache_config
 
@@ -354,6 +360,7 @@ def upgrade(
     state: TypeState = cache.state
 
     upgrades: Dict[str, RepoInfo] = {}
+    pkg_upgrades: Dict[str, RepoInfo] = {}
 
     def task(k: str) -> None:
         i = irKey(k)
@@ -384,15 +391,25 @@ def upgrade(
         releases = repo.release(pre_release=pre_release)
 
         if releases[0].published_dt() > state[k].published_dt() or force is True:
-            upgrades[i.name] = repo
+            if is_package(state, k) and not packages_only:
+                pkg_upgrades[i.name] = repo
+            else:
+                upgrades[i.name] = repo
 
     threads(task, data=[k for k in state], max_workers=20, return_result=False)
+
+    if packages_only is False and len(pkg_upgrades) > 0:
+        pprint("\n[bold cyan]Following package can be upgraded.[/]\n")
+        pprint("[bold indian_red]" + " ".join(pkg_upgrades.keys()))
+        pprint(
+            "\n[bold white]To upgrade packages, run: [green]ir upgrade --pkg[/green][/]\n"
+        )
 
     # ask prompt to upgrade listed tools
     if len(upgrades) > 0:
         pprint("\n[bold magenta]Following tool will get upgraded.\n")
         console.print("[bold yellow]" + " ".join(upgrades.keys()))
-        pprint("[bold blue]Upgrade these tools, (Y/n):", end=" ")
+        pprint("\n[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
         if skip_prompt is False:
             r = input()
@@ -402,7 +419,7 @@ def upgrade(
         pprint("[bold green]All tools are onto latest version")
         return
 
-    for name in track(upgrades, description="Upgrading..."):
+    for name in track(upgrades, description="Upgrading...", disable=packages_only):
         repo = upgrades[name]
         releases = repo.release()
         k = f"{repo.repo_url}#{name}"
@@ -412,7 +429,8 @@ def upgrade(
             f"Updating: {name}, {state[k].tag_name} => {releases[0].tag_name}"
             "[/]"
         )
-        get(repo, prompt=False, name=name)
+
+        get(repo, prompt=False, name=name, package_mode=is_package(state, k))
 
 
 def show_state():
@@ -445,7 +463,7 @@ def list_install(
     _hold_table = []
     for key in state:
         i = irKey(key)
-        release = state[key]
+        state[key]
 
         if hold_update:
             if state[key].hold_update is True:
@@ -460,7 +478,7 @@ def list_install(
 
         # Add package type info if it's a package
         version_str = state[key].tag_name
-        if hasattr(release, "install_method") and release.install_method == "package":
+        if is_package(state, key):
             version_str += " [cyan](pkg)[/cyan]"
 
         if state[key].hold_update is True:
@@ -480,7 +498,7 @@ def list_install(
         show_table(_table, title=title)
 
 
-def remove(name: str, as_package: bool = False):
+def remove(name: str):
     """
     | Remove any cli tool.
 
@@ -502,13 +520,7 @@ def remove(name: str, as_package: bool = False):
             popKey = key
             release = state[key]
 
-            # If as_package flag is set or if it's installed as a package, use package uninstaller
-            is_package = (
-                hasattr(release, "install_method")
-                and release.install_method == "package"
-            )
-
-            if as_package or is_package:
+            if is_package(state, key):
                 if not hasattr(release, "package_type"):
                     logger.warning(f"{name} was not installed as a package")
                 else:

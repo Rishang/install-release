@@ -26,13 +26,13 @@ class DebPackage(PackageInstallerABC):
         logger.debug(f"Installing DEB package: {source_path}")
 
         # Use apt to install (handles dependencies)
-        result = sh(f"sudo apt install -y {source_path}")
+        result = sh(f"sudo apt install -y {source_path}", interactive=True)
 
         if result.returncode != 0:
             logger.error(f"Failed to install DEB package: {result.stderr}")
             # Fallback to dpkg
             logger.debug("Trying dpkg fallback...")
-            result = sh(f"sudo dpkg -i {source_path}")
+            result = sh(f"sudo dpkg -i {source_path}", interactive=True)
             if result.returncode != 0:
                 logger.error(f"dpkg also failed: {result.stderr}")
                 return None
@@ -47,12 +47,12 @@ class DebPackage(PackageInstallerABC):
         logger.debug(f"Uninstalling DEB package: {self.package_name}")
 
         # Try apt remove first
-        result = sh(f"sudo apt remove -y {self.package_name}")
+        result = sh(f"sudo apt remove -y {self.package_name}", interactive=True)
 
         if result.returncode != 0:
             logger.error(f"Failed to uninstall: {result.stderr}")
             # Fallback to dpkg
-            result = sh(f"sudo dpkg -r {self.package_name}")
+            result = sh(f"sudo dpkg -r {self.package_name}", interactive=True)
             if result.returncode != 0:
                 logger.error(f"dpkg remove also failed: {result.stderr}")
                 return False

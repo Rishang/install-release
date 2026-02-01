@@ -146,18 +146,13 @@ def ls(
 def rm(
     name: str = typer.Argument(None, help="name of installed tool to remove"),
     debug: bool = __optionDebug,
-    pkg: bool = typer.Option(
-        False,
-        "--pkg",
-        help="Remove as package (use system package manager).",
-    ),
 ):
     """
     | Remove any installed CLI tool
     """
     setLogger(debug=debug)
 
-    remove(name, as_package=pkg)
+    remove(name)
 
 
 @app.command(name="config")

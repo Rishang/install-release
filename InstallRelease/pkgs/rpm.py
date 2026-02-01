@@ -26,17 +26,17 @@ class RpmPackage(PackageInstallerABC):
         logger.debug(f"Installing RPM package: {source_path}")
 
         # Try dnf first (Fedora/RHEL 8+)
-        result = sh(f"sudo dnf install -y {source_path}")
+        result = sh(f"sudo dnf install -y {source_path}", interactive=True)
 
         if result.returncode != 0:
             logger.debug("dnf not available, trying yum...")
             # Fallback to yum (older RHEL/CentOS)
-            result = sh(f"sudo yum install -y {source_path}")
+            result = sh(f"sudo yum install -y {source_path}", interactive=True)
 
             if result.returncode != 0:
                 logger.debug("yum failed, trying rpm...")
                 # Fallback to rpm (no dependency resolution)
-                result = sh(f"sudo rpm -ivh {source_path}")
+                result = sh(f"sudo rpm -ivh {source_path}", interactive=True)
 
                 if result.returncode != 0:
                     logger.error(f"Failed to install RPM package: {result.stderr}")
@@ -52,17 +52,17 @@ class RpmPackage(PackageInstallerABC):
         logger.debug(f"Uninstalling RPM package: {self.package_name}")
 
         # Try dnf first
-        result = sh(f"sudo dnf remove -y {self.package_name}")
+        result = sh(f"sudo dnf remove -y {self.package_name}", interactive=True)
 
         if result.returncode != 0:
             logger.debug("dnf not available, trying yum...")
             # Fallback to yum
-            result = sh(f"sudo yum remove -y {self.package_name}")
+            result = sh(f"sudo yum remove -y {self.package_name}", interactive=True)
 
             if result.returncode != 0:
                 logger.debug("yum failed, trying rpm...")
                 # Fallback to rpm
-                result = sh(f"sudo rpm -e {self.package_name}")
+                result = sh(f"sudo rpm -e {self.package_name}", interactive=True)
 
                 if result.returncode != 0:
                     logger.error(f"Failed to uninstall: {result.stderr}")
