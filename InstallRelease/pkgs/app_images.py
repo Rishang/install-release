@@ -43,11 +43,7 @@ class AppImage(PackageInstallerABC):
 
         if not self.appimage_path:
             self.appimage_path = (
-                Path.home()
-                / ".local"
-                / "share"
-                / "appimages"
-                / f"{self.name}.appimage"
+                Path.home() / ".local" / "share" / "appimages" / f"{self.name}.appimage"
             )
 
     def install(self, source: str) -> Path | None:

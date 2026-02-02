@@ -9,6 +9,22 @@ platform_arch_aliases = {
     "aarch64": ["arm64", "aarch64", "arm"],
 }
 
+penalty_words = [
+    "debug",
+    "dbg",
+    ".json",
+    ".txt",
+    ".yaml",
+    ".yml",
+    ".md",
+    ".snap",
+    ".jsonl",
+    ".sha256sum",
+    ".msi",
+    ".exe",
+    ".dmg",
+]
+
 
 class ReleaseScorer:
     """Simple class to score release names based on platform compatibility"""
@@ -27,6 +43,7 @@ class ReleaseScorer:
         self.architecture = platform.machine()
         self.is_glibc_system = self._detect_glibc()
         self.platform_words = self._platform_words()
+        self.penalty_words = penalty_words
         self.extra_words = extra_words or []
         self.disable_penalties = disable_penalties
 
@@ -131,16 +148,6 @@ class ReleaseScorer:
         """
         adjusted_score = score
         release_name_lower = release_name.lower()
-        penalty_words = [
-            "debug",
-            "dbg",
-            ".json",
-            ".txt",
-            ".yaml",
-            ".yml",
-            ".md",
-            ".jsonl",
-        ]
 
         # Apply penalty for musl releases on glibc systems
         if self.is_glibc_system and "musl" in release_name_lower:
