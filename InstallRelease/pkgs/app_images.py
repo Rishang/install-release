@@ -20,7 +20,7 @@ class AppImage(PackageInstallerABC):
         appimage_path: str = None,
     ):
         super().__init__(name)
-        self.appimage_name = name
+        self.name = name
         self.appimage_path = Path(appimage_path) if appimage_path else None
 
         current_platform = platform.system().lower()
@@ -35,13 +35,11 @@ class AppImage(PackageInstallerABC):
         self.desktop_entry_path: Path = (
             Path(desktop_entry_path)
             if desktop_entry_path
-            else apps_base / f"{self.appimage_name}.desktop"
+            else apps_base / f"{self.name}.desktop"
         )
-        self.desktop_entry_name: str = f"{self.appimage_name}.desktop"
         self.icon_path: Path = (
-            Path(icon_path) if icon_path else icons_base / f"{self.appimage_name}.png"
+            Path(icon_path) if icon_path else icons_base / f"{self.name}.png"
         )
-        self.icon_name = f"{self.appimage_name}.png"
 
         if not self.appimage_path:
             self.appimage_path = (
@@ -49,7 +47,7 @@ class AppImage(PackageInstallerABC):
                 / ".local"
                 / "share"
                 / "appimages"
-                / f"{self.appimage_name}.appimage"
+                / f"{self.name}.appimage"
             )
 
     def install(self, source: str) -> Path | None:
@@ -134,7 +132,7 @@ class AppImage(PackageInstallerABC):
         appimage_abs_path = self.appimage_path.resolve()
 
         # Create a temporary directory for extraction
-        temp_dir = Path(tempfile.mkdtemp(prefix=f"{self.appimage_name}_extract_"))
+        temp_dir = Path(tempfile.mkdtemp(prefix=f"{self.name}_extract_"))
         logger.debug(f"Created temporary extraction directory: {temp_dir}")
 
         try:
@@ -159,9 +157,6 @@ class AppImage(PackageInstallerABC):
                 shutil.copy2(icon_file, self.icon_path)
                 logger.debug(f"Icon copied to: {self.icon_path}")
                 return str(self.icon_path)
-            else:
-                logger.warning(f"No icon found in AppImage: {self.appimage_path}")
-                return None
 
         except Exception as e:
             logger.error(f"Error generating icon: {e}")
@@ -207,15 +202,11 @@ class AppImage(PackageInstallerABC):
                     if file.lower().endswith(icon_extensions):
                         file_path = root_path / file
 
-                        # Save first icon found as fallback
                         if not any_icon:
                             any_icon = file_path
 
-                        # Prefer icons matching app name or PNG format
-                        if (
-                            self.appimage_name.lower() in file.lower()
-                            or file.lower().endswith(".png")
-                        ):
+                        # Prefer icons matching app name
+                        if self.name.lower() in file.lower():
                             preferred_icon = file_path
                             break
 
