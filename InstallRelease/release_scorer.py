@@ -166,7 +166,7 @@ class ReleaseScorer:
             )
 
         # Apply penalty for debug releases or unwanted words
-        if any(word in release_name_lower for word in penalty_words):
+        if any(word in release_name_lower for word in self.penalty_words):
             adjusted_score *= 0.8  # 20% penalty
 
             logger.debug(f"Applied debug penalty to '{release_name}': {adjusted_score}")
