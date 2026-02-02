@@ -11,7 +11,11 @@ from rich.console import Console
 from InstallRelease.state import State, platform_path
 from InstallRelease.data import Release, ToolConfig, irKey, TypeState, ReleaseAssets
 
-from InstallRelease.pkgs.main import install_package, detect_package_type
+from InstallRelease.pkgs.main import (
+    detect_package_type_from_asset_name,
+    detect_package_type_from_os_release,
+    install_package,
+)
 from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import (
     mkdir,
@@ -225,7 +229,7 @@ def get(
     # Detect package type if in package mode
     package_type = None
     if package_mode:
-        package_type = detect_package_type()
+        package_type = detect_package_type_from_os_release()
         if not package_type:
             logger.error("Could not detect appropriate package type for your system")
             return
@@ -293,32 +297,32 @@ def get(
         else:
             pprint("\n[magenta]Downloading...[/magenta]")
 
-    # Install based on mode
-    if package_mode:
-        package_path = download(asset.browser_download_url, at.name)
-        logger.debug(f"Downloaded package to: {package_path}")
+    # Install: package (deb/rpm/appimage) or binary (extract + install_bin)
+    effective_pkg = (
+        package_type
+        if package_mode
+        else detect_package_type_from_asset_name(asset.name)
+    )
 
-        # Install as package
+    if effective_pkg:
+        download(asset.browser_download_url, at.name)
+        logger.debug(f"Downloaded package to: {at.name}")
+
         success = install_package(
-            package_type=package_type,
+            package_type=effective_pkg,
             name=toolname,
             temp_dir=at.name,
         )
         if not success:
-            logger.error(f"Failed to install {toolname} as {package_type} package")
+            logger.error(f"Failed to install {toolname} as {effective_pkg} package")
             return
 
-        # Update the releases with package metadata
         releases[0].assets = [asset]
-        releases[0].package_type = package_type
+        releases[0].package_type = effective_pkg
         releases[0].install_method = "package"
     else:
-        # For binaries, extract and install
         extract_release(item=asset, at=at.name)
-
-        # Update the releases with the selected asset
         releases[0].assets = [asset]
-
         mkdir(dest)
         install_bin(src=at.name, dest=dest, local=local, name=toolname)
 

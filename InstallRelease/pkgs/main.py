@@ -6,7 +6,15 @@ from InstallRelease.utils import logger, sh
 from InstallRelease.data import _valid_package_types
 
 
-def detect_package_type() -> Optional[str]:
+def detect_package_type_from_asset_name(name: str) -> Optional[str]:
+    """Infer package type from asset filename. Returns None if not a known package."""
+    ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
+    if ext in _valid_package_types:
+        return ext
+    return None
+
+
+def detect_package_type_from_os_release() -> Optional[str]:
     """Detect the appropriate package type for the current OS"""
 
     package_type = ""
