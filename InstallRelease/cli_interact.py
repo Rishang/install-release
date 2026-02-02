@@ -38,6 +38,8 @@ from InstallRelease.core import (
     RepoInfo,
 )
 
+from InstallRelease.release_scorer import penalty_words
+
 
 console = Console(width=40)
 
@@ -113,6 +115,8 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
     # Prepare data for table display
     assets_data = []
     for idx, asset in enumerate(release.assets, start=1):
+        if any(word in asset.name.lower() for word in penalty_words):
+            continue
         assets_data.append(
             {
                 "ID": idx,

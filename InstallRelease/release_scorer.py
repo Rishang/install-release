@@ -11,7 +11,7 @@ platform_arch_aliases = {
 
 penalty_words = [
     "debug",
-    "dbg",
+    ".dbg",
     ".json",
     ".txt",
     ".yaml",
@@ -22,7 +22,6 @@ penalty_words = [
     ".sha256sum",
     ".msi",
     ".exe",
-    ".dmg",
 ]
 
 
