@@ -67,6 +67,16 @@ This can be any tool you want to install, which is pre-compiled for your device 
 pip install -U install-release
 ```
 
+**Set up the PATH for shell (e.g. ~/.bashrc or ~/.zshrc):**
+
+Tools installed via `ir` will be installed to `~/bin` by default. 
+
+```bash
+export PATH="$HOME/bin:$PATH" 
+```
+
+If you want to change the installation path, you can use the `ir config --path <path>` flag.
+
 ### Manage your tools
 
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
