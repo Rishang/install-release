@@ -29,7 +29,8 @@ This can be any tool you want to install, which is pre-compiled for your device 
 ## Table of Contents 📚
 
 - [Table of Contents 📚](#table-of-contents-)
-- [Getting started ⚡](#getting-started-)
+- [Getting started ⚡](#getting-started)
+  - [Installation](#installation)
   - [Manage your tools](#manage-your-tools)
 - [Prerequisites 📋](#prerequisites-)
 - [Updating `install-release` 🔄](#updating-install-release-)
@@ -47,6 +48,26 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Configure tool installation path 🗂️](#config-tool-installation-path)
   - [Configure updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
   - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
+
+
+## Getting started
+
+
+
+### Installation
+
+**Prerequisites:**
+
+- Python 3.9 or higher
+- pip
+
+**Installation command:**
+
+```bash
+pip install -U install-release
+```
+
+### Manage your tools
 
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
@@ -80,8 +101,6 @@ Verify the installation:
 ❯ glab --version
 glab 1.80.0 ...
 ```
-
-### Manage your tools
 
 Once installed, you can manage your tools with these simple commands:
 
