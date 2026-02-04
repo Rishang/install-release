@@ -77,6 +77,8 @@ export PATH="$HOME/bin:$PATH"
 
 If you want to change the installation path, you can use the `ir config --path <path>` flag.
 
+---
+
 ### Manage your tools
 
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
