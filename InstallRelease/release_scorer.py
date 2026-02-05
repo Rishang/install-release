@@ -20,6 +20,7 @@ penalty_words = [
     ".snap",
     ".jsonl",
     ".sha256sum",
+    ".sig",
     ".msi",
     ".exe",
 ]
