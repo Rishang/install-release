@@ -44,6 +44,7 @@ from InstallRelease.release_scorer import penalty_words
 console = Console(width=40)
 
 install_release_version = PackageVersion("install-release")
+os_package_type = detect_package_type_from_os_release()
 
 if os.environ.get("installState", "") == "test":
     temp_dir = "../temp"
@@ -231,9 +232,8 @@ def get(
     logger.debug(f"cached_release: {cached_release}")
 
     # Detect package type if in package mode
-    package_type = None
+    package_type = os_package_type
     if package_mode:
-        package_type = detect_package_type_from_os_release()
         if not package_type:
             logger.error("Could not detect appropriate package type for your system")
             return
@@ -257,6 +257,14 @@ def get(
     # At this point, result must be a ReleaseAssets object
     # Using cast to tell mypy that we've already checked the type
     asset = cast(ReleaseAssets, result)
+
+    for release in releases:
+        for asset in release.assets:
+            if detect_package_type_from_asset_name(asset.name) == os_package_type:
+                pprint(
+                    f"[bold green]\n[INFO]: A `{os_package_type}` package is available for this release. Add `--pkg` to install it.[/bold green]"
+                )
+                break
 
     if prompt is not False:
         pprint(
