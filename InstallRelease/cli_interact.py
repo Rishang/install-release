@@ -269,6 +269,14 @@ def get(
     # Using cast to tell mypy that we've already checked the type
     asset = cast(ReleaseAssets, result)
 
+    for release in releases:
+        for asset in release.assets:
+            if detect_package_type_from_asset_name(asset.name) == os_package_type:
+                pprint(
+                    f"[bold green]\n[INFO]: A `{os_package_type}` package is available for this release. Add `--pkg` to install it.[/bold green]"
+                )
+                break
+
     if prompt is not False:
         pprint(
             f"\n[green bold]📑 Repo     : {repo.info.full_name}"
