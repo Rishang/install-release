@@ -32,17 +32,17 @@ This can be any tool you want to install, which is pre-compiled for your device 
 - [Getting started ⚡](#getting-started)
   - [Installation](#installation)
   - [Manage your tools](#manage-your-tools)
-- [Prerequisites 📋](#prerequisites-)
-- [Updating `install-release` 🔄](#updating-install-release-)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
   - [Install completion for cli 🎠](#install-completion-for-cli-)
   - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
+    - [Install as system package (deb/rpm/appimage) 📦](#install-as-system-package-debrpmappimage-)
   - [Install specific release asset from GitHub/GitLab releases 🔦](#install-specific-release-asset-from-githubgitlab-releases-)
     - [Method 1: Interactive Selection (Recommended)](#method-1-interactive-selection-recommended)
     - [Method 2: Command-line Flag](#method-2-command-line-flag)
   - [List installed tools 📋](#list-installed-tools-)
   - [Remove installed release ❌](#remove-installed-release-)
   - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
+    - [Update installed system packages 📦](#update-installed-system-packages-)
   - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
   - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
   - [Configure tool installation path 🗂️](#config-tool-installation-path)
@@ -60,6 +60,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 - Python 3.9 or higher
 - pip
+- [libmagic](https://github.com/ahupp/python-magic#installation)
 
 **Installation command:**
 
@@ -122,30 +123,6 @@ Once installed, you can manage your tools with these simple commands:
 
 For more details, check the [Table of Contents](#table-of-contents-).
 
-## Prerequisites 📋
-
-- python3.8 or higher
-- [libmagic](https://github.com/ahupp/python-magic#installation)
-- Default installation path: `~/bin/` (Ensure this is in your `PATH`)
-
-```bash
-# Add this to your ~/.bashrc or ~/.zshrc
-export PATH=$HOME/bin:$PATH
-```
-
-## Updating `install-release` 🔄
-
-For seeing version:
-
-```bash
-ir me --version
-```
-
-For updating:
-
-```bash
-ir me --upgrade
-```
 
 ## Example usage `ir --help` 💡
 
@@ -212,7 +189,18 @@ Install this tool (Y/n/?): y
 0.9.4
 ```
 
-#### Install specific release asset from GitHub/GitLab releases 🔦
+##### Install as system package (deb/rpm/appimage) 📦
+
+If the release asset files provide a package file for your system, you can install tools as a system package (deb/rpm/appimage) instead of a standalone binary by using the `--pkg` flag.
+
+This is useful for tools that provide `.deb`, `.rpm` or `appimage` releases that might need other system package dependencies to work.
+
+```bash
+# Example installation of RedisInsight, a dashboard to manage Redis
+❯ ir get https://github.com/redis/RedisInsight --pkg
+```
+
+### Install specific release asset from GitHub/GitLab releases 🔦
 
 In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name. There are two ways to do this:
 
@@ -301,7 +289,7 @@ INFO     Removed: gron
 ```
 
 #### Update all previously installed tools to the latest version 🕶️
-
+    
 ```bash
 ❯ ir upgrade
 
@@ -321,6 +309,16 @@ Updating: terrascan, v1.15.0 => v1.15.2
 
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
 ```
+    
+##### Update installed system packages 📦
+    
+If you have tools installed as packages (deb/rpm/appimage), `ir upgrade` will inform you if updates are available but will **not** install them. To upgrade packages, run:
+    
+```bash
+❯ ir upgrade --pkg
+```
+    
+This will prompt for sudo permissions to upgrade the system packages.
 
 #### Pull state templates for installing tools 📄
 

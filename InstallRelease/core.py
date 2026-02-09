@@ -5,6 +5,7 @@ import platform
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 from abc import ABC, abstractmethod
+import os
 
 # pipi
 import requests
@@ -626,6 +627,7 @@ def get_release(
     repo_url: str,
     extra_words: Optional[List[str]] = None,
     is_user_pattern: bool = False,
+    package_type: Optional[str] = None,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
 
@@ -634,11 +636,18 @@ def get_release(
         repo_url: The repository URL
         extra_words: Additional keywords to match against
         is_user_pattern: Whether to use user pattern mode
+        package_type: If set, prioritize this package type (deb/rpm/appimage)
     Returns:
         The best matching ReleaseAssets or False if no match found
     """
     # Initialize empty list if None
     extra_words = extra_words or []
+
+    # If package_type is specified, add it to extra_words for prioritization
+    if package_type:
+        extra_words = list(extra_words) + [package_type]
+        logger.debug(f"Package mode enabled, prioritizing: {package_type}")
+
     logger.debug(f"extra_words: {extra_words}")
     logger.debug(f"is_user_pattern: {is_user_pattern}")
 
@@ -715,7 +724,13 @@ def extract_release(item: ReleaseAssets, at: str) -> bool:
     return True
 
 
-def install_bin(src: str, dest: str, local: bool, name: Optional[str] = None) -> bool:
+def install_bin(
+    src: str,
+    dest: str,
+    local: bool,
+    name: Optional[str] = None,
+    skip_extensions: Optional[List[str]] = ["ts"],
+) -> bool:
     """Install single binary executable file from source to destination
 
     Args:
@@ -734,6 +749,17 @@ def install_bin(src: str, dest: str, local: bool, name: Optional[str] = None) ->
         if f.name == "directory":
             continue
         elif not re.match(pattern=__exec_pattern, string=f.mime_type):
+            continue
+
+        # Skip files with script extensions
+        file_ext = os.path.splitext(file)[1].lower()
+        if file_ext in skip_extensions:
+            logger.debug(f"Skipping script file: {file}")
+            continue
+
+        # Check if file is actually executable
+        if not os.access(file, os.X_OK):
+            logger.debug(f"Skipping non-executable file: {file}")
             continue
 
         bin_files.append(file)

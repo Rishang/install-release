@@ -171,36 +171,47 @@ class Shell:
         except UnicodeDecodeError:
             return text_type(s, encoding="utf_8")
 
-    def cmd(self, cmd) -> ShellOutputs:
+    def cmd(self, cmd, interactive: bool = False) -> ShellOutputs:
         try:
-            process = subprocess.Popen(cmd, **self.popen_args)  # type: ignore
-            stdout, stderr = process.communicate()
-            returncode = process.returncode
+            # For interactive commands, don't capture output
+            if interactive:
+                popen_args = {"shell": True}
+                process = subprocess.Popen(cmd, **popen_args)  # type: ignore
+                process.wait()
+                returncode = process.returncode
+                stdout = []
+                stderr = []
+            else:
+                # For non-interactive commands, capture output
+                process = subprocess.Popen(cmd, **self.popen_args)  # type: ignore
+                stdout, stderr = process.communicate()
+                returncode = process.returncode
+
+                stdout = self.console_to_str(stdout)
+                stdout = stdout.split(self.line_breaks)
+                stdout = list(filter(None, stdout))  # filter empty values
+
+                stderr = self.console_to_str(stderr)
+                stderr = stderr.split(self.line_breaks)
+                stderr = list(filter(None, stderr))  # filter empty values
+
+                if "has-session" in cmd and len(stderr):
+                    if not stdout:
+                        stdout = stderr[0]
+                logger.debug(f"stdout for {cmd}:\n{stdout}")
 
         except Exception as e:
             logger.error("Exception for %s: \n%s" % (subprocess.list2cmdline(cmd), e))
-
-        returncode = returncode
-
-        stdout = self.console_to_str(stdout)
-        stdout = stdout.split(self.line_breaks)
-        stdout = list(filter(None, stdout))  # filter empty values
-
-        stderr = self.console_to_str(stderr)
-        stderr = stderr.split(self.line_breaks)
-        stderr = list(filter(None, stderr))  # filter empty values
-
-        if "has-session" in cmd and len(stderr):
-            if not stdout:
-                stdout = stderr[0]
-        logger.debug(f"stdout for {cmd}:\n{stdout}")
+            returncode = 1
+            stdout = []
+            stderr = []
 
         return ShellOutputs(stdout=stdout, stderr=stderr, returncode=returncode)
 
 
-def sh(command: str):
+def sh(command: str, interactive: bool = False):
     s = Shell()
-    return s.cmd(command)
+    return s.cmd(command, interactive=interactive)
 
 
 def mkdir(path: str):

@@ -37,3 +37,8 @@ tasks:
       - uv run python -m nuitka --standalone --onefile {{.ARGS}} --follow-imports cli/__main__.py --output-filename={{.FILENAME}}
       - rm -rf __main__.build __main__.onefile-build
       - mv {{.FILENAME}} dist/
+
+  test:
+    desc: Test the CLI in Docker (e.g. task test -- ubuntu)
+    cmds:
+      - bash ./test/test.sh {{.CLI_ARGS}}
