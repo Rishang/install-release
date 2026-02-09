@@ -1,11 +1,12 @@
-FROM ubuntu:24.04
+FROM fedora:41
 
-RUN apt-get update && apt-get install -y \
+RUN dnf install -y \
     curl \
-    libmagic1 sudo libmagic1 \
+    file \
+    file-libs \
+    findutils \
     python3 \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+    && dnf clean all
 
 # Install uv (binary from official image)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/

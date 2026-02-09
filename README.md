@@ -32,8 +32,6 @@ This can be any tool you want to install, which is pre-compiled for your device 
 - [Getting started ⚡](#getting-started)
   - [Installation](#installation)
   - [Manage your tools](#manage-your-tools)
-- [Prerequisites 📋](#prerequisites-)
-- [Updating `install-release` 🔄](#updating-install-release-)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
   - [Install completion for cli 🎠](#install-completion-for-cli-)
   - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
@@ -62,6 +60,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 - Python 3.9 or higher
 - pip
+- [libmagic](https://github.com/ahupp/python-magic#installation)
 
 **Installation command:**
 
@@ -124,30 +123,6 @@ Once installed, you can manage your tools with these simple commands:
 
 For more details, check the [Table of Contents](#table-of-contents-).
 
-## Prerequisites 📋
-
-- python3.8 or higher
-- [libmagic](https://github.com/ahupp/python-magic#installation)
-- Default installation path: `~/bin/` (Ensure this is in your `PATH`)
-
-```bash
-# Add this to your ~/.bashrc or ~/.zshrc
-export PATH=$HOME/bin:$PATH
-```
-
-## Updating `install-release` 🔄
-
-For seeing version:
-
-```bash
-ir me --version
-```
-
-For updating:
-
-```bash
-ir me --upgrade
-```
 
 ## Example usage `ir --help` 💡
 
