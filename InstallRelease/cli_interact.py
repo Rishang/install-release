@@ -205,6 +205,15 @@ def get(
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
+    # When --pkg is selected, keep only assets matching the OS package type
+    if package_mode and os_package_type:
+        for release in releases:
+            release.assets = [
+                a
+                for a in release.assets
+                if detect_package_type_from_asset_name(a.name) == os_package_type
+            ]
+
     if not releases:
         logger.error(f"No releases found: {repo.repo_url}")
         return
