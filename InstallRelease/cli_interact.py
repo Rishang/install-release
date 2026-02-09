@@ -46,6 +46,8 @@ console = Console(width=40)
 install_release_version = PackageVersion("install-release")
 os_package_type = detect_package_type_from_os_release()
 
+logger.debug(f"os_package_type: {os_package_type}")
+
 if os.environ.get("installState", "") == "test":
     temp_dir = "../temp"
     __spath = {

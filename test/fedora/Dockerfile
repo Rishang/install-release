@@ -5,6 +5,7 @@ RUN dnf install -y \
     file \
     file-libs \
     findutils \
+    ncurses \
     python3 \
     && dnf clean all
 
@@ -15,7 +16,6 @@ WORKDIR /app
 
 # Copy dependency manifests first for better layer caching (paths relative to context = repo root)
 COPY pyproject.toml uv.lock ./
-COPY InstallRelease/ ./InstallRelease/
 
 # Sync dependencies and install the package (CLI: ir, install-release)
 RUN uv sync --frozen --no-dev

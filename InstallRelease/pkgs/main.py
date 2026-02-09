@@ -64,15 +64,15 @@ def detect_package_type_from_os_release() -> Optional[str]:
     # Fallback: Check for package manager availability
     # Check for rpm-based first (to avoid false positives on Fedora with dpkg installed)
     if (
-        sh("which rpm").returncode == 0
-        or sh("which dnf").returncode == 0
-        or sh("which yum").returncode == 0
+        sh("command -v rpm").returncode == 0
+        or sh("command -v dnf").returncode == 0
+        or sh("command -v yum").returncode == 0
     ):
         logger.debug("Detected RPM package manager, using .rpm packages")
         package_type = "rpm"
 
     # Check for dpkg/apt (Debian-based)
-    elif sh("which dpkg").returncode == 0 or sh("which apt").returncode == 0:
+    elif sh("command -v dpkg").returncode == 0 or sh("command -v apt").returncode == 0:
         logger.debug("Detected Debian package manager, using .deb packages")
         package_type = "deb"
 
