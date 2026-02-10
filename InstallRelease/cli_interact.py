@@ -566,7 +566,7 @@ def remove(name: str):
 
                             installer = RpmPackage(name)
                             installer.uninstall()
-                        elif package_type == "appimage":
+                        elif package_type == "AppImage":
                             from InstallRelease.pkgs.app_images import AppImageInstaller
 
                             installer = AppImageInstaller(name)
