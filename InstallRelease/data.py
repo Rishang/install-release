@@ -7,7 +7,7 @@ exception_compressed_mime_type = [
     "application/x-7z-compressed",
 ]
 _valid_install_methods = ["binary", "package"]
-_valid_package_types = ["deb", "rpm", "appimage", "binary"]
+_valid_package_types = ["deb", "rpm", "AppImage", "binary"]
 
 
 @dataclass
@@ -72,7 +72,7 @@ class Release:
     # Package management fields
     package_type: Optional[str] = field(
         default="binary"
-    )  # "deb", "rpm", "appimage", "binary"
+    )  # "deb", "rpm", "AppImage", "binary"
     install_method: Optional[str] = field(default="binary")  # "binary" or "package"
     # author: dict
     # draft: bool

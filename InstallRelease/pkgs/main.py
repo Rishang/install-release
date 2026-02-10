@@ -9,6 +9,8 @@ from InstallRelease.data import _valid_package_types
 def detect_package_type_from_asset_name(name: str) -> Optional[str]:
     """Infer package type from asset filename. Returns None if not a known package."""
     ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
+    if ext == "appimage":
+        return "AppImage"
     if ext in _valid_package_types:
         return ext
     return None
@@ -79,7 +81,7 @@ def detect_package_type_from_os_release() -> Optional[str]:
     else:
         # Fallback to AppImage for other Linux distros
         logger.debug("No specific package manager detected, using AppImage")
-        package_type = "appimage"
+        package_type = "AppImage"
 
     if package_type not in _valid_package_types:
         raise ValueError(f"Unsupported package type: {package_type}")
@@ -126,10 +128,10 @@ def install_package(
             installer = RpmPackage(name)
             logger.info("Installing RPM package this will need sudo permissions...")
             result = installer.install(package_path)
-        elif package_type == "appimage":
-            from InstallRelease.pkgs.app_images import AppImageInstaller
+        elif package_type == "AppImage":
+            from InstallRelease.pkgs.app_images import AppImage
 
-            installer = AppImageInstaller(name)
+            installer = AppImage(name)
             result = installer.install(package_path)
         else:
             logger.error(f"Unsupported package type: {package_type}")

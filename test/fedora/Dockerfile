@@ -18,7 +18,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Sync dependencies and install the package (CLI: ir, install-release)
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen
 
 # Ensure venv bin is on PATH so `ir` and `install-release` are available
 ENV PATH="/app/.venv/bin:$PATH"
