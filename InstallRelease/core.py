@@ -759,8 +759,12 @@ def install_bin(
 
         # Check if file is actually executable
         if not os.access(file, os.X_OK):
-            logger.debug(f"Skipping non-executable file: {file}")
-            continue
+            try:
+                os.chmod(file, 0o755)
+                logger.debug(f"Made file executable: {file}")
+            except Exception as e:
+                logger.error(f"Failed to make file executable: {e}")
+                continue
 
         bin_files.append(file)
 
