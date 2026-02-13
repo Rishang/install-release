@@ -38,7 +38,7 @@ from InstallRelease.core import (
     RepoInfo,
 )
 
-from InstallRelease.release_scorer import penalty_words
+from InstallRelease.release_scorer import PENALTY_KEYWORDS
 
 
 console = Console(width=40)
@@ -117,8 +117,8 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
 
     # Prepare data for table display
     assets_data = []
-    for idx, asset in enumerate(release.assets, start=1):
-        if any(word in asset.name.lower() for word in penalty_words):
+    for idx, asset in enumerate[ReleaseAssets](release.assets, start=1):
+        if any(word in asset.name.lower() for word in PENALTY_KEYWORDS):
             continue
         assets_data.append(
             {
@@ -194,12 +194,12 @@ def get(
     except Exception as e:
         logger.error(f"Error getting platform info: {e}")
 
-    # Extract words from release filename if provided
+    # Extract words from asset_file if provided
     custom_release_words = None
     if not is_none(asset_file):
         filename = asset_file.rsplit(".", 1)[0]
         custom_release_words = to_words(
-            filename.replace(".", "-"), ignore_words=["v", "unknown"]
+            text=filename.replace(".", "-"), ignore_words=["v", "unknown"]
         )
 
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
@@ -221,26 +221,31 @@ def get(
     toolname = repo.repo_name.lower() if is_none(name) else name.lower()
     at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    # Get cached release to check for custom_release_words
+    # Check for cached custom_release_words from previous installation
     cached_release = cache.get(f"{repo.repo_url}#{toolname}")
-
-    # Priority: custom_release_words from asset_file > cached custom_release_words > toolname
-    if custom_release_words:
-        extra_words = custom_release_words
-        is_user_pattern = True
-    elif (
+    cached_custom_words = None
+    if (
         cached_release
         and hasattr(cached_release, "custom_release_words")
         and cached_release.custom_release_words
     ):
-        extra_words = cached_release.custom_release_words
-        is_user_pattern = True
+        cached_custom_words = cached_release.custom_release_words
+
+    # Determine extra_words: prioritize new custom words > cached custom words > None
+    if custom_release_words:
+        extra_words = custom_release_words
+        disable_penalties = True
+    elif cached_custom_words:
+        extra_words = cached_custom_words
+        disable_penalties = True
     else:
-        extra_words = [toolname]
-        is_user_pattern = False
+        extra_words = None
+        disable_penalties = False
 
     logger.debug(f"custom_release_words: {custom_release_words}")
-    logger.debug(f"cached_release: {cached_release}")
+    logger.debug(f"cached_custom_words: {cached_custom_words}")
+    logger.debug(f"extra_words: {extra_words}")
+    logger.debug(f"disable_penalties: {disable_penalties}")
 
     # Detect package type if in package mode
     package_type = os_package_type
@@ -254,19 +259,16 @@ def get(
         releases=releases,
         repo_url=repo.repo_url,
         extra_words=extra_words,
-        is_user_pattern=is_user_pattern,
+        disable_penalties=disable_penalties,
         package_type=package_type if package_mode else None,
     )
 
     logger.debug(result)
 
-    # Handle the case where get_release returns False
     if result is False:
         logger.error("No suitable release assets found")
         return
 
-    # At this point, result must be a ReleaseAssets object
-    # Using cast to tell mypy that we've already checked the type
     asset = cast(ReleaseAssets, result)
 
     for _r in releases:
@@ -303,17 +305,15 @@ def get(
         pprint("[color(34)]Install this tool (Y/n/?): ", end="")
         yn = input()
 
-        # Handle '?' to show all assets and let user select
         if yn.lower() == "?":
             selected_asset = _show_and_select_asset(releases[0], toolname)
             if selected_asset is None:
                 return
-            # Update asset with user's selection
             asset = selected_asset
-            # Extract custom_release_words from selected asset filename
+            # Extract custom_release_words from user's manual selection
             filename = asset.name.rsplit(".", 1)[0]
             custom_release_words = to_words(
-                filename.replace(".", "-"), ignore_words=["v", "unknown"]
+                text=filename.replace(".", "-"), ignore_words=["v", "unknown"]
             )
             pprint("\n[magenta]Downloading...[/magenta]")
         elif yn.lower() != "y":
@@ -348,26 +348,18 @@ def get(
         extract_release(item=asset, at=at.name)
         releases[0].assets = [asset]
         mkdir(dest)
-        install_bin(src=at.name, dest=dest, local=local, name=toolname)
+        is_installed = install_bin(src=at.name, dest=dest, local=local, name=toolname)
+        if not is_installed:
+            return
 
-    # Lock to specific version if tag was provided, unlock if release_file was used
-    if tag_name:
-        releases[0].hold_update = True
-    else:
-        releases[0].hold_update = False
+    # Lock to specific version if tag was provided
+    releases[0].hold_update = bool(tag_name)
 
-    # Store extracted or cached words
+    # Persist custom_release_words: new custom words > cached custom words
     if custom_release_words:
         releases[0].custom_release_words = custom_release_words
-    elif cached_release and hasattr(cached_release, "custom_release_words"):
-        releases[0].custom_release_words = cached_release.custom_release_words
-
-    # """For ignoring holds in get too"""
-    # check_key = cache.get(f"{repo.repo_url}#{toolname}")
-
-    # if isinstance(check_key, GithubRelease) and check_key.hold_update == True:
-    #     logger.debug(f"hold_update={check_key.hold_update}")
-    #     releases[0].hold_update = True
+    elif cached_custom_words:
+        releases[0].custom_release_words = cached_custom_words
 
     cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()
