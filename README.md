@@ -134,13 +134,18 @@ Usage: ir [OPTIONS] COMMAND [ARGS]...
 
   GitHub / GitLab release installer based on your system (Linux/MacOS)
 
+  Options:
+    --install-completion   Install completion for the current shell.
+    --show-completion      Show completion for the current shell, to copy it or customize the installation.
+    --help                Show this message and exit.
+
   Commands:
     get      | Install GitHub/GitLab repository CLI tool from its releases
+    upgrade  | Upgrade all installed CLI tools from their repositories
     ls       | List all installed CLI tools
     rm       | Remove any installed CLI tool
-    upgrade  | Upgrade all installed CLI tools from their repositories
-    state    | Show the current stored state of Install-Release
     config   | Set configs for Install-Release
+    state    | Show the current stored state of Install-Release
     pull     | Install tools from the remote install-release state URL
     hold     | Keep an installed CLI tool's updates on hold.
     me       | Update the Install-Release tool.
@@ -244,16 +249,16 @@ The tool will automatically parse the selected filename into keywords and store 
 
 ##### Method 2: Command-line Flag
 
-You can also specify the release file name directly using the `-a` flag:
+You can also specify the release file name directly using the `-f` / `--file` flag:
 
 ```bash
-❯ ir get [GITHUB-URL or GITLAB-URL] -a [release asset filename]
+❯ ir get [GITHUB-URL or GITLAB-URL] -f [release asset filename]
 ```
 
 Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
 
 ```bash
-❯ ir get https://github.com/ekzhang/bore -a bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
+❯ ir get https://github.com/ekzhang/bore -f bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
 ```
 
 **How it works:**

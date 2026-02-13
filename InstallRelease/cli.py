@@ -63,13 +63,16 @@ def get(
     debug: bool = __optionDebug,
     quite: bool = __optionQuite,
     url: str = typer.Argument(None, help="[URL] of GitHub/GitLab repository"),
-    tag_name: str = typer.Option("", "-t", help="Select a specific release version."),
+    tag_name: str = typer.Option(
+        "", "-t", "--tag", help="Select a specific release version."
+    ),
     asset_file: str = typer.Option(
-        "", "-a", help="Select a specific release asset filename."
+        "", "-f", "--file", help="Select a specific release asset filename."
     ),
     name: str = typer.Option(
         "",
         "-n",
+        "--name",
         help="Custom name to save the tool as.",
     ),
     approve: bool = typer.Option(False, "-y", help="Approve without prompt."),

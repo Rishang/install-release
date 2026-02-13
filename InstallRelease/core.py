@@ -626,7 +626,7 @@ def get_release(
     releases: List[Release],
     repo_url: str,
     extra_words: Optional[List[str]] = None,
-    is_user_pattern: bool = False,
+    disable_penalties: bool = False,
     package_type: Optional[str] = None,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
@@ -635,7 +635,7 @@ def get_release(
         releases: List of releases to choose from
         repo_url: The repository URL
         extra_words: Additional keywords to match against
-        is_user_pattern: Whether to use user pattern mode
+        disable_penalties: Whether to disable penalties
         package_type: If set, prioritize this package type (deb/rpm/appimage)
     Returns:
         The best matching ReleaseAssets or False if no match found
@@ -649,10 +649,10 @@ def get_release(
         logger.debug(f"Package mode enabled, prioritizing: {package_type}")
 
     logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"is_user_pattern: {is_user_pattern}")
+    logger.debug(f"disable_penalties: {disable_penalties}")
 
     # Create scorer with platform words and extra words
-    scorer = ReleaseScorer(extra_words=extra_words, disable_penalties=is_user_pattern)
+    scorer = ReleaseScorer(extra_words=extra_words, disable_penalties=disable_penalties)
 
     # Log scorer information
     scorer_info = scorer.get_info()
@@ -759,8 +759,12 @@ def install_bin(
 
         # Check if file is actually executable
         if not os.access(file, os.X_OK):
-            logger.debug(f"Skipping non-executable file: {file}")
-            continue
+            try:
+                os.chmod(file, 0o755)
+                logger.debug(f"Made file executable: {file}")
+            except Exception as e:
+                logger.error(f"Failed to make file executable: {e}")
+                continue
 
         bin_files.append(file)
 
