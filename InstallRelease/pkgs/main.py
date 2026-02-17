@@ -10,10 +10,9 @@ def detect_package_type_from_asset_name(name: str) -> Optional[str]:
     """Infer package type from asset filename. Returns None if not a known package."""
     ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
     if ext == "appimage":
-        return "AppImage"
-    if ext in _valid_package_types:
-        return ext
-    return None
+        ext = "AppImage"
+    logger.debug(f"detect_package_type_from_asset_name: {ext}")
+    return ext if ext in _valid_package_types else None
 
 
 def detect_package_type_from_os_release() -> Optional[str]:

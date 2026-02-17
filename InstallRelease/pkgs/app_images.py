@@ -102,10 +102,49 @@ class AppImage(PackageInstallerABC):
             return
 
         logger.debug(f"Creating desktop entry: {self.desktop_entry_path}")
+        # Extract to detect whether we need --no-sandbox for Exec
+        needs_no_sandbox = True
+        if self.appimage_path and self.appimage_path.exists():
+            appimage_abs_path = self.appimage_path.resolve()
+            extracted_dir = self._appimage_extract(appimage_abs_path)
+            if extracted_dir and extracted_dir.exists():
+                try:
+                    needs_no_sandbox = self._needs_no_sandbox(extracted_dir)
+                finally:
+                    if extracted_dir.parent.exists():
+                        shutil.rmtree(extracted_dir.parent)
+        exec_cmd = (
+            f"{self.appimage_path} --no-sandbox"
+            if needs_no_sandbox
+            else str(self.appimage_path)
+        )
         self.desktop_entry_path.write_text(
-            f"[Desktop Entry]\nName={self.name}\nExec={self.appimage_path}\nIcon={self.icon_path}\nType=Application\nCategories=Utility;"
+            f"[Desktop Entry]\nName={self.name}\nExec={exec_cmd}\nIcon={self.icon_path}\nType=Application\nCategories=Utility;"
         )
         self.icon()
+
+    def _appimage_extract(self, appimage_path: Path) -> Path | None:
+        """
+        Extract the AppImage to a temporary directory.
+        Returns path to the extracted squashfs-root, or None on failure.
+        Caller is responsible for cleaning up the parent of the returned path.
+        """
+        temp_dir = Path(tempfile.mkdtemp(prefix=f"{self.name}_extract_"))
+        logger.debug(f"Created temporary extraction directory: {temp_dir}")
+
+        try:
+            appimage_path.chmod(0o755)
+            logger.debug(f"Extracting AppImage: {appimage_path}")
+            result = sh(f"cd {temp_dir} && {appimage_path} --appimage-extract")
+            if result.returncode != 0:
+                logger.error(f"Failed to extract AppImage: {result.stderr}")
+                return None
+            return temp_dir / "squashfs-root"
+        except Exception as e:
+            logger.error(f"Error extracting AppImage: {e}")
+            if temp_dir.exists():
+                shutil.rmtree(temp_dir)
+            return None
 
     def icon(self, remove: bool = False):
         """
@@ -124,44 +163,54 @@ class AppImage(PackageInstallerABC):
             )
             return None
 
-        # Convert to absolute path to avoid issues with cd
         appimage_abs_path = self.appimage_path.resolve()
-
-        # Create a temporary directory for extraction
-        temp_dir = Path(tempfile.mkdtemp(prefix=f"{self.name}_extract_"))
-        logger.debug(f"Created temporary extraction directory: {temp_dir}")
+        extracted_dir = self._appimage_extract(appimage_abs_path)
+        if not extracted_dir or not extracted_dir.exists():
+            return None
 
         try:
-            # Make AppImage executable
-            appimage_abs_path.chmod(0o755)
-
-            # Extract AppImage
-            logger.debug(f"Extracting AppImage: {appimage_abs_path}")
-            result = sh(f"cd {temp_dir} && {appimage_abs_path} --appimage-extract")
-
-            if result.returncode != 0:
-                logger.error(f"Failed to extract AppImage: {result.stderr}")
-                return None
-
-            # Look for icon files in the extracted directory
-            extracted_dir = temp_dir / "squashfs-root"
             icon_file = self._find_icon(extracted_dir)
-
             if icon_file:
                 logger.debug(f"Found icon: {icon_file}")
-                # Copy icon to the destination
                 shutil.copy2(icon_file, self.icon_path)
                 logger.debug(f"Icon copied to: {self.icon_path}")
                 return str(self.icon_path)
-
+            return None
         except Exception as e:
             logger.error(f"Error generating icon: {e}")
             return None
         finally:
-            # Clean up extracted directory
-            if temp_dir.exists():
-                logger.debug(f"Removing temporary directory: {temp_dir}")
-                shutil.rmtree(temp_dir)
+            if extracted_dir.parent.exists():
+                logger.debug(f"Removing temporary directory: {extracted_dir.parent}")
+                shutil.rmtree(extracted_dir.parent)
+
+    def _needs_no_sandbox(self, extracted_dir: Path) -> bool:
+        """
+        Check extracted AppImage contents to see if the app likely needs
+        --no-sandbox (e.g. Electron-based apps on Linux).
+        """
+        # Electron: app.asar under resources
+        app_asar = extracted_dir / "resources" / "app.asar"
+        if app_asar.is_file():
+            logger.debug("Detected Electron app (app.asar), will use --no-sandbox")
+            return True
+        # Electron/Chromium: electron binary or chrome-sandbox
+        for name in ("electron", "chrome-sandbox"):
+            for parent in (extracted_dir, extracted_dir / "usr" / "bin"):
+                if (parent / name).exists():
+                    logger.debug(
+                        f"Detected Electron/Chromium ({name}), will use --no-sandbox"
+                    )
+                    return True
+        # Any .asar in resources (other Electron layouts)
+        resources = extracted_dir / "resources"
+        if resources.is_dir():
+            for p in resources.iterdir():
+                if p.suffix == ".asar":
+                    logger.debug("Detected .asar in resources, will use --no-sandbox")
+                    return True
+        logger.debug("No Electron/sandbox indicators, Exec will not use --no-sandbox")
+        return False
 
     def _find_icon(self, extracted_dir: Path) -> Path | None:
         """

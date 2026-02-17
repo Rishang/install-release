@@ -559,9 +559,9 @@ def remove(name: str):
                             installer = RpmPackage(name)
                             installer.uninstall()
                         elif package_type == "AppImage":
-                            from InstallRelease.pkgs.app_images import AppImageInstaller
+                            from InstallRelease.pkgs.app_images import AppImage
 
-                            installer = AppImageInstaller(name)
+                            installer = AppImage(name)
                             installer.uninstall()
                     except Exception as e:
                         logger.error(f"Failed to uninstall package: {e}")
