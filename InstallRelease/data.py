@@ -79,6 +79,9 @@ class Release:
     # target_commitish: str
 
     def __post_init__(self):
+        # Normalize package_type for backward compatibility (e.g. state saved as "appimage")
+        if self.package_type and self.package_type.lower() == "appimage":
+            self.package_type = "AppImage"
         # Validate install method and package type before processing assets
         if self.install_method and self.install_method not in _valid_install_methods:
             raise ValueError(f"Unsupported install method: {self.install_method}")
