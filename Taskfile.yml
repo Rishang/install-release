@@ -34,7 +34,7 @@ tasks:
       ARGS: '{{ .ARGS | default "" }}'
     cmds:
       - mkdir -p dist
-      - uv run python -m nuitka --standalone --onefile {{.ARGS}} --follow-imports cli/__main__.py --output-filename={{.FILENAME}}
+      - uv run python -m nuitka --standalone --onefile --include-package=rich {{.ARGS}} --follow-imports cli/__main__.py --output-filename={{.FILENAME}}
       - rm -rf __main__.build __main__.onefile-build
       - mv {{.FILENAME}} dist/
 
