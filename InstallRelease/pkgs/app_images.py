@@ -2,6 +2,7 @@
 This module is for installing Linux AppImages.
 """
 
+import configparser
 import os
 import shutil
 import tempfile
@@ -21,6 +22,7 @@ class AppImage(PackageInstallerABC):
     ):
         super().__init__(name)
         self.name = name
+        self.pid_name: str | None = None
         self.appimage_path = Path(appimage_path) if appimage_path else None
 
         current_platform = platform.system().lower()
@@ -110,6 +112,8 @@ class AppImage(PackageInstallerABC):
             if extracted_dir and extracted_dir.exists():
                 try:
                     needs_no_sandbox = self._needs_no_sandbox(extracted_dir)
+                    self.pid_name = self._get_pid_name(extracted_dir)
+                    logger.debug(f"Detected PID name: {self.pid_name}")
                 finally:
                     if extracted_dir.parent.exists():
                         shutil.rmtree(extracted_dir.parent)
@@ -118,8 +122,9 @@ class AppImage(PackageInstallerABC):
             if needs_no_sandbox
             else str(self.appimage_path)
         )
+        startup_wm_class = self.pid_name or self.name
         self.desktop_entry_path.write_text(
-            f"[Desktop Entry]\nName={self.name}\nExec={exec_cmd}\nIcon={self.icon_path}\nType=Application\nCategories=Utility;"
+            f"[Desktop Entry]\nName={self.name}\nExec={exec_cmd}\nIcon={self.icon_path}\nType=Application\nCategories=Utility;\nStartupWMClass={startup_wm_class}"
         )
         self.icon()
 
@@ -211,6 +216,27 @@ class AppImage(PackageInstallerABC):
                     return True
         logger.debug("No Electron/sandbox indicators, Exec will not use --no-sandbox")
         return False
+
+    def _get_pid_name(self, extracted_dir: Path) -> str | None:
+        """
+        Detect the actual process name the AppImage launches by reading
+        the internal .desktop file's Exec= entry.
+
+        Returns the binary name (e.g. "code", "obsidian") or None if not found.
+        """
+        for f in extracted_dir.glob("*.desktop"):
+            config = configparser.RawConfigParser(strict=False)
+            config.read(f)
+            exec_val = config.get("Desktop Entry", "Exec", fallback=None)
+            if exec_val:
+                # Exec may contain args and field codes: e.g. "myapp --flag %U"
+                binary = exec_val.split()[0]
+                # Strip path component, e.g. /usr/bin/myapp -> myapp
+                pid_name = Path(binary).name
+                logger.debug(f"Found PID name '{pid_name}' from {f.name}")
+                return pid_name
+        logger.debug("No internal .desktop file found; could not detect PID name")
+        return None
 
     def _find_icon(self, extracted_dir: Path) -> Path | None:
         """
