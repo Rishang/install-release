@@ -11,7 +11,6 @@ def detect_package_type_from_asset_name(name: str) -> Optional[str]:
     ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
     if ext == "appimage":
         ext = "AppImage"
-    logger.debug(f"detect_package_type_from_asset_name: {ext}")
     return ext if ext in _valid_package_types else None
 
 
@@ -57,6 +56,12 @@ def detect_package_type_from_os_release() -> Optional[str]:
                     "Detected RPM-based system from /etc/os-release, using .rpm packages"
                 )
                 package_type = "rpm"
+
+            # Linux fallback
+            if platform.system().lower() == "linux":
+                logger.debug("Detected Linux system, using AppImage packages")
+                package_type = "AppImage"
+
     except FileNotFoundError:
         logger.debug(
             "/etc/os-release not found, falling back to package manager detection"
