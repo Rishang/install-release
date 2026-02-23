@@ -181,6 +181,9 @@ class ReleaseScorer:
         valid = [item for item in scored if item[1] >= min_score]
 
         if not valid:
+            if len(scored) == 1:
+                logger.info(f"Only one asset available, selecting: '{scored[0][0]}'")
+                return scored[0][0]
             logger.debug(f"No releases scored above {min_score}")
             return None
 

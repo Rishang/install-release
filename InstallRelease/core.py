@@ -751,11 +751,23 @@ def install_bin(
         elif not re.match(pattern=__exec_pattern, string=f.mime_type):
             continue
 
-        # Skip files with script extensions
-        file_ext = os.path.splitext(file)[1].lower()
-        if file_ext in skip_extensions:
+        file_ext = os.path.splitext(file)[1].lower().lstrip(".")
+
+        # Skip files with certain extensions
+        if skip_extensions and file_ext in skip_extensions:
             logger.debug(f"Skipping script file: {file}")
             continue
+
+        # For .js files, only keep if they have a #!/usr/bin/env node shebang
+        if file_ext == "js" or file_ext == "ts":
+            try:
+                with open(file, "rb") as fh:
+                    shebang = fh.read(32)
+                if b"#!/usr/bin/env node" not in shebang:
+                    logger.debug(f"Skipping non-runnable .js (no node shebang): {file}")
+                    continue
+            except Exception:
+                continue
 
         # Check if file is actually executable
         if not os.access(file, os.X_OK):

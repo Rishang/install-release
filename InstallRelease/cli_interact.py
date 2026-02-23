@@ -201,6 +201,7 @@ def get(
         custom_release_words = to_words(
             text=filename.replace(".", "-"), ignore_words=["v", "unknown"]
         )
+        disable_penalties = True
 
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
