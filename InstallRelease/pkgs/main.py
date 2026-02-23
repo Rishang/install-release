@@ -24,25 +24,20 @@ def detect_package_type_from_os_release() -> Optional[str]:
         logger.warning("Package installation is only supported on Linux")
         return None
 
-    # Try to detect from /etc/os-release (standard method)
+    # Try to detect from /etc/os-release
     try:
         with open("/etc/os-release") as f:
             os_release = f.read().lower()
 
-            # Check for Debian-based distros
             if any(
-                distro in os_release
-                for distro in ["debian", "ubuntu", "mint", "pop", "elementary"]
+                d in os_release
+                for d in ["debian", "ubuntu", "mint", "pop", "elementary"]
             ):
-                logger.debug(
-                    "Detected Debian-based system from /etc/os-release, using .deb packages"
-                )
+                logger.debug("Detected Debian-based system, using .deb packages")
                 package_type = "deb"
-
-            # Check for RPM-based distros
-            if any(
-                distro in os_release
-                for distro in [
+            elif any(
+                d in os_release
+                for d in [
                     "fedora",
                     "rhel",
                     "centos",
@@ -52,40 +47,32 @@ def detect_package_type_from_os_release() -> Optional[str]:
                     "suse",
                 ]
             ):
-                logger.debug(
-                    "Detected RPM-based system from /etc/os-release, using .rpm packages"
-                )
+                logger.debug("Detected RPM-based system, using .rpm packages")
                 package_type = "rpm"
-
-            # Linux fallback
-            if platform.system().lower() == "linux":
-                logger.debug("Detected Linux system, using AppImage packages")
-                package_type = "AppImage"
 
     except FileNotFoundError:
         logger.debug(
             "/etc/os-release not found, falling back to package manager detection"
         )
 
-    # Fallback: Check for package manager availability
-    # Check for rpm-based first (to avoid false positives on Fedora with dpkg installed)
-    if (
-        sh("command -v rpm").returncode == 0
-        or sh("command -v dnf").returncode == 0
-        or sh("command -v yum").returncode == 0
-    ):
-        logger.debug("Detected RPM package manager, using .rpm packages")
-        package_type = "rpm"
-
-    # Check for dpkg/apt (Debian-based)
-    elif sh("command -v dpkg").returncode == 0 or sh("command -v apt").returncode == 0:
-        logger.debug("Detected Debian package manager, using .deb packages")
-        package_type = "deb"
-
-    else:
-        # Fallback to AppImage for other Linux distros
-        logger.debug("No specific package manager detected, using AppImage")
-        package_type = "AppImage"
+    # Fallback: check package manager availability if not detected yet
+    if not package_type:
+        if (
+            sh("command -v rpm").returncode == 0
+            or sh("command -v dnf").returncode == 0
+            or sh("command -v yum").returncode == 0
+        ):
+            logger.debug("Detected RPM package manager, using .rpm packages")
+            package_type = "rpm"
+        elif (
+            sh("command -v dpkg").returncode == 0
+            or sh("command -v apt").returncode == 0
+        ):
+            logger.debug("Detected Debian package manager, using .deb packages")
+            package_type = "deb"
+        else:
+            logger.debug("No specific package manager detected, using AppImage")
+            package_type = "AppImage"
 
     if package_type not in _valid_package_types:
         raise ValueError(f"Unsupported package type: {package_type}")

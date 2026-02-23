@@ -205,14 +205,29 @@ def get(
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
-    # When --pkg is selected, keep only assets matching the OS package type
+    # When --pkg is selected, filter to native package type; fall back to AppImage if none found.
     if package_mode and os_package_type:
-        for release in releases:
-            release.assets = [
+
+        def _pkg_assets(release, pkg_type):
+            return [
                 a
                 for a in release.assets
-                if detect_package_type_from_asset_name(a.name) == os_package_type
+                if detect_package_type_from_asset_name(a.name) == pkg_type
             ]
+
+        for release in releases:
+            release.assets = _pkg_assets(release, os_package_type) or _pkg_assets(
+                release, "AppImage"
+            )
+            if (
+                release.assets
+                and detect_package_type_from_asset_name(release.assets[0].name)
+                == "AppImage"
+                and os_package_type != "AppImage"
+            ):
+                logger.info(
+                    f"No {os_package_type} package found, falling back to AppImage"
+                )
 
     if not releases:
         logger.error(f"No releases found: {repo.repo_url}")
