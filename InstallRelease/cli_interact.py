@@ -221,15 +221,6 @@ def _install_asset(
 
     On success, mutates `release` with the installed asset metadata.
 
-    Args:
-        asset: The selected release asset
-        release: The Release object to update on success
-        package_mode: Whether --pkg was requested
-        package_type: Detected OS package type
-        toolname: Name for the installed tool
-        temp_dir: Temporary directory for download/extract
-        local: Whether to install locally
-
     Returns:
         True if installation succeeded, False otherwise
     """
