@@ -357,7 +357,7 @@ def get(
     logger.debug(f"extra_words: {extra_words}")
     logger.debug(f"disable_penalties: {disable_penalties}")
 
-    # --- 4. Validate package mode ---------------------------------------------
+    # --- Validate package mode ---------------------------------------------
     package_type = os_package_type
     if package_mode:
         if not package_type:
