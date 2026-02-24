@@ -104,10 +104,6 @@ dest = platform_path(paths=bin_path, alt=config_path_str)
 def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
     """Show all release assets in a table and let user select one by ID
 
-    Args:
-        release: The release object containing assets
-        toolname: Name of the tool being installed
-
     Returns:
         Selected ReleaseAssets object or None if cancelled
     """
@@ -168,12 +164,7 @@ def _extract_words_from_filename(asset_filename: str) -> list:
     """Extract scoring keywords from an asset filename.
 
     Strips the extension, replaces dots with hyphens, and tokenizes.
-
-    Args:
-        asset_filename: The asset filename (e.g. "tool-linux-amd64.tar.gz")
-
-    Returns:
-        List of extracted keyword strings
+    Returns: List of extracted keyword strings
     """
     basename = asset_filename.rsplit(".", 1)[0]
     return to_words(text=basename.replace(".", "-"), ignore_words=["v", "unknown"])
@@ -186,46 +177,13 @@ def _resolve_release_words(
 
     Priority: custom > cached > None.
 
-    Returns:
-        (extra_words, disable_penalties) tuple
+    Returns: (extra_words, disable_penalties) tuple
     """
     if custom_words:
         return custom_words, True
     if cached_words:
         return cached_words, True
     return None, False
-
-
-def _filter_pkg_assets(releases: list, pkg_type: str) -> None:
-    """Filter release assets to only the requested package type.
-
-    Falls back to AppImage if no native packages are found.
-    Mutates release.assets in-place.
-
-    Args:
-        releases: List of Release objects to filter
-        pkg_type: Target package type (e.g. "deb", "rpm")
-    """
-    for release in releases:
-        native = [
-            a
-            for a in release.assets
-            if detect_package_type_from_asset_name(a.name) == pkg_type
-        ]
-        fallback = [
-            a
-            for a in release.assets
-            if detect_package_type_from_asset_name(a.name) == "AppImage"
-        ]
-        release.assets = native or fallback
-
-        if (
-            release.assets
-            and detect_package_type_from_asset_name(release.assets[0].name)
-            == "AppImage"
-            and pkg_type != "AppImage"
-        ):
-            logger.info(f"No {pkg_type} package found, falling back to AppImage")
 
 
 def _show_pkg_hint(releases: list, package_mode: bool) -> None:
@@ -347,7 +305,32 @@ def get(
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
     if package_mode and os_package_type:
-        _filter_pkg_assets(releases, os_package_type)
+        """Filter release assets to only the requested package type.
+        Falls back to AppImage if no native packages are found.
+        Mutates release.assets in-place.
+        """
+        for release in releases:
+            native = [
+                a
+                for a in release.assets
+                if detect_package_type_from_asset_name(a.name) == os_package_type
+            ]
+            fallback = [
+                a
+                for a in release.assets
+                if detect_package_type_from_asset_name(a.name) == "AppImage"
+            ]
+            release.assets = native or fallback
+
+            if (
+                release.assets
+                and detect_package_type_from_asset_name(release.assets[0].name)
+                == "AppImage"
+                and os_package_type != "AppImage"
+            ):
+                logger.info(
+                    f"No {os_package_type} package found, falling back to AppImage"
+                )
 
     if not releases:
         logger.error(f"No releases found: {repo.repo_url}")
