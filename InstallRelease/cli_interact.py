@@ -164,6 +164,149 @@ def state_info():
     logger.debug(dest)
 
 
+def _extract_words_from_filename(asset_filename: str) -> list:
+    """Extract scoring keywords from an asset filename.
+
+    Strips the extension, replaces dots with hyphens, and tokenizes.
+
+    Args:
+        asset_filename: The asset filename (e.g. "tool-linux-amd64.tar.gz")
+
+    Returns:
+        List of extracted keyword strings
+    """
+    basename = asset_filename.rsplit(".", 1)[0]
+    return to_words(text=basename.replace(".", "-"), ignore_words=["v", "unknown"])
+
+
+def _resolve_release_words(
+    custom_words: Optional[list], cached_words: Optional[list]
+) -> tuple:
+    """Resolve extra_words and disable_penalties from custom and cached words.
+
+    Priority: custom > cached > None.
+
+    Returns:
+        (extra_words, disable_penalties) tuple
+    """
+    if custom_words:
+        return custom_words, True
+    if cached_words:
+        return cached_words, True
+    return None, False
+
+
+def _filter_pkg_assets(releases: list, pkg_type: str) -> None:
+    """Filter release assets to only the requested package type.
+
+    Falls back to AppImage if no native packages are found.
+    Mutates release.assets in-place.
+
+    Args:
+        releases: List of Release objects to filter
+        pkg_type: Target package type (e.g. "deb", "rpm")
+    """
+    for release in releases:
+        native = [
+            a
+            for a in release.assets
+            if detect_package_type_from_asset_name(a.name) == pkg_type
+        ]
+        fallback = [
+            a
+            for a in release.assets
+            if detect_package_type_from_asset_name(a.name) == "AppImage"
+        ]
+        release.assets = native or fallback
+
+        if (
+            release.assets
+            and detect_package_type_from_asset_name(release.assets[0].name)
+            == "AppImage"
+            and pkg_type != "AppImage"
+        ):
+            logger.info(f"No {pkg_type} package found, falling back to AppImage")
+
+
+def _show_pkg_hint(releases: list, package_mode: bool) -> None:
+    """Show a one-time hint if a native OS package is available but not selected.
+
+    Only prints when package_mode is False and a matching package asset exists.
+
+    Args:
+        releases: List of Release objects
+        package_mode: Whether --pkg was already requested
+    """
+    if package_mode or not os_package_type:
+        return
+
+    for release in releases:
+        for asset in release.assets:
+            if detect_package_type_from_asset_name(asset.name) == os_package_type:
+                pprint(
+                    f"[bold green]\n[INFO]: A `{os_package_type}` package is "
+                    f"available for this release. Add `--pkg` to install it.[/bold green]"
+                )
+                return  # show hint only once
+
+
+def _install_asset(
+    asset: ReleaseAssets,
+    release: "Release",
+    package_mode: bool,
+    package_type: Optional[str],
+    toolname: str,
+    temp_dir: str,
+    local: bool,
+) -> bool:
+    """Download and install a release asset (package or binary).
+
+    On success, mutates `release` with the installed asset metadata.
+
+    Args:
+        asset: The selected release asset
+        release: The Release object to update on success
+        package_mode: Whether --pkg was requested
+        package_type: Detected OS package type
+        toolname: Name for the installed tool
+        temp_dir: Temporary directory for download/extract
+        local: Whether to install locally
+
+    Returns:
+        True if installation succeeded, False otherwise
+    """
+    effective_pkg = (
+        package_type
+        if package_mode
+        else detect_package_type_from_asset_name(asset.name)
+    )
+
+    if effective_pkg:
+        download(asset.browser_download_url, temp_dir)
+        logger.debug(f"Downloaded package to: {temp_dir}")
+
+        success = install_package(
+            package_type=effective_pkg,
+            name=toolname,
+            temp_dir=temp_dir,
+        )
+        if not success:
+            logger.error(f"Failed to install {toolname} as {effective_pkg} package")
+            return False
+
+        release.assets = [asset]
+        release.package_type = effective_pkg
+        release.install_method = "package"
+    else:
+        extract_release(item=asset, at=temp_dir)
+        release.assets = [asset]
+        mkdir(dest)
+        if not install_bin(src=temp_dir, dest=dest, local=local, name=toolname):
+            return False
+
+    return True
+
+
 def get(
     repo: RepoInfo,
     tag_name: str = "",
@@ -194,76 +337,44 @@ def get(
     except Exception as e:
         logger.error(f"Error getting platform info: {e}")
 
-    # Extract words from asset_file if provided
-    custom_release_words = None
-    if not is_none(asset_file):
-        filename = asset_file.rsplit(".", 1)[0]
-        custom_release_words = to_words(
-            text=filename.replace(".", "-"), ignore_words=["v", "unknown"]
-        )
-        disable_penalties = True
+    # --- Parse custom words from asset_file --------------------------------
+    custom_release_words = (
+        _extract_words_from_filename(asset_file) if not is_none(asset_file) else None
+    )
 
+    # --- Fetch releases ----------------------------------------------------
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
-    # When --pkg is selected, filter to native package type; fall back to AppImage if none found.
     if package_mode and os_package_type:
-
-        def _pkg_assets(release, pkg_type):
-            return [
-                a
-                for a in release.assets
-                if detect_package_type_from_asset_name(a.name) == pkg_type
-            ]
-
-        for release in releases:
-            release.assets = _pkg_assets(release, os_package_type) or _pkg_assets(
-                release, "AppImage"
-            )
-            if (
-                release.assets
-                and detect_package_type_from_asset_name(release.assets[0].name)
-                == "AppImage"
-                and os_package_type != "AppImage"
-            ):
-                logger.info(
-                    f"No {os_package_type} package found, falling back to AppImage"
-                )
+        _filter_pkg_assets(releases, os_package_type)
 
     if not releases:
         logger.error(f"No releases found: {repo.repo_url}")
         return
 
+    # ---  Resolve extra_words (custom > cached > None) ----------------------
     toolname = repo.repo_name.lower() if is_none(name) else name.lower()
-    at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
 
-    # Check for cached custom_release_words from previous installation
     cached_release = cache.get(f"{repo.repo_url}#{toolname}")
-    cached_custom_words = None
-    if (
-        cached_release
+    cached_custom_words = (
+        cached_release.custom_release_words
+        if cached_release
         and hasattr(cached_release, "custom_release_words")
         and cached_release.custom_release_words
-    ):
-        cached_custom_words = cached_release.custom_release_words
+        else None
+    )
 
-    # Determine extra_words: prioritize new custom words > cached custom words > None
-    if custom_release_words:
-        extra_words = custom_release_words
-        disable_penalties = True
-    elif cached_custom_words:
-        extra_words = cached_custom_words
-        disable_penalties = True
-    else:
-        extra_words = None
-        disable_penalties = False
+    extra_words, disable_penalties = _resolve_release_words(
+        custom_release_words, cached_custom_words
+    )
 
     logger.debug(f"custom_release_words: {custom_release_words}")
     logger.debug(f"cached_custom_words: {cached_custom_words}")
     logger.debug(f"extra_words: {extra_words}")
     logger.debug(f"disable_penalties: {disable_penalties}")
 
-    # Detect package type if in package mode
+    # --- 4. Validate package mode ---------------------------------------------
     package_type = os_package_type
     if package_mode:
         if not package_type:
@@ -271,31 +382,43 @@ def get(
             return
         logger.info(f"Installing as {package_type} package")
 
-    result = get_release(
-        releases=releases,
-        repo_url=repo.repo_url,
-        extra_words=extra_words,
-        disable_penalties=disable_penalties,
-        package_type=package_type if package_mode else None,
-    )
+    # ---  Score & select asset ----------------------------------------------
+    # Try exact name match: explicit --file, or previously cached asset name
+    asset = None
+    known_names = set()
+    if not is_none(asset_file):
+        known_names.add(asset_file)
+    if cached_release and cached_release.assets:
+        known_names.add(cached_release.assets[0].name)
 
-    logger.debug(result)
-
-    if result is False:
-        logger.error("No suitable release assets found")
-        return
-
-    asset = cast(ReleaseAssets, result)
-
-    for _r in releases:
-        for _a in _r.assets:
-            if detect_package_type_from_asset_name(_a.name) == os_package_type:
-                pprint(
-                    f"[bold green]\n[INFO]: A `{os_package_type}` package is available for this release. Add `--pkg` to install it.[/bold green]"
-                )
+    if known_names:
+        for a in releases[0].assets:
+            if a.name in known_names:
+                asset = a
+                logger.debug(f"Exact asset match: '{a.name}'")
                 break
-    del _r, _a
 
+    if asset is None:
+        result = get_release(
+            releases=releases,
+            repo_url=repo.repo_url,
+            extra_words=extra_words,
+            disable_penalties=disable_penalties,
+            package_type=package_type if package_mode else None,
+        )
+
+        logger.debug(result)
+
+        if result is False:
+            logger.error("No suitable release assets found")
+            return
+
+        asset = cast(ReleaseAssets, result)
+
+    # --- Show pkg hint (only when not in --pkg mode) -----------------------
+    _show_pkg_hint(releases, package_mode)
+
+    # --- Prompt user -------------------------------------------------------
     if prompt is not False:
         pprint(
             f"\n[green bold]📑 Repo     : {repo.info.full_name}"
@@ -326,56 +449,35 @@ def get(
             if selected_asset is None:
                 return
             asset = selected_asset
-            # Extract custom_release_words from user's manual selection
-            filename = asset.name.rsplit(".", 1)[0]
-            custom_release_words = to_words(
-                text=filename.replace(".", "-"), ignore_words=["v", "unknown"]
-            )
+            custom_release_words = _extract_words_from_filename(asset.name)
             pprint("\n[magenta]Downloading...[/magenta]")
         elif yn.lower() != "y":
             return
         else:
             pprint("\n[magenta]Downloading...[/magenta]")
 
-    # Install: package (deb/rpm/appimage) or binary (extract + install_bin)
-    effective_pkg = (
-        package_type
-        if package_mode
-        else detect_package_type_from_asset_name(asset.name)
-    )
+    # ---  Install (package or binary) ---------------------------------------
+    at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
+    if not _install_asset(
+        asset,
+        releases[0],
+        package_mode=package_mode,
+        package_type=package_type,
+        toolname=toolname,
+        temp_dir=at.name,
+        local=local,
+    ):
+        return
 
-    if effective_pkg:
-        download(asset.browser_download_url, at.name)
-        logger.debug(f"Downloaded package to: {at.name}")
-
-        success = install_package(
-            package_type=effective_pkg,
-            name=toolname,
-            temp_dir=at.name,
-        )
-        if not success:
-            logger.error(f"Failed to install {toolname} as {effective_pkg} package")
-            return
-
-        releases[0].assets = [asset]
-        releases[0].package_type = effective_pkg
-        releases[0].install_method = "package"
-    else:
-        extract_release(item=asset, at=at.name)
-        releases[0].assets = [asset]
-        mkdir(dest)
-        is_installed = install_bin(src=at.name, dest=dest, local=local, name=toolname)
-        if not is_installed:
-            return
-
-    # Lock to specific version if tag was provided
+    # ---  Persist to cache --------------------------------------------------
     releases[0].hold_update = bool(tag_name)
 
-    # Persist custom_release_words: new custom words > cached custom words
-    if custom_release_words:
-        releases[0].custom_release_words = custom_release_words
-    elif cached_custom_words:
-        releases[0].custom_release_words = cached_custom_words
+    # Persist custom_release_words: custom > cached
+    resolved_words, _ = _resolve_release_words(
+        custom_release_words, cached_custom_words
+    )
+    if resolved_words:
+        releases[0].custom_release_words = resolved_words
 
     cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()

@@ -1,3 +1,7 @@
+"""
+All the re-usable utilities independent of the application logic for the project are here
+"""
+
 import os
 import re
 import sys
