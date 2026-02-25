@@ -51,5 +51,5 @@ tasks:
         elif [ "{{.CLI_ARGS}}" = "fedora" ]; then
           bash setup.sh fedora
         elif [ "{{.CLI_ARGS}}" = "py" ]; then
-          pytest .
+          pytest -s .
         fi
