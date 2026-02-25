@@ -8,15 +8,13 @@ from rich.progress import track
 from rich.console import Console
 
 # locals
-from InstallRelease.state import State, platform_path
-from InstallRelease.data import Release, ToolConfig, irKey, TypeState, ReleaseAssets
+from InstallRelease.data import Release, irKey, TypeState, ReleaseAssets
 
 from InstallRelease.pkgs.main import (
     detect_package_type_from_asset_name,
     detect_package_type_from_os_release,
     install_package,
 )
-from InstallRelease.constants import state_path, bin_path, config_path
 from InstallRelease.utils import (
     mkdir,
     pprint,
@@ -39,6 +37,7 @@ from InstallRelease.core import (
 )
 
 from InstallRelease.release_scorer import PENALTY_KEYWORDS
+from InstallRelease.config import cache, cache_config, config, dest
 
 
 console = Console(width=40)
@@ -48,55 +47,12 @@ os_package_type = detect_package_type_from_os_release()
 
 logger.debug(f"os_package_type: {os_package_type}")
 
-if os.environ.get("installState", "") == "test":
-    temp_dir = "../temp"
-    __spath = {
-        "state_path": f"{temp_dir}/temp-state.json",
-        "config_path": f"{temp_dir}/temp-config.json",
-    }
-    logger.info(f"installState={os.environ.get('installState')}")
-else:
-    __spath = {"state_path": "", "config_path": ""}
-
-cache = State(
-    file_path=platform_path(paths=state_path, alt=__spath["state_path"]),
-    obj=Release,
-)
-
-cache_config = State(
-    file_path=platform_path(paths=config_path, alt=__spath["config_path"]),
-    obj=ToolConfig,
-)
-
 
 def is_package(state, k):
     return hasattr(state[k], "install_method") and (
         state[k].install_method == "package"
     )
 
-
-def load_config() -> ToolConfig:
-    """Load config from cache_config
-
-    Returns:
-        The loaded configuration object or a new one if not found
-    """
-    config = cache_config.state.get("config")
-
-    if config is not None and isinstance(config, ToolConfig):
-        return config
-    else:
-        new_config = ToolConfig()
-        cache_config.set("config", new_config)
-        cache_config.save()
-        return new_config
-
-
-config: ToolConfig = load_config()
-
-# Handle the path, ensuring it's a string
-config_path_str = str(config.path) if config.path is not None else ""
-dest = platform_path(paths=bin_path, alt=config_path_str)
 
 # ------- cli ----------
 
@@ -492,9 +448,7 @@ def upgrade(
         except AttributeError:
             pass
 
-        repo = get_repo_info(
-            i.url, token=config.token, gitlab_token=config.gitlab_token
-        )
+        repo = get_repo_info(i.url)
         pprint(f"Fetching: {k}")
         # Ensure pre_release is boolean
         pre_release = (
@@ -748,7 +702,7 @@ def pull_state(url: str = "", override: bool = False):
             logger.warning(f"Invalid input: {key}")
             continue
         get(
-            get_repo_info(i.url, token=config.token, gitlab_token=config.gitlab_token),
+            get_repo_info(i.url),
             tag_name=temp[key].tag_name,
             prompt=False,
             name=i.name,

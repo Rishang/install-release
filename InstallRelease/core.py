@@ -26,6 +26,7 @@ from InstallRelease.data import (
 )
 from InstallRelease.release_scorer import ReleaseScorer
 from InstallRelease.constants import HOME
+from InstallRelease.config import config
 
 # --------------- CODE ------------------
 
@@ -261,7 +262,6 @@ class GitlabInfo(RepoInfo):
         repo_url: str,
         data: Optional[Dict[str, Any]] = None,
         token: Optional[str] = None,
-        gitlab_token: Optional[str] = None,
     ) -> None:
         """Initialize a GitLab repository handler
 
@@ -296,7 +296,7 @@ class GitlabInfo(RepoInfo):
         self.api = f"https://gitlab.com/api/v4/projects/{encoded_path}"
 
         # Prefer gitlab_token if provided, otherwise fall back to token
-        self.token = gitlab_token or token or ""
+        self.token = token or ""
 
         self.data = data
 
@@ -482,16 +482,12 @@ class GitlabInfo(RepoInfo):
 def get_repo_info(
     repo_url: str,
     data: Optional[Dict[str, Any]] = None,
-    token: Optional[str] = None,
-    gitlab_token: Optional[str] = None,
 ) -> RepoInfo:
     """Factory method to get the appropriate repo info handler based on URL
 
     Args:
         repo_url: The repository URL (GitHub or GitLab)
         data: Additional data to send with API requests
-        token: Generic API token for authentication
-        gitlab_token: GitLab-specific token (used only for GitLab URLs)
 
     Returns:
         An instance of the appropriate RepoInfo subclass
@@ -504,9 +500,9 @@ def get_repo_info(
 
     try:
         if "github.com" in repo_url:
-            return GitHubInfo(repo_url, data, token)
+            return GitHubInfo(repo_url, data, config.token)
         elif "gitlab.com" in repo_url:
-            return GitlabInfo(repo_url, data, token, gitlab_token)
+            return GitlabInfo(repo_url, data, config.gitlab_token)
         else:
             error_msg = (
                 "Unsupported repository URL. Only GitHub and GitLab URLs are supported."

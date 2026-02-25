@@ -16,7 +16,7 @@ case $1 in
       -e HOME=/root \
       install-release-ubuntu:latest
     docker exec -it ir-ubuntu bash -c '/usr/local/bin/uv sync'
-    docker exec -it ir-ubuntu bash
+    # docker exec -it ir-ubuntu bash
     ;;
   "fedora")
     docker rm -f ir-fedora
@@ -31,7 +31,7 @@ case $1 in
       -e HOME=/root \
       install-release-fedora:latest
     docker exec -it ir-fedora bash -c '/usr/local/bin/uv sync'
-    docker exec -it ir-fedora bash
+    # docker exec -it ir-fedora bash
 
     ;;
   *)

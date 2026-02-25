@@ -213,7 +213,7 @@ class Shell:
         return ShellOutputs(stdout=stdout, stderr=stderr, returncode=returncode)
 
 
-def sh(command: str, interactive: bool = False):
+def sh(command: str, interactive: bool = False) -> ShellOutputs:
     s = Shell()
     return s.cmd(command, interactive=interactive)
 

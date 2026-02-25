@@ -1,0 +1,12 @@
+repos:
+- name: gron
+  cmd: ir get https://github.com/tomnomnom/gron -n gron -y
+  validate:
+    cmd: gron --help
+    grep: "Transform JSON"
+
+- name: yt-dlp
+  cmd: ir get https://github.com/yt-dlp/yt-dlp -n yt-dlp --file yt-dlp_linux -y
+  validate:
+    cmd: yt-dlp --help
+    grep: "Usage: yt-dlp"
