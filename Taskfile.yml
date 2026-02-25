@@ -40,16 +40,15 @@ tasks:
 
   test:
     dir: ./test
+    silent: true
     desc: Test the CLI in Docker (e.g. task test -- ubuntu)
     cmds:
       - |
         if [ "{{.CLI_ARGS}}" = "" ]; then
           echo "No arguments provided"
           exit 1
-        elif [ "{{.CLI_ARGS}}" = "ubuntu" ]; then
-          bash setup.sh ubuntu
-        elif [ "{{.CLI_ARGS}}" = "fedora" ]; then
-          bash setup.sh fedora
         elif [ "{{.CLI_ARGS}}" = "py" ]; then
-          pytest -s .
+          uv run python3 test_install.py
+        else
+          bash setup.sh {{.CLI_ARGS}}
         fi

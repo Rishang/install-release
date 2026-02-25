@@ -5,7 +5,6 @@ cd "$(dirname "$0")/.."
 case $1 in
   "ubuntu")
     docker rm -f ir-ubuntu
-    docker build -t install-release-ubuntu:latest -f test/images/ubuntu/Dockerfile .
     docker run -itd \
       --name ir-ubuntu \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
@@ -20,7 +19,6 @@ case $1 in
     ;;
   "fedora")
     docker rm -f ir-fedora
-    docker build -t install-release-fedora:latest -f test/images/fedora/Dockerfile .
     docker run -itd \
       --name ir-fedora \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
@@ -31,8 +29,12 @@ case $1 in
       -e HOME=/root \
       install-release-fedora:latest
     docker exec -it ir-fedora bash -c '/usr/local/bin/uv sync'
-    # docker exec -it ir-fedora bash
+    docker exec -it ir-fedora bash
 
+    ;;
+  "build")
+    docker build -t install-release-ubuntu:latest -f test/images/ubuntu/Dockerfile .
+    docker build -t install-release-fedora:latest -f test/images/fedora/Dockerfile .
     ;;
   *)
     echo "Usage: $0 [ubuntu|fedora]"
