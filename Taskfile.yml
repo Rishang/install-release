@@ -39,6 +39,17 @@ tasks:
       - mv {{.FILENAME}} dist/
 
   test:
+    dir: ./test
     desc: Test the CLI in Docker (e.g. task test -- ubuntu)
     cmds:
-      - bash ./test/setup.sh {{.CLI_ARGS}}
+      - |
+        if [ "{{.CLI_ARGS}}" = "" ]; then
+          echo "No arguments provided"
+          exit 1
+        elif [ "{{.CLI_ARGS}}" = "ubuntu" ]; then
+          bash setup.sh ubuntu
+        elif [ "{{.CLI_ARGS}}" = "fedora" ]; then
+          bash setup.sh fedora
+        elif [ "{{.CLI_ARGS}}" = "py" ]; then
+          python run.py
+        fi
