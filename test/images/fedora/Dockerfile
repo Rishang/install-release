@@ -23,4 +23,4 @@ RUN uv sync --frozen
 # Ensure venv bin is on PATH so `ir` and `install-release` are available
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT ["ir"]
+ENTRYPOINT ["sleep", "infinity"]
