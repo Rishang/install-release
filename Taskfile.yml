@@ -41,4 +41,4 @@ tasks:
   test:
     desc: Test the CLI in Docker (e.g. task test -- ubuntu)
     cmds:
-      - bash ./test/test.sh {{.CLI_ARGS}}
+      - bash ./test/setup.sh {{.CLI_ARGS}}
