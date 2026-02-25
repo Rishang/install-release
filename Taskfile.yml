@@ -48,7 +48,7 @@ tasks:
           echo "No arguments provided"
           exit 1
         elif [ "{{.CLI_ARGS}}" = "py" ]; then
-          uv run python3 test_install.py
+          uv run pytest -s .
         else
           bash setup.sh {{.CLI_ARGS}}
         fi

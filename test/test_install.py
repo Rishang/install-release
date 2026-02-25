@@ -42,10 +42,7 @@ def test_get(name: str = "all!"):
         else:
             print(f"Validation passed for {repo['name']}")
 
-    if len(failed_repos) == 0:
-        print("All repos passed validation")
-    else:
-        print(f"Failed repos: {failed_repos}")
+    assert len(failed_repos) == 0, f"Failed repos: {failed_repos}"
 
 
 test_get()
