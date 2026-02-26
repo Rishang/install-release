@@ -21,6 +21,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
 # Ensure venv bin is on PATH so `ir` and `install-release` are available
-ENV PATH="/app/.venv/bin:$PATH"
-
-ENTRYPOINT ["ir"]
+ENV PATH="/root/bin:/app/.venv/bin:$PATH"
+ENV NO_COLOR=1
+ENV PYTHONIOENCODING="utf-8"
+ENTRYPOINT ["sleep", "infinity"]

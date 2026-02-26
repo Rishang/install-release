@@ -1,8 +1,8 @@
 [project]
 name = "install-release"
-version = "0.6.7"
+version = "0.6.8"
 readme = "README.md"
-description = "Simple package manager to easily install, update and manage any command-line(CLI) tool directly from github releases"
+description = "Simple package manager to easily install, update and manage any tool directly from github or gitlab releases"
 authors = [
   { name = "Rishang", email = "rishangbhavsarcs@gmail.com" }
 ]

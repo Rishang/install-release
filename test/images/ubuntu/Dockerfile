@@ -1,10 +1,10 @@
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 RUN apt-get update && apt-get install -y \
     curl \
     libmagic1 sudo libmagic1 \
     python3 \
-    python3-venv \
+    python3-venv nginx \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv (binary from official image)
@@ -19,6 +19,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
 # Ensure venv bin is on PATH so `ir` and `install-release` are available
-ENV PATH="/app/.venv/bin:$PATH"
-
-ENTRYPOINT ["ir"]
+ENV PATH="/root/bin:/app/.venv/bin:$PATH"
+ENV NO_COLOR=1
+ENV PYTHONIOENCODING="utf-8"
+ENTRYPOINT ["sleep", "infinity"]

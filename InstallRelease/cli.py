@@ -88,10 +88,9 @@ def get(
     if url is None or url == "":
         see_help("get")
 
-    _url = url
-    url = "/".join(_url.split("/")[:5])
+    url = "/".join(url.split("/")[:5])
 
-    repo = get_repo_info(url, token=config.token, gitlab_token=config.gitlab_token)
+    repo = get_repo_info(url)
 
     _get(
         repo,

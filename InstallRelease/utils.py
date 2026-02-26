@@ -1,3 +1,7 @@
+"""
+All the re-usable utilities independent of the application logic for the project are here
+"""
+
 import os
 import re
 import sys
@@ -209,7 +213,7 @@ class Shell:
         return ShellOutputs(stdout=stdout, stderr=stderr, returncode=returncode)
 
 
-def sh(command: str, interactive: bool = False):
+def sh(command: str, interactive: bool = False) -> ShellOutputs:
     s = Shell()
     return s.cmd(command, interactive=interactive)
 
