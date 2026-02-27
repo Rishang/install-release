@@ -33,7 +33,9 @@ def see_help(arg: str = ""):
 __optionDebug = typer.Option(False, "--verbose", "-v", help="Enable verbose mode.")
 __optionQuiet = typer.Option(False, "--quiet", "-q", help="Enable quiet mode.")
 __optionForce = typer.Option(False, "--force", "-F", help="Enable force mode.")
-__optionSkipPrompt = typer.Option(False, "--yes", "-y", help="Skip confirmation (y/n) prompt.")
+__optionSkipPrompt = typer.Option(
+    False, "--yes", "-y", help="Skip confirmation (y/n) prompt."
+)
 
 
 def setLogger(quite: Optional[bool] = None, debug: Optional[bool] = None) -> None:
