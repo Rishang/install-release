@@ -30,10 +30,10 @@ def see_help(arg: str = ""):
 
 
 # cli debug type alias
-__optionDebug = typer.Option(False, "-v", help="Enable verbose mode.")
-__optionQuite = typer.Option(False, "-q", help="Enable quiet mode.")
-__optionForce = typer.Option(False, "-F", help="Enable force mode.")
-__optionSkipPrompt = typer.Option(False, "-y", help="Skip confirmation (y/n) prompt.")
+__optionDebug = typer.Option(False, "--verbose", "-v", help="Enable verbose mode.")
+__optionQuiet = typer.Option(False, "--quiet", "-q", help="Enable quiet mode.")
+__optionForce = typer.Option(False, "--force", "-F", help="Enable force mode.")
+__optionSkipPrompt = typer.Option(False, "--yes", "-y", help="Skip confirmation (y/n) prompt.")
 
 
 def setLogger(quite: Optional[bool] = None, debug: Optional[bool] = None) -> None:
@@ -61,7 +61,7 @@ app = typer.Typer(
 @app.command()
 def get(
     debug: bool = __optionDebug,
-    quite: bool = __optionQuite,
+    quiet: bool = __optionQuiet,
     url: str = typer.Argument(None, help="[URL] of GitHub/GitLab repository"),
     tag_name: str = typer.Option(
         "", "-t", "--tag", help="Select a specific release version."
@@ -84,7 +84,7 @@ def get(
     | Install GitHub/GitLab repository CLI tool from its releases
     """
 
-    setLogger(quite, debug)
+    setLogger(quiet, debug)
     if url is None or url == "":
         see_help("get")
 
@@ -105,7 +105,7 @@ def get(
 @app.command()
 def upgrade(
     debug: bool = __optionDebug,
-    quite: bool = __optionQuite,
+    quiet: bool = __optionQuiet,
     force: bool = __optionForce,
     skip_prompt: bool = __optionSkipPrompt,
     pkg: bool = typer.Option(
@@ -117,7 +117,7 @@ def upgrade(
     """
     | Upgrade all installed CLI tools from their repositories
     """
-    setLogger(quite, debug)
+    setLogger(quiet, debug)
     local_version = install_release_version.local_version()
     latest_version = install_release_version.latest_version()
     logger.debug(f"local_version: {local_version}")
