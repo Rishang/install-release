@@ -59,9 +59,6 @@ def is_package(state, k):
 
 def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
     """Show all release assets in a table and let user select one by ID
-
-    Returns:
-        Selected ReleaseAssets object or None if cancelled
     """
     if not release.assets:
         pprint("[red]No assets available for this release[/red]")
@@ -109,7 +106,7 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
     return None
 
 
-def state_info():
+def state_info() -> None:
     logger.debug(cache.state_file)
     logger.debug(cache_config.state_file)
     logger.debug(dest)
