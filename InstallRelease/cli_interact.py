@@ -104,10 +104,9 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
             pprint(
                 f"[red]Invalid ID. Please select between 1 and {len(release.assets)}[/red]"
             )
-            return None
     except ValueError:
         pprint("[red]Invalid input. Please enter a number or 'n' to cancel[/red]")
-        return None
+    return None
 
 
 def state_info():
@@ -222,15 +221,6 @@ def get(
     package_mode: bool = False,
 ) -> None:
     """Get a release from a GitHub/GitLab repository
-
-    Args:
-        repo: Repository information handler
-        tag_name: Specific tag to fetch
-        asset_file: Filename pattern to extract words from
-        local: Whether to install locally (ignored for packages)
-        prompt: Whether to prompt for confirmation
-        name: Optional name to give the installed tool
-        package_mode: Whether to install as a package (auto-detects type)
     """
     state_info()
 
@@ -417,11 +407,6 @@ def upgrade(
     force: bool = False, skip_prompt: bool = False, packages_only: bool = False
 ) -> None:
     """Upgrade all installed tools
-
-    Args:
-        force: Whether to force upgrade even if not newer
-        skip_prompt: Whether to skip confirmation prompt
-        packages_only: Whether to upgrade only packages (not binaries)
     """
     state_info()
 
@@ -515,11 +500,6 @@ def list_install(
     hold_update: bool = False,
 ) -> None:
     """List all installed tools
-
-    Args:
-        state: Optional state data to list, defaults to global state
-        title: Title to display for the list
-        hold_update: Whether to show only tools with updates on hold
     """
     if state is None:
         state_info()
@@ -564,16 +544,9 @@ def list_install(
         show_table(_table, title=title)
 
 
-def remove(name: str):
+def remove(name: str) -> None:
     """
-    | Remove any cli tool.
-
-    Args:
-        name: The name of the tool to remove
-        as_package: Whether to remove as a package (use system package manager)
-
-    Returns:
-        None
+    | Remove any cli tool
     """
     state_info()
     state: TypeState = cache.state
@@ -634,7 +607,7 @@ def remove(name: str):
         logger.warning(f"Tool not found: {name}")
 
 
-def hold(name: str, hold_update: bool):
+def hold(name: str, hold_update: bool) -> None:
     """
     | Holds updates of any cli tool.
     """
@@ -648,17 +621,13 @@ def hold(name: str, hold_update: bool):
             logger.info(f"Update on hold for, {name} to {hold_update}")
             break
     cache.save()
+    return None
 
 
-def pull_state(url: str = "", override: bool = False):
-    """
-    | Install tools from remote state
-    """
+def pull_state(url: str = "", override: bool = False) -> None:
     logger.debug(url)
-
     if is_none(url):
-        return
-
+        return None
     r: dict = requests_session.get(url=url).json()
 
     data: dict = {k: Release(**r[k]) for k in r}
@@ -685,7 +654,7 @@ def pull_state(url: str = "", override: bool = False):
     logger.debug(temp)
 
     if len(temp) == 0:
-        return
+        return None
 
     list_install(state=temp, title="Tools to be installed")
     pprint("\n[bold magenta]Following tool will get Installed.\n")
@@ -693,7 +662,7 @@ def pull_state(url: str = "", override: bool = False):
 
     _i = input()
     if _i.lower() != "y":
-        return
+        return None
 
     for key in temp:
         try:
@@ -707,3 +676,4 @@ def pull_state(url: str = "", override: bool = False):
             prompt=False,
             name=i.name,
         )
+    return None
