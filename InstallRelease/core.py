@@ -622,7 +622,7 @@ def get_release(
     releases: List[Release],
     repo_url: str,
     extra_words: Optional[List[str]] = None,
-    disable_penalties: bool = False,
+    disable_adjustments: bool = False,
     package_type: Optional[str] = None,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
@@ -631,7 +631,7 @@ def get_release(
         releases: List of releases to choose from
         repo_url: The repository URL
         extra_words: Additional keywords to match against
-        disable_penalties: Whether to disable penalties
+        disable_adjustments: Whether to disable penalties
         package_type: If set, prioritize this package type (deb/rpm/appimage)
     Returns:
         The best matching ReleaseAssets or False if no match found
@@ -645,10 +645,12 @@ def get_release(
         logger.debug(f"Package mode enabled, prioritizing: {package_type}")
 
     logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"disable_penalties: {disable_penalties}")
+    logger.debug(f"disable_adjustments: {disable_adjustments}")
 
     # Create scorer with platform words and extra words
-    scorer = ReleaseScorer(extra_words=extra_words, disable_penalties=disable_penalties)
+    scorer = ReleaseScorer(
+        extra_words=extra_words, disable_adjustments=disable_adjustments
+    )
 
     # Log scorer information
     scorer_info = scorer.get_info()

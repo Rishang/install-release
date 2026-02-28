@@ -36,7 +36,7 @@ from InstallRelease.core import (
     RepoInfo,
 )
 
-from InstallRelease.release_scorer import PENALTY_KEYWORDS
+from InstallRelease.release_scorer import PENALTY_EXTENSIONS
 from InstallRelease.config import cache, cache_config, config, dest
 
 
@@ -70,7 +70,7 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
     # Prepare data for table display
     assets_data = []
     for idx, asset in enumerate[ReleaseAssets](release.assets, start=1):
-        if any(word in asset.name.lower() for word in PENALTY_KEYWORDS):
+        if any(word in asset.name.lower() for word in PENALTY_EXTENSIONS):
             continue
         assets_data.append(
             {
@@ -129,11 +129,11 @@ def _extract_words_from_filename(asset_filename: str) -> list:
 def _resolve_release_words(
     custom_words: Optional[list], cached_words: Optional[list]
 ) -> tuple:
-    """Resolve extra_words and disable_penalties from custom and cached words.
+    """Resolve extra_words and disable_adjustments from custom and cached words.
 
     Priority: custom > cached > None.
 
-    Returns: (extra_words, disable_penalties) tuple
+    Returns: (extra_words, disable_adjustments) tuple
     """
     if custom_words:
         return custom_words, True
@@ -295,14 +295,14 @@ def get(
         else None
     )
 
-    extra_words, disable_penalties = _resolve_release_words(
+    extra_words, disable_adjustments = _resolve_release_words(
         custom_release_words, cached_custom_words
     )
 
     logger.debug(f"custom_release_words: {custom_release_words}")
     logger.debug(f"cached_custom_words: {cached_custom_words}")
     logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"disable_penalties: {disable_penalties}")
+    logger.debug(f"disable_adjustments: {disable_adjustments}")
 
     # --- Validate package mode ---------------------------------------------
     package_type = os_package_type
@@ -333,7 +333,7 @@ def get(
             releases=releases,
             repo_url=repo.repo_url,
             extra_words=extra_words,
-            disable_penalties=disable_penalties,
+            disable_adjustments=disable_adjustments,
             package_type=package_type if package_mode else None,
         )
 
