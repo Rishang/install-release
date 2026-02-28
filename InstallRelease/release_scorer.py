@@ -9,8 +9,8 @@ PLATFORM_ARCH_ALIASES = {
     "aarch64": ["arm64", "aarch64", "arm"],
 }
 
-PENALTY_KEYWORDS = {
-    "debug",
+PENALTY_SUBSTRINGS = {"debug"}
+PENALTY_EXTENSIONS = {
     ".dbg",
     ".json",
     ".jsonl",
@@ -28,33 +28,48 @@ PENALTY_KEYWORDS = {
 
 
 class ReleaseScorer:
-    """Score release names based on platform compatibility"""
+    """Score release names based on platform compatibility."""
 
     def __init__(
-        self, extra_words: Optional[List[str]] = None, disable_penalties: bool = False
+        self,
+        extra_words: Optional[List[str]] = None,
+        disable_adjustments: bool = False,  # FIX: renamed from disable_penalties —
+        # the flag suppresses bonuses too, not just penalties.
     ):
-        """Initialize the scorer with platform detection and matching words
-
-        Args:
-            extra_words: Additional words to match (e.g., user-specified patterns)
-            disable_penalties: Whether to disable penalty/bonus adjustments
-        """
+        """Initialize the scorer with platform detection and matching words."""
         self.platform = platform.system().lower()
         self.architecture = platform.machine().lower()
         self.is_glibc = self._detect_glibc()
         self.extra_words = extra_words or []
-        self.disable_penalties = disable_penalties
+        self.disable_adjustments = disable_adjustments
 
-        # Build weighted patterns (pattern -> weight)
-        self.patterns = self._build_patterns()
+        self._extra_words_set = {w.lower() for w in self.extra_words}
+
+        # never accidentally treat a plain string as a regex or vice-versa.
+        self._plain_patterns: Dict[str, float] = {}
+        self._regex_patterns: Dict[str, float] = {}
+        self._build_patterns()
+
+        # Total weight is used for normalisation — computed once.
+        self._total_weight = sum(self._plain_patterns.values()) + sum(
+            self._regex_patterns.values()
+        )
 
         logger.debug(
-            f"Platform: {self.platform}, Arch: {self.architecture}, glibc: {self.is_glibc}"
+            f"Platform: {self.platform}, Arch: {self.architecture}, "
+            f"glibc: {self.is_glibc}"
         )
-        logger.debug(f"Patterns: {self.patterns}")
+        logger.debug(
+            f"Plain patterns: {self._plain_patterns}, "
+            f"Regex patterns: {self._regex_patterns}"
+        )
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
     def _detect_glibc(self) -> bool:
-        """Detect if system uses glibc"""
+        """Detect if system uses glibc."""
         try:
             result = subprocess.run(
                 ["ldd", "--version"], capture_output=True, text=True, timeout=2
@@ -64,133 +79,153 @@ class ReleaseScorer:
         except Exception:
             return False
 
-    def _build_patterns(self) -> Dict[str, float]:
-        """Build weighted pattern dictionary
+    def _build_patterns(self) -> None:
+        """Populate _plain_patterns and _regex_patterns."""
 
-        Returns:
-            Dict mapping pattern to weight (higher = more important)
-        """
-        patterns = {}
+        # 1. Operating system (highest priority).
+        self._plain_patterns[self.platform] = 5.0
 
-        # 1. Operating system (highest priority)
-        patterns[self.platform] = 5.0
-
-        # 2. Architecture aliases
+        # 2. Architecture aliases.
         for canonical, aliases in PLATFORM_ARCH_ALIASES.items():
             if self.architecture in aliases:
                 for alias in aliases:
-                    patterns[alias] = 3.0
+                    self._plain_patterns[alias] = 3.0
                 break
+        else:
+            # FIX: warn when architecture is unrecognised instead of silently
+            # adding no arch patterns and distorting scores.
+            logger.warning(
+                f"Architecture '{self.architecture}' not found in "
+                f"PLATFORM_ARCH_ALIASES; no arch patterns will be applied."
+            )
 
-        # 3. Bit architecture (lower priority)
-        bit_arch = platform.architecture()[0]
-        patterns[bit_arch] = 1.0
-
-        # 4. musl for non-glibc systems
+        # 3. musl for non-glibc systems.
         if not self.is_glibc:
-            patterns["musl"] = 2.0
+            self._plain_patterns["musl"] = 2.0
 
-        # 5. Archive extensions
-        patterns[r"\.(tar|zip|gz|bz2|xz|7z)"] = 2.0
+        # 4. Archive extensions (regex, kept separate from plain patterns).
+        self._regex_patterns[r"\.(tar|zip|gz|bz2|xz|7z)"] = 2.0
 
-        # 6. User-specified words
+        # 5. User-specified words (treated as plain strings).
         for word in self.extra_words:
-            patterns[word] = 2.0
+            self._plain_patterns[word] = 2.0
 
-        return patterns
+    def _is_penalised(self, name_lower: str) -> bool:
+        """Return True if the release name should be penalised."""
+        # FIX: check extensions via str.endswith() and substrings separately,
+        # preventing extension strings like ".json" from matching mid-filename.
+        if any(name_lower.endswith(ext) for ext in PENALTY_EXTENSIONS):
+            return True
+        if any(kw in name_lower for kw in PENALTY_SUBSTRINGS):
+            return True
+        return False
+
+    def _match_weight(self, name_lower: str) -> float:
+        """Sum weights of all patterns that match name_lower."""
+        weight = 0.0
+        for pattern, w in self._plain_patterns.items():
+            if pattern in name_lower:
+                weight += w
+        for pattern, w in self._regex_patterns.items():
+            if re.search(pattern, name_lower):
+                weight += w
+        return weight
 
     def score(self, release_name: str) -> float:
-        """Score a release name (0-1, higher is better)
+        """Score a release name based on platform compatibility.
 
         Returns:
-            Normalized score between 0 and 1
+            Normalised score between 0.0 and 1.0 (before adjustments).
+            Adjustments (penalties/bonuses) may push the value slightly
+            outside that range but are bounded to [0, 1] before returning.
         """
         name_lower = release_name.lower()
 
-        # Calculate base score from pattern matching
-        matched_weight = 0.0
-        total_weight = sum(self.patterns.values())
+        base_score = (
+            self._match_weight(name_lower) / self._total_weight
+            if self._total_weight > 0
+            else 0.0
+        )
 
-        for pattern, weight in self.patterns.items():
-            if re.search(pattern, name_lower):
-                matched_weight += weight
-
-        base_score = matched_weight / total_weight if total_weight > 0 else 0.0
-
-        # Apply adjustments if not disabled
-        if not self.disable_penalties:
-            score = self._adjust_score(base_score, name_lower)
+        if not self.disable_adjustments:
+            final_score = self._adjust_score(base_score, name_lower)
         else:
-            score = base_score
+            final_score = base_score
 
-        logger.debug(f"'{release_name}': base={base_score:.3f}, final={score:.3f}")
-        return score
+        # FIX: clamp to [0, 1] so callers can always rely on the stated range.
+        final_score = max(0.0, min(1.0, final_score))
+
+        logger.debug(
+            f"'{release_name}': base={base_score:.3f}, final={final_score:.3f}"
+        )
+        return final_score
 
     def _adjust_score(self, base_score: float, name_lower: str) -> float:
-        """Apply penalty and bonus adjustments
-
-        Returns:
-            Adjusted score
-        """
+        """Apply penalty and bonus adjustments to a base score."""
         score = base_score
 
-        # Penalty: musl on glibc system
-        if self.is_glibc and "musl" in name_lower:
-            score *= 0.7
-            logger.debug(f"Applied musl penalty: {score:.3f}")
+        if self.is_glibc:
+            if "musl" in name_lower:
+                score *= 0.7
+                logger.debug(f"Applied musl penalty -> {score:.3f}")
+            elif any(word in name_lower for word in ("glibc", "gnu")):
+                score *= 1.1
+                logger.debug(f"Applied glibc bonus -> {score:.3f}")
 
-        # Bonus: glibc on glibc system
-        elif self.is_glibc and any(word in name_lower for word in ["glibc", "gnu"]):
-            score *= 1.1
-            logger.debug(f"Applied glibc bonus: {score:.3f}")
-
-        # Penalty: debug/unwanted files
-        if any(word in name_lower for word in PENALTY_KEYWORDS):
+        # FIX: use the split penalty sets and report the triggering token.
+        triggered = next(
+            (ext for ext in PENALTY_EXTENSIONS if name_lower.endswith(ext)), None
+        ) or next((kw for kw in PENALTY_SUBSTRINGS if kw in name_lower), None)
+        if triggered:
             score *= 0.5
-            logger.debug(f"Applied penalty keyword: {score:.3f}")
+            logger.debug(f"Applied penalty for '{triggered}' -> {score:.3f}")
 
         return score
 
     def select_best(
         self, release_names: List[str], min_score: float = 0.2
     ) -> Optional[str]:
-        """Select the best matching release
+        """Select the best matching release.
+
+        When ``disable_adjustments`` is True and ``extra_words`` are provided,
+        prefers a release whose tokenised name contains *all* extra words over
+        the highest-scored candidate.
+
+        When only a single asset exists it is returned regardless of score,
+        since there is no alternative.
 
         Args:
-            release_names: List of release filenames
-            min_score: Minimum acceptable score
+            release_names: List of release filenames.
+            min_score: Minimum acceptable score (ignored when only one asset).
 
         Returns:
-            Best matching release name or None
+            Best matching release name or None.
         """
         if not release_names:
             return None
 
-        scored = [(name, self.score(name)) for name in release_names]
-        scored.sort(key=lambda x: x[1], reverse=True)
-
+        scored = self.score_multiple(release_names)
         logger.debug(f"Top 3 scores: {scored[:3]}")
 
-        valid = [item for item in scored if item[1] >= min_score]
+        # FIX: single-asset fallback is now explicit and documented.
+        if len(scored) == 1:
+            logger.info(f"Only one asset available, selecting: '{scored[0][0]}'")
+            return scored[0][0]
+
+        valid = [(name, s) for name, s in scored if s >= min_score]
 
         if not valid:
-            if len(scored) == 1:
-                logger.info(f"Only one asset available, selecting: '{scored[0][0]}'")
-                return scored[0][0]
             logger.debug(f"No releases scored above {min_score}")
             return None
 
         best_name, best_score = valid[0]
 
-        # When penalties disabled with user pattern, find exact word matches
-        if self.disable_penalties and self.extra_words:
-            extra_words_set = set(word.lower() for word in self.extra_words)
-
-            for name, score in valid:
+        # When adjustments are disabled and the caller supplied extra words,
+        # prefer an exact full-word match over the raw score winner.
+        if self.disable_adjustments and self._extra_words_set:
+            for name, _ in valid:
                 release_words = set(to_words(name, ignore_words=["v", "unknown"]))
-
-                # Prefer release that contains all extra words
-                if extra_words_set.issubset(release_words):
+                if self._extra_words_set.issubset(release_words):
                     logger.debug(
                         f"Exact word match: '{name}' contains all words {self.extra_words}"
                     )
@@ -200,28 +235,25 @@ class ReleaseScorer:
         return best_name
 
     def score_multiple(self, release_names: List[str]) -> List[Tuple[str, float]]:
-        """Score and sort multiple releases
-
-        Args:
-            release_names: List of release filenames
+        """Score and sort multiple releases by descending score.
 
         Returns:
-            List of (name, score) tuples, sorted by score descending
+            List of (name, score) tuples sorted by score descending.
         """
         scored = [(name, self.score(name)) for name in release_names]
         return sorted(scored, key=lambda x: x[1], reverse=True)
 
     def get_info(self) -> Dict[str, Any]:
-        """Get information about the scorer configuration
-
-        Returns:
-            Dictionary with scorer configuration details
         """
+        Returns:
+            Dictionary with platform, architecture, pattern weights, etc.
+        """
+        all_patterns = {**self._plain_patterns, **self._regex_patterns}
         return {
-            "platform_words": list(self.patterns.keys()),
+            "platform_words": list(all_patterns.keys()),
             "extra_words": self.extra_words,
-            "all_patterns": list(self.patterns.keys()),
-            "pattern_weights": self.patterns,
+            "all_patterns": list(all_patterns.keys()),
+            "pattern_weights": all_patterns,
             "is_glibc_system": self.is_glibc,
             "platform": self.platform,
             "architecture": self.architecture,

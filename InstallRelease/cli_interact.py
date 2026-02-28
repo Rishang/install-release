@@ -13,7 +13,7 @@ from InstallRelease.data import Release, irKey, TypeState, ReleaseAssets
 from InstallRelease.pkgs.main import (
     detect_package_type_from_asset_name,
     detect_package_type_from_os_release,
-    install_package,
+    PackageInstaller,
 )
 from InstallRelease.utils import (
     mkdir,
@@ -36,7 +36,7 @@ from InstallRelease.core import (
     RepoInfo,
 )
 
-from InstallRelease.release_scorer import PENALTY_KEYWORDS
+from InstallRelease.release_scorer import PENALTY_EXTENSIONS
 from InstallRelease.config import cache, cache_config, config, dest
 
 
@@ -58,11 +58,7 @@ def is_package(state, k):
 
 
 def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
-    """Show all release assets in a table and let user select one by ID
-
-    Returns:
-        Selected ReleaseAssets object or None if cancelled
-    """
+    """Show all release assets in a table and let user select one by ID"""
     if not release.assets:
         pprint("[red]No assets available for this release[/red]")
         return None
@@ -70,7 +66,7 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
     # Prepare data for table display
     assets_data = []
     for idx, asset in enumerate[ReleaseAssets](release.assets, start=1):
-        if any(word in asset.name.lower() for word in PENALTY_KEYWORDS):
+        if any(word in asset.name.lower() for word in PENALTY_EXTENSIONS):
             continue
         assets_data.append(
             {
@@ -104,13 +100,12 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
             pprint(
                 f"[red]Invalid ID. Please select between 1 and {len(release.assets)}[/red]"
             )
-            return None
     except ValueError:
         pprint("[red]Invalid input. Please enter a number or 'n' to cancel[/red]")
-        return None
+    return None
 
 
-def state_info():
+def state_info() -> None:
     logger.debug(cache.state_file)
     logger.debug(cache_config.state_file)
     logger.debug(dest)
@@ -129,11 +124,11 @@ def _extract_words_from_filename(asset_filename: str) -> list:
 def _resolve_release_words(
     custom_words: Optional[list], cached_words: Optional[list]
 ) -> tuple:
-    """Resolve extra_words and disable_penalties from custom and cached words.
+    """Resolve extra_words and disable_adjustments from custom and cached words.
 
     Priority: custom > cached > None.
 
-    Returns: (extra_words, disable_penalties) tuple
+    Returns: (extra_words, disable_adjustments) tuple
     """
     if custom_words:
         return custom_words, True
@@ -190,11 +185,8 @@ def _install_asset(
         download(asset.browser_download_url, temp_dir)
         logger.debug(f"Downloaded package to: {temp_dir}")
 
-        success = install_package(
-            package_type=effective_pkg,
-            name=toolname,
-            temp_dir=temp_dir,
-        )
+        package_installer = PackageInstaller(package_type=effective_pkg, name=toolname)
+        success = package_installer.install(source=temp_dir)
         if not success:
             logger.error(f"Failed to install {toolname} as {effective_pkg} package")
             return False
@@ -221,17 +213,7 @@ def get(
     name: Optional[str] = None,
     package_mode: bool = False,
 ) -> None:
-    """Get a release from a GitHub/GitLab repository
-
-    Args:
-        repo: Repository information handler
-        tag_name: Specific tag to fetch
-        asset_file: Filename pattern to extract words from
-        local: Whether to install locally (ignored for packages)
-        prompt: Whether to prompt for confirmation
-        name: Optional name to give the installed tool
-        package_mode: Whether to install as a package (auto-detects type)
-    """
+    """Get a release from a GitHub/GitLab repository"""
     state_info()
 
     logger.debug(f"Python version: {platform.python_version()}")
@@ -295,14 +277,14 @@ def get(
         else None
     )
 
-    extra_words, disable_penalties = _resolve_release_words(
+    extra_words, disable_adjustments = _resolve_release_words(
         custom_release_words, cached_custom_words
     )
 
     logger.debug(f"custom_release_words: {custom_release_words}")
     logger.debug(f"cached_custom_words: {cached_custom_words}")
     logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"disable_penalties: {disable_penalties}")
+    logger.debug(f"disable_adjustments: {disable_adjustments}")
 
     # --- Validate package mode ---------------------------------------------
     package_type = os_package_type
@@ -333,7 +315,7 @@ def get(
             releases=releases,
             repo_url=repo.repo_url,
             extra_words=extra_words,
-            disable_penalties=disable_penalties,
+            disable_adjustments=disable_adjustments,
             package_type=package_type if package_mode else None,
         )
 
@@ -416,13 +398,7 @@ def get(
 def upgrade(
     force: bool = False, skip_prompt: bool = False, packages_only: bool = False
 ) -> None:
-    """Upgrade all installed tools
-
-    Args:
-        force: Whether to force upgrade even if not newer
-        skip_prompt: Whether to skip confirmation prompt
-        packages_only: Whether to upgrade only packages (not binaries)
-    """
+    """Upgrade all installed tools"""
     state_info()
 
     state: TypeState = cache.state
@@ -514,13 +490,7 @@ def list_install(
     title: str = "Installed tools",
     hold_update: bool = False,
 ) -> None:
-    """List all installed tools
-
-    Args:
-        state: Optional state data to list, defaults to global state
-        title: Title to display for the list
-        hold_update: Whether to show only tools with updates on hold
-    """
+    """List all installed tools"""
     if state is None:
         state_info()
         state = cache.state
@@ -564,16 +534,9 @@ def list_install(
         show_table(_table, title=title)
 
 
-def remove(name: str):
+def remove(name: str) -> None:
     """
-    | Remove any cli tool.
-
-    Args:
-        name: The name of the tool to remove
-        as_package: Whether to remove as a package (use system package manager)
-
-    Returns:
-        None
+    | Remove any cli tool
     """
     state_info()
     state: TypeState = cache.state
@@ -590,27 +553,10 @@ def remove(name: str):
                 if not hasattr(release, "package_type"):
                     logger.warning(f"{name} was not installed as a package")
                 else:
-                    package_type = release.package_type
-                    logger.info(f"Removing {name} as {package_type} package")
-
-                    try:
-                        if package_type == "deb":
-                            from InstallRelease.pkgs.deb import DebPackage
-
-                            installer = DebPackage(name)
-                            installer.uninstall()
-                        elif package_type == "rpm":
-                            from InstallRelease.pkgs.rpm import RpmPackage
-
-                            installer = RpmPackage(name)
-                            installer.uninstall()
-                        elif package_type == "AppImage":
-                            from InstallRelease.pkgs.app_images import AppImage
-
-                            installer = AppImage(name)
-                            installer.uninstall()
-                    except Exception as e:
-                        logger.error(f"Failed to uninstall package: {e}")
+                    package_installer = PackageInstaller(
+                        name, package_type=release.package_type
+                    )
+                    package_installer.uninstall()
             else:
                 # Remove binary file (existing code)
                 try:
@@ -634,7 +580,7 @@ def remove(name: str):
         logger.warning(f"Tool not found: {name}")
 
 
-def hold(name: str, hold_update: bool):
+def hold(name: str, hold_update: bool) -> None:
     """
     | Holds updates of any cli tool.
     """
@@ -648,23 +594,19 @@ def hold(name: str, hold_update: bool):
             logger.info(f"Update on hold for, {name} to {hold_update}")
             break
     cache.save()
+    return None
 
 
-def pull_state(url: str = "", override: bool = False):
-    """
-    | Install tools from remote state
-    """
+def pull_state(url: str = "", override: bool = False) -> None:
     logger.debug(url)
-
     if is_none(url):
-        return
-
+        return None
     r: dict = requests_session.get(url=url).json()
 
-    data: dict = {k: Release(**r[k]) for k in r}
+    data: dict[str, Release] = {k: Release(**r[k]) for k in r}
     state: TypeState = cache.state
 
-    temp: Dict[str, Release] = {}
+    temp: dict[str, Release] = {}
 
     for key in data:
         try:
@@ -673,19 +615,18 @@ def pull_state(url: str = "", override: bool = False):
             logger.warning(f"Invalid input: {key}")
             continue
 
-        if state.get(key) is not None:
-            if state[key].tag_name == data[key].tag_name or override is False:
-                logger.debug(f"Skipping: {key}")
-                continue
-            else:
-                temp[key] = data[key]
+        if state.get(key) is not None and (
+            state[key].tag_name == data[key].tag_name or override is False
+        ):
+            logger.debug(f"Skipping: {key}")
+            continue
         else:
             temp[key] = data[key]
 
     logger.debug(temp)
 
     if len(temp) == 0:
-        return
+        return None
 
     list_install(state=temp, title="Tools to be installed")
     pprint("\n[bold magenta]Following tool will get Installed.\n")
@@ -693,7 +634,7 @@ def pull_state(url: str = "", override: bool = False):
 
     _i = input()
     if _i.lower() != "y":
-        return
+        return None
 
     for key in temp:
         try:
@@ -707,3 +648,4 @@ def pull_state(url: str = "", override: bool = False):
             prompt=False,
             name=i.name,
         )
+    return None

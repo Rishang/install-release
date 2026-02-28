@@ -1,9 +1,13 @@
 import glob
 import platform
 from typing import Optional
-
+from pathlib import Path
 from InstallRelease.utils import logger, sh
 from InstallRelease.data import _valid_package_types
+from InstallRelease.pkgs.base import PackageInstallerABC
+from InstallRelease.pkgs.deb import DebPackage
+from InstallRelease.pkgs.rpm import RpmPackage
+from InstallRelease.pkgs.app_images import AppImage
 
 
 def detect_package_type_from_asset_name(name: str) -> Optional[str]:
@@ -80,55 +84,44 @@ def detect_package_type_from_os_release() -> Optional[str]:
     return package_type
 
 
-def install_package(
-    package_type: str,
-    name: str,
-    temp_dir: str,
-) -> bool:
-    """Install a package using the appropriate installer
+class PackageInstaller(PackageInstallerABC):
+    def __init__(self, name: str, package_type: str = None):
+        super().__init__(name)
+        self.package_type = (
+            package_type if package_type else detect_package_type_from_os_release()
+        )
+        self.pkgs: dict[str, type[PackageInstallerABC]] = {
+            "deb": DebPackage,
+            "rpm": RpmPackage,
+            "AppImage": AppImage,
+        }
 
-    Args:
-        package_type: Type of package (deb/rpm/appimage)
-        name: Name of the package
-        temp_dir: Temporary directory for downloads
+    def install(self, source: str) -> Path | None:
+        # Find the package file in the temp directory
+        package_files = glob.glob(f"{source}/**/*.{self.package_type}", recursive=True)
 
-    Returns:
-        True if installation succeeded
-    """
-    # Find the package file in the temp directory
-    package_files = glob.glob(f"{temp_dir}/**/*.{package_type}", recursive=True)
+        if not package_files:
+            logger.error(f"No .{self.package_type} file found in {source}")
+            return Path.home()
 
-    if not package_files:
-        logger.error(f"No .{package_type} file found in {temp_dir}")
-        return False
+        package_path = package_files[0]
+        logger.debug(f"Found package file: {package_path}")
 
-    package_path = package_files[0]
-    logger.debug(f"Found package file: {package_path}")
-
-    # Install based on type
-    try:
-        if package_type == "deb":
-            from InstallRelease.pkgs.deb import DebPackage
-
-            installer = DebPackage(name)
-            logger.info("Installing DEB package this will need sudo permissions...")
+        # Install based on type
+        try:
+            installer = self.pkgs[self.package_type](self.name)
+            logger.info(
+                f"Installing {self.package_type} package this might need sudo permissions..."
+            )
             result = installer.install(package_path)
-        elif package_type == "rpm":
-            from InstallRelease.pkgs.rpm import RpmPackage
+            return result
+        except Exception as e:
+            logger.error(f"Failed to install package: {e}")
+            return None
 
-            installer = RpmPackage(name)
-            logger.info("Installing RPM package this will need sudo permissions...")
-            result = installer.install(package_path)
-        elif package_type == "AppImage":
-            from InstallRelease.pkgs.app_images import AppImage
-
-            installer = AppImage(name)
-            result = installer.install(package_path)
-        else:
-            logger.error(f"Unsupported package type: {package_type}")
-            return False
-
-        return result is not None
-    except Exception as e:
-        logger.error(f"Failed to install package: {e}")
-        return False
+    def uninstall(self) -> None:
+        try:
+            installer = self.pkgs[self.package_type](self.name)
+            _ = installer.uninstall()
+        except Exception as e:
+            logger.error(f"Failed to uninstall package: {e}")
