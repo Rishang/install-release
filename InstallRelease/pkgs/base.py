@@ -7,6 +7,25 @@ from pathlib import Path
 from InstallRelease.utils import logger
 
 
+PACKAGE_ALIASES = {
+    "deb": ["debian", "ubuntu", "mint", "pop", "elementary", "kali"],
+    "rpm": [
+        "fedora",
+        "rhel",
+        "centos",
+        "rocky",
+        "alma",
+        "opensuse",
+        "suse",
+        "centos stream",
+    ],
+    "AppImage": ["manjaro", "arch"],
+    "dmg": ["macos"],
+    "exe": ["windows"],
+    "msi": ["windows"],
+}
+
+
 class PackageInstallerABC(ABC):
     """Abstract base class for package installers."""
 

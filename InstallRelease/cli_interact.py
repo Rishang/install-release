@@ -13,7 +13,7 @@ from InstallRelease.data import Release, irKey, TypeState, ReleaseAssets
 from InstallRelease.pkgs.main import (
     detect_package_type_from_asset_name,
     detect_package_type_from_os_release,
-    install_package,
+    PackageInstaller,
 )
 from InstallRelease.utils import (
     mkdir,
@@ -58,8 +58,7 @@ def is_package(state, k):
 
 
 def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
-    """Show all release assets in a table and let user select one by ID
-    """
+    """Show all release assets in a table and let user select one by ID"""
     if not release.assets:
         pprint("[red]No assets available for this release[/red]")
         return None
@@ -186,11 +185,8 @@ def _install_asset(
         download(asset.browser_download_url, temp_dir)
         logger.debug(f"Downloaded package to: {temp_dir}")
 
-        success = install_package(
-            package_type=effective_pkg,
-            name=toolname,
-            temp_dir=temp_dir,
-        )
+        package_installer = PackageInstaller(package_type=effective_pkg, name=toolname)
+        success = package_installer.install(source=temp_dir)
         if not success:
             logger.error(f"Failed to install {toolname} as {effective_pkg} package")
             return False
@@ -217,8 +213,7 @@ def get(
     name: Optional[str] = None,
     package_mode: bool = False,
 ) -> None:
-    """Get a release from a GitHub/GitLab repository
-    """
+    """Get a release from a GitHub/GitLab repository"""
     state_info()
 
     logger.debug(f"Python version: {platform.python_version()}")
@@ -403,8 +398,7 @@ def get(
 def upgrade(
     force: bool = False, skip_prompt: bool = False, packages_only: bool = False
 ) -> None:
-    """Upgrade all installed tools
-    """
+    """Upgrade all installed tools"""
     state_info()
 
     state: TypeState = cache.state
@@ -496,8 +490,7 @@ def list_install(
     title: str = "Installed tools",
     hold_update: bool = False,
 ) -> None:
-    """List all installed tools
-    """
+    """List all installed tools"""
     if state is None:
         state_info()
         state = cache.state
@@ -560,27 +553,10 @@ def remove(name: str) -> None:
                 if not hasattr(release, "package_type"):
                     logger.warning(f"{name} was not installed as a package")
                 else:
-                    package_type = release.package_type
-                    logger.info(f"Removing {name} as {package_type} package")
-
-                    try:
-                        if package_type == "deb":
-                            from InstallRelease.pkgs.deb import DebPackage
-
-                            installer = DebPackage(name)
-                            installer.uninstall()
-                        elif package_type == "rpm":
-                            from InstallRelease.pkgs.rpm import RpmPackage
-
-                            installer = RpmPackage(name)
-                            installer.uninstall()
-                        elif package_type == "AppImage":
-                            from InstallRelease.pkgs.app_images import AppImage
-
-                            installer = AppImage(name)
-                            installer.uninstall()
-                    except Exception as e:
-                        logger.error(f"Failed to uninstall package: {e}")
+                    package_installer = PackageInstaller(
+                        name, package_type=release.package_type
+                    )
+                    package_installer.uninstall()
             else:
                 # Remove binary file (existing code)
                 try:
@@ -627,10 +603,10 @@ def pull_state(url: str = "", override: bool = False) -> None:
         return None
     r: dict = requests_session.get(url=url).json()
 
-    data: dict = {k: Release(**r[k]) for k in r}
+    data: dict[str, Release] = {k: Release(**r[k]) for k in r}
     state: TypeState = cache.state
 
-    temp: Dict[str, Release] = {}
+    temp: dict[str, Release] = {}
 
     for key in data:
         try:
@@ -639,12 +615,11 @@ def pull_state(url: str = "", override: bool = False) -> None:
             logger.warning(f"Invalid input: {key}")
             continue
 
-        if state.get(key) is not None:
-            if state[key].tag_name == data[key].tag_name or override is False:
-                logger.debug(f"Skipping: {key}")
-                continue
-            else:
-                temp[key] = data[key]
+        if state.get(key) is not None and (
+            state[key].tag_name == data[key].tag_name or override is False
+        ):
+            logger.debug(f"Skipping: {key}")
+            continue
         else:
             temp[key] = data[key]
 
