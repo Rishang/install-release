@@ -15,16 +15,6 @@ __dir_name__ = "install_release"
 __state_at__ = f"{__dir_name__}/state.json"
 __config_at__ = f"{__dir_name__}/config.json"
 
-_colors = {
-    "green": "#8CC265",
-    "light_green": "#D0FF5E bold",
-    "blue": "#4AA5F0",
-    "cyan": "#76F6FF",
-    "yellow": "#F0A45D bold",
-    "red": "#E8678A",
-    "purple": "#8782E9 bold",
-}
-
 
 state_path = {
     "linux": f"{HOME}/.config/{__state_at__}",

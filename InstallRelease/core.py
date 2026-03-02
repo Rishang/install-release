@@ -25,8 +25,7 @@ from InstallRelease.schemas import (
     RepositoryInfo,
 )
 from InstallRelease.release_scorer import ReleaseScorer
-from InstallRelease.config import HOME
-from InstallRelease.config import config
+from InstallRelease.config import bin_path, config
 
 # --------------- CODE ------------------
 
@@ -528,11 +527,6 @@ class InstallRelease:
     USER: str
     SUDO_USER: str
 
-    bin_path = {
-        "linux": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"},
-        "darwin": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"},
-    }
-
     def __init__(self, source: str, name: str = "") -> None:
         """Initialize the InstallRelease object
 
@@ -541,7 +535,7 @@ class InstallRelease:
             name: Name to give the installed binary
         """
         pl = platform.system()
-        self.paths = self.bin_path[pl.lower()]
+        self.paths = bin_path[pl.lower()]
         self.pl = pl
         self.source = source
         self.name = name
