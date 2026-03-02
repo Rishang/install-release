@@ -8,7 +8,7 @@ from rich.progress import track
 from rich.console import Console
 
 # locals
-from InstallRelease.data import Release, irKey, TypeState, ReleaseAssets
+from InstallRelease.schemas import Release, irKey, TypeState, ReleaseAssets
 
 from InstallRelease.pkgs.main import (
     detect_package_type_from_asset_name,

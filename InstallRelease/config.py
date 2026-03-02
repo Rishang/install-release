@@ -4,9 +4,42 @@ This module handles the configuration of the tool.
 
 import os
 from InstallRelease.state import State, platform_path
-from InstallRelease.data import Release, ToolConfig
-from InstallRelease.constants import state_path, config_path, bin_path
+from InstallRelease.schemas import Release, ToolConfig
 from InstallRelease.utils import logger
+
+HOME = os.path.expanduser("~")
+
+__bin_at__ = "bin"
+__dir_name__ = "install_release"
+
+__state_at__ = f"{__dir_name__}/state.json"
+__config_at__ = f"{__dir_name__}/config.json"
+
+_colors = {
+    "green": "#8CC265",
+    "light_green": "#D0FF5E bold",
+    "blue": "#4AA5F0",
+    "cyan": "#76F6FF",
+    "yellow": "#F0A45D bold",
+    "red": "#E8678A",
+    "purple": "#8782E9 bold",
+}
+
+
+state_path = {
+    "linux": f"{HOME}/.config/{__state_at__}",
+    "darwin": f"{HOME}/Library/.config/{__state_at__}",
+}
+
+config_path = {
+    "linux": f"{HOME}/.config/{__config_at__}",
+    "darwin": f"{HOME}/Library/.config/{__config_at__}",
+}
+
+bin_path = {
+    "linux": f"{HOME}/{__bin_at__}",
+    "darwin": f"{HOME}/{__bin_at__}",
+}
 
 if os.environ.get("installState", "") == "test":
     temp_dir = "../temp"
@@ -17,6 +50,7 @@ if os.environ.get("installState", "") == "test":
     logger.info(f"installState={os.environ.get('installState')}")
 else:
     __spath = {"state_path": "", "config_path": ""}
+
 
 cache = State(
     file_path=platform_path(paths=state_path, alt=__spath["state_path"]),

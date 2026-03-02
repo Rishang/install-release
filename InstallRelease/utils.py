@@ -42,7 +42,7 @@ except ImportError:
 
 
 # locals
-from InstallRelease.constants import _colors
+from InstallRelease.config import _colors
 
 requests_session = requests.Session()
 
