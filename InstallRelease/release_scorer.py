@@ -182,6 +182,27 @@ class ReleaseScorer:
 
         return score
 
+    def _effective_total_weight(self, release_names: List[str]) -> float:
+        """Compute effective total weight using only patterns that match at
+        least one asset name.
+
+        When none of the assets mention the OS (e.g. ``linux``) or archive
+        extensions, those pattern weights should not inflate the denominator
+        and unfairly penalise all candidates.
+        """
+        names_lower = [name.lower() for name in release_names]
+        effective = 0.0
+
+        for pattern, w in self._plain_patterns.items():
+            if any(pattern in name for name in names_lower):
+                effective += w
+
+        for pattern, w in self._regex_patterns.items():
+            if any(re.search(pattern, name) for name in names_lower):
+                effective += w
+
+        return effective if effective > 0 else self._total_weight
+
     def select_best(
         self, release_names: List[str], min_score: float = 0.2
     ) -> Optional[str]:
@@ -204,8 +225,23 @@ class ReleaseScorer:
         if not release_names:
             return None
 
-        scored = self.score_multiple(release_names)
-        logger.debug(f"Top 3 scores: {scored[:3]}")
+        # Adjust normalisation to only count patterns that match at least one
+        # asset.  This prevents unreachable patterns (e.g. "linux" when no
+        # asset mentions it) from inflating the denominator.
+        original_total = self._total_weight
+        effective = self._effective_total_weight(release_names)
+        if effective != original_total:
+            logger.debug(
+                f"Adjusted normalization weight: {original_total} -> {effective} "
+                f"(some patterns not present in any asset)"
+            )
+            self._total_weight = effective
+
+        try:
+            scored = self.score_multiple(release_names)
+            logger.debug(f"Top 3 scores: {scored[:3]}")
+        finally:
+            self._total_weight = original_total
 
         # FIX: single-asset fallback is now explicit and documented.
         if len(scored) == 1:
