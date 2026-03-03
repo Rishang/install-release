@@ -14,7 +14,11 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
   build:
+    needs: test
     strategy:
       matrix:
         include:
@@ -61,7 +65,7 @@ jobs:
 
       - name: Build CLI
         run: task build:cli FILENAME=${{ matrix.executable }} ARGS="${{ matrix.build_args }}"
-      
+
       - name: Patch executable for macos
         if: matrix.os == 'macos-latest'
         run: |
