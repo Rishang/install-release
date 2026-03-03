@@ -41,7 +41,7 @@ tasks:
   test:
     dir: ./test
     silent: true
-    desc: Test the CLI in Docker (e.g. task test -- ubuntu)
+    desc: Test the CLI in Docker (e.g. task test -- py)
     cmds:
       - |
         if [ "{{.CLI_ARGS}}" = "" ]; then
