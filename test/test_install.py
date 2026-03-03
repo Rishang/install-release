@@ -38,7 +38,7 @@ def test_get(name: str = "all!"):
         if validate[2] == 0:
             print(f"Validation failed for {repo['name']}")
             print(validate[1])
-            failed_repos.append(repo["name"])
+            failed_repos.append((repo["name"], validate[1], validate[2]))
         else:
             print(f"Validation passed for {repo['name']}")
 
