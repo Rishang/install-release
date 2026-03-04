@@ -17,6 +17,7 @@ case $1 in
     docker run -itd \
       --name ir-ubuntu \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
+      -v "$HOME/.config/install_release/config.json":/root/.config/install_release/config.json:ro \
       -v "$(pwd)/cli":/app/cli \
       -v "$(pwd)/pyproject.toml":/app/pyproject.toml \
       -v "$(pwd)/uv.lock":/app/uv.lock \
@@ -32,6 +33,7 @@ case $1 in
     docker run -itd \
       --name ir-fedora \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
+      -v "$HOME/.config/install_release/config.json":/root/.config/install_release/config.json:ro \
       -v "$(pwd)/cli":/app/cli \
       -v "$(pwd)/pyproject.toml":/app/pyproject.toml \
       -v "$(pwd)/uv.lock":/app/uv.lock \
