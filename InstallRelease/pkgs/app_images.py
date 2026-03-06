@@ -51,11 +51,25 @@ class AppImage(PackageInstallerABC):
             / f"{self.name}.appimage"
         )
 
+    @property
+    def package_name(self) -> str:
+        return self.name
+
+    def _query_package_name(self, source: str) -> str | None:
+        """AppImages have no package-manager name; name is set at construction time."""
+        return None
+
+    def _extract_package(self, source: str) -> Path | None:
+        """
+        Locate and validate the .AppImage file.
+        """
+        return self.validate_source(source, ".AppImage")
+
     def install(self, source: str) -> Path | None:
         """
         Install the AppImage.
         """
-        source_path = self.validate_source(source, ".AppImage")
+        source_path = self._extract_package(source)
         if not source_path:
             return None
 

@@ -96,8 +96,14 @@ class PackageInstaller(PackageInstallerABC):
             "AppImage": AppImage,
         }
 
-    def install(self, source: str) -> Path | None:
-        # Find the package file in the temp directory
+    def _query_package_name(self, source: str) -> str | None:
+        return None
+
+    def _extract_package(self, source: str) -> Path | None:
+        return None
+
+    def install(self, source: str) -> str | Path | None:
+        """Install the package and return the actual package name registered in the package manager."""
         package_files = glob.glob(f"{source}/**/*.{self.package_type}", recursive=True)
 
         if not package_files:
@@ -107,13 +113,15 @@ class PackageInstaller(PackageInstallerABC):
         package_path = package_files[0]
         logger.debug(f"Found package file: {package_path}")
 
-        # Install based on type
         try:
             installer = self.pkgs[self.package_type](self.name)
             logger.info(
                 f"Installing {self.package_type} package this might need sudo permissions..."
             )
             result = installer.install(package_path)
+            # Propagate the actual package name (may differ from repo name, e.g. rio -> rioterm)
+            if result is not None:
+                self.name = installer.package_name
             return result
         except Exception as e:
             logger.error(f"Failed to install package: {e}")

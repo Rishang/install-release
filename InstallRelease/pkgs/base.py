@@ -62,6 +62,20 @@ class PackageInstallerABC(ABC):
         """
         pass
 
+    @abstractmethod
+    def _extract_package(self, source: str) -> Path | None:
+        """
+        Extract the package from source.
+        """
+        ...
+
+    @abstractmethod
+    def _query_package_name(self, source: str) -> str | None:
+        """
+        Query the package name from the source file.
+        """
+        pass
+
     def validate_source(self, source: str, extension: str) -> Path | None:
         """
         Validate the source file exists and has the correct extension.

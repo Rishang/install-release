@@ -194,6 +194,9 @@ def _install_asset(
         release.assets = [asset]
         release.package_type = effective_pkg
         release.install_method = "package"
+        # Store the actual package name as registered in the package manager.
+        # This may differ from the repo/toolname (e.g. repo "rio" installs as "rioterm").
+        release.package_name = package_installer.name
     else:
         extract_release(item=asset, at=temp_dir)
         release.assets = [asset]
@@ -550,11 +553,22 @@ def remove(name: str) -> None:
             release = state[key]
 
             if is_package(state, key):
-                if not hasattr(release, "package_type"):
+                if not getattr(release, "package_type", None):
                     logger.warning(f"{name} was not installed as a package")
                 else:
+                    # Use the stored package_name (actual name in the package manager DB)
+                    # which may differ from the repo/toolname (e.g. repo "rio" -> "rioterm").
+                    pkg_name = (
+                        release.package_name
+                        if hasattr(release, "package_name") and release.package_name
+                        else name
+                    )
+                    if pkg_name != name:
+                        logger.debug(
+                            f"Using actual package name '{pkg_name}' instead of '{name}'"
+                        )
                     package_installer = PackageInstaller(
-                        name, package_type=release.package_type
+                        pkg_name, package_type=release.package_type
                     )
                     package_installer.uninstall()
             else:
