@@ -10,3 +10,9 @@ repos:
   validate:
     cmd: yt-dlp --help
     grep: "Usage: yt-dlp"
+
+- name: ttyd
+  cmd: ir get https://github.com/tsl0922/ttyd -n ttyd -y
+  validate:
+    cmd: ttyd --help
+    grep: ttyd

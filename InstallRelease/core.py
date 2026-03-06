@@ -19,14 +19,13 @@ from InstallRelease.utils import (
     download,
     sh,
 )
-from InstallRelease.data import (
+from InstallRelease.schemas import (
     Release,
     ReleaseAssets,
     RepositoryInfo,
 )
 from InstallRelease.release_scorer import ReleaseScorer
-from InstallRelease.constants import HOME
-from InstallRelease.config import config
+from InstallRelease.config import bin_path, config
 
 # --------------- CODE ------------------
 
@@ -130,7 +129,7 @@ class GitHubInfo(RepoInfo):
         self.api = f"https://api.github.com/repos/{self.owner}/{self.repo_name}"
         self.token = token or ""  # Convert None to empty string
 
-        self.data = data
+        self.schemas = data
 
         # Initialize repository info
         try:
@@ -162,7 +161,7 @@ class GitHubInfo(RepoInfo):
                 url,
                 headers=self.headers,
                 auth=auth,
-                json=self.data,
+                json=self.schemas,
             )
             response.raise_for_status()  # Raise exception for HTTP errors
             data = response.json()
@@ -298,7 +297,7 @@ class GitlabInfo(RepoInfo):
         # Prefer gitlab_token if provided, otherwise fall back to token
         self.token = token or ""
 
-        self.data = data
+        self.schemas = data
 
         try:
             repo_info = self._req(self.api)
@@ -339,7 +338,7 @@ class GitlabInfo(RepoInfo):
             response = requests.get(
                 url,
                 headers=headers,
-                json=self.data,
+                json=self.schemas,
             )
             response.raise_for_status()  # Raise exception for HTTP errors
             data = response.json()
@@ -528,11 +527,6 @@ class InstallRelease:
     USER: str
     SUDO_USER: str
 
-    bin_path = {
-        "linux": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"},
-        "darwin": {"local": f"{HOME}/.local/bin", "global": "/usr/local/bin"},
-    }
-
     def __init__(self, source: str, name: str = "") -> None:
         """Initialize the InstallRelease object
 
@@ -541,7 +535,7 @@ class InstallRelease:
             name: Name to give the installed binary
         """
         pl = platform.system()
-        self.paths = self.bin_path[pl.lower()]
+        self.paths = bin_path[pl.lower()]
         self.pl = pl
         self.source = source
         self.name = name
@@ -622,7 +616,7 @@ def get_release(
     releases: List[Release],
     repo_url: str,
     extra_words: Optional[List[str]] = None,
-    disable_penalties: bool = False,
+    disable_adjustments: bool = False,
     package_type: Optional[str] = None,
 ) -> Union[ReleaseAssets, bool]:
     """Get the release with the highest priority
@@ -631,7 +625,7 @@ def get_release(
         releases: List of releases to choose from
         repo_url: The repository URL
         extra_words: Additional keywords to match against
-        disable_penalties: Whether to disable penalties
+        disable_adjustments: Whether to disable penalties
         package_type: If set, prioritize this package type (deb/rpm/appimage)
     Returns:
         The best matching ReleaseAssets or False if no match found
@@ -645,10 +639,12 @@ def get_release(
         logger.debug(f"Package mode enabled, prioritizing: {package_type}")
 
     logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"disable_penalties: {disable_penalties}")
+    logger.debug(f"disable_adjustments: {disable_adjustments}")
 
     # Create scorer with platform words and extra words
-    scorer = ReleaseScorer(extra_words=extra_words, disable_penalties=disable_penalties)
+    scorer = ReleaseScorer(
+        extra_words=extra_words, disable_adjustments=disable_adjustments
+    )
 
     # Log scorer information
     scorer_info = scorer.get_info()

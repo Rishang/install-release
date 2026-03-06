@@ -74,6 +74,8 @@ class Release:
         default="binary"
     )  # "deb", "rpm", "AppImage", "binary"
     install_method: Optional[str] = field(default="binary")  # "binary" or "package"
+    # Actual package name as registered in the package manager (may differ from repo name)
+    package_name: Optional[str] = field(default=None)
     # author: dict
     # draft: bool
     # target_commitish: str

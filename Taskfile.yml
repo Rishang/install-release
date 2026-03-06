@@ -41,13 +41,14 @@ tasks:
   test:
     dir: ./test
     silent: true
-    desc: Test the CLI in Docker (e.g. task test -- ubuntu)
+    desc: Test the CLI in Docker (e.g. task test -- py)
     cmds:
       - |
         if [ "{{.CLI_ARGS}}" = "" ]; then
           echo "No arguments provided"
           exit 1
         elif [ "{{.CLI_ARGS}}" = "py" ]; then
+          (docker ps | grep ir-*) || bash setup.sh ubuntu
           uv run pytest -s .
         else
           bash setup.sh {{.CLI_ARGS}}
