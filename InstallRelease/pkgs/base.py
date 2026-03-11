@@ -7,6 +7,25 @@ from pathlib import Path
 from InstallRelease.utils import logger
 
 
+PACKAGE_ALIASES = {
+    "deb": ["debian", "ubuntu", "mint", "pop", "elementary", "kali"],
+    "rpm": [
+        "fedora",
+        "rhel",
+        "centos",
+        "rocky",
+        "alma",
+        "opensuse",
+        "suse",
+        "centos stream",
+    ],
+    "AppImage": ["manjaro", "arch"],
+    "dmg": ["macos"],
+    "exe": ["windows"],
+    "msi": ["windows"],
+}
+
+
 class PackageInstallerABC(ABC):
     """Abstract base class for package installers."""
 
@@ -40,6 +59,20 @@ class PackageInstallerABC(ABC):
 
         Returns:
             True if successful, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def _extract_package(self, source: str) -> Path | None:
+        """
+        Extract the package from source.
+        """
+        ...
+
+    @abstractmethod
+    def _query_package_name(self, source: str) -> str | None:
+        """
+        Query the package name from the source file.
         """
         pass
 

@@ -40,13 +40,19 @@ except ImportError:
 
 # logging.basicConfig(level=logging.INFO)
 
-
-# locals
-from InstallRelease.constants import _colors
-
 requests_session = requests.Session()
 
 console = Console()
+
+_colors = {
+    "green": "#8CC265",
+    "light_green": "#D0FF5E bold",
+    "blue": "#4AA5F0",
+    "cyan": "#76F6FF",
+    "yellow": "#F0A45D bold",
+    "red": "#E8678A",
+    "purple": "#8782E9 bold",
+}
 
 
 def _logger(flag: str = "", format: str = ""):

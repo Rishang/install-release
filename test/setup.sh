@@ -2,12 +2,22 @@
 # set -x
 cd "$(dirname "$0")/.."
 
+function build_ubuntu {
+  docker build -t install-release-ubuntu:latest -f test/images/ubuntu/Dockerfile .
+}
+
+function build_fedora {
+  docker build -t install-release-fedora:latest -f test/images/fedora/Dockerfile .
+}
+
 case $1 in
   "ubuntu")
     docker rm -f ir-ubuntu
+    docker images | grep install-release-ubuntu || build_ubuntu
     docker run -itd \
       --name ir-ubuntu \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
+      -v "$HOME/.config/install_release/config.json":/root/.config/install_release/config.json:ro \
       -v "$(pwd)/cli":/app/cli \
       -v "$(pwd)/pyproject.toml":/app/pyproject.toml \
       -v "$(pwd)/uv.lock":/app/uv.lock \
@@ -19,9 +29,11 @@ case $1 in
     ;;
   "fedora")
     docker rm -f ir-fedora
+    docker images | grep install-release-fedora || build_fedora
     docker run -itd \
       --name ir-fedora \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
+      -v "$HOME/.config/install_release/config.json":/root/.config/install_release/config.json:ro \
       -v "$(pwd)/cli":/app/cli \
       -v "$(pwd)/pyproject.toml":/app/pyproject.toml \
       -v "$(pwd)/uv.lock":/app/uv.lock \
@@ -33,8 +45,8 @@ case $1 in
 
     ;;
   "build")
-    docker build -t install-release-ubuntu:latest -f test/images/ubuntu/Dockerfile .
-    docker build -t install-release-fedora:latest -f test/images/fedora/Dockerfile .
+    build_ubuntu
+    build_fedora
     ;;
   *)
     echo "Usage: $0 [ubuntu|fedora]"
