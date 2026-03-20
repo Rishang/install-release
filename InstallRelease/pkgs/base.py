@@ -19,10 +19,10 @@ PACKAGE_ALIASES = {
         "suse",
         "centos stream",
     ],
-    "AppImage": ["manjaro", "arch"],
     "dmg": ["macos"],
     "exe": ["windows"],
     "msi": ["windows"],
+    "AppImage": ["linux"],
 }
 
 

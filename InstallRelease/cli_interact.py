@@ -15,6 +15,7 @@ from InstallRelease.pkgs.main import (
     detect_package_type_from_os_release,
     PackageInstaller,
 )
+from InstallRelease.pkgs.base import PACKAGE_ALIASES
 from InstallRelease.utils import (
     mkdir,
     pprint,
@@ -175,13 +176,17 @@ def _install_asset(
     Returns:
         True if installation succeeded, False otherwise
     """
-    effective_pkg = (
-        package_type
-        if package_mode
-        else detect_package_type_from_asset_name(asset.name)
-    )
+    asset_pkg = detect_package_type_from_asset_name(asset.name)
+    # Always trust the selected asset type first. In --pkg mode, package_type is
+    # only a preference (used during scoring/filtering), not a hard override.
+    effective_pkg = asset_pkg or (package_type if package_mode else None)
 
     if effective_pkg:
+        if package_mode and package_type and effective_pkg != package_type:
+            logger.info(
+                f"Selected asset '{asset.name}' is {effective_pkg}; "
+                f"overriding requested {package_type} package type"
+            )
         download(asset.browser_download_url, temp_dir)
         logger.debug(f"Downloaded package to: {temp_dir}")
 
@@ -236,33 +241,41 @@ def get(
     pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
     releases = repo.release(tag_name=tag_name, pre_release=pre_release)
 
-    if package_mode and os_package_type:
-        """Filter release assets to only the requested package type.
-        Falls back to AppImage if no native packages are found.
-        Mutates release.assets in-place.
-        """
+    package_type = os_package_type
+    if package_mode:
+        if not package_type:
+            logger.error("Could not detect appropriate package type for your system")
+            return
+
+        appimage_supported = platform.system().lower() in PACKAGE_ALIASES.get(
+            "AppImage", []
+        )
         for release in releases:
             native = [
                 a
                 for a in release.assets
-                if detect_package_type_from_asset_name(a.name) == os_package_type
+                if detect_package_type_from_asset_name(a.name) == package_type
             ]
-            fallback = [
-                a
-                for a in release.assets
-                if detect_package_type_from_asset_name(a.name) == "AppImage"
-            ]
-            release.assets = native or fallback
+            if native:
+                release.assets = native
+                continue
 
-            if (
-                release.assets
-                and detect_package_type_from_asset_name(release.assets[0].name)
-                == "AppImage"
-                and os_package_type != "AppImage"
-            ):
+            fallback = (
+                [
+                    a
+                    for a in release.assets
+                    if detect_package_type_from_asset_name(a.name) == "AppImage"
+                ]
+                if appimage_supported
+                else []
+            )
+            release.assets = fallback
+
+            if fallback and package_type != "AppImage":
                 logger.info(
-                    f"No {os_package_type} package found, falling back to AppImage"
+                    f"No {package_type} package found, falling back to AppImage"
                 )
+                package_type = "AppImage"
 
     if not releases:
         logger.error(f"No releases found: {repo.repo_url}")
@@ -290,12 +303,8 @@ def get(
     logger.debug(f"disable_adjustments: {disable_adjustments}")
 
     # --- Validate package mode ---------------------------------------------
-    package_type = os_package_type
     if package_mode:
-        if not package_type:
-            logger.error("Could not detect appropriate package type for your system")
-            return
-        logger.info(f"Installing as {package_type} package")
+        logger.info(f"Package mode enabled; preferred package type: {package_type}")
 
     # ---  Score & select asset ----------------------------------------------
     # Try exact name match: explicit --file, or previously cached asset name
