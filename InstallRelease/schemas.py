@@ -67,6 +67,7 @@ class Release:
     prerelease: bool
     published_at: str
     assets: List[ReleaseAssets]
+    description: Optional[str] = field(default=None)
     hold_update: Optional[bool] = field(default=False)
     custom_release_words: Optional[List[str]] = field(default=None)
     # Package management fields

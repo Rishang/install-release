@@ -402,6 +402,8 @@ def get(
     )
     if resolved_words:
         releases[0].custom_release_words = resolved_words
+    if repo.info.description and repo.info.description != "":
+        releases[0].description = repo.info.description
 
     cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
     cache.save()
@@ -509,9 +511,17 @@ def list_install(
 
     _table = []
     _hold_table = []
+    desc_length = 50
     for key in state:
         i = irKey(key)
         state[key]
+        desc_raw = state[key].description or ""
+        # Keep table output readable for long descriptions.
+        desc = (
+            (desc_raw[:desc_length].rstrip() + "..")
+            if len(desc_raw) > desc_length
+            else desc_raw
+        )
 
         if hold_update:
             if state[key].hold_update is True:
@@ -519,6 +529,7 @@ def list_install(
                     {
                         "Name": i.name,
                         "Version": f"[dim]{state[key].tag_name}",
+                        "Title": (f"[dim yellow]{desc}[/dim yellow]"),
                         "Url": f"[dim]{state[key].url}",
                     }
                 )
@@ -536,6 +547,7 @@ def list_install(
             {
                 "Name": i.name,
                 "Version": version_str,
+                "Title": (f"[yellow]{desc}[/yellow]"),
                 "Url": state[key].url,
             }
         )
