@@ -23,18 +23,7 @@ class DebPackage(PackageInstallerABC):
         return None
 
     def _extract_package(self, source: str) -> Path | None:
-        """
-        Locate and validate the .deb file, resolving the actual package name
-        from its metadata into `self.package_name`.
-        """
-        source_path = self.validate_source(source, ".deb")
-        if not source_path:
-            return None
-        actual_name = self._query_package_name(str(source_path))
-        if actual_name:
-            logger.debug(f"DEB package name from metadata: {actual_name}")
-            self.package_name = actual_name
-        return source_path
+        return self._extract_package_base(source, ".deb", "DEB")
 
     def install(self, source: str) -> str | None:
         """

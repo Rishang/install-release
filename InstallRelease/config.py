@@ -4,32 +4,28 @@ This module handles the configuration of the tool.
 
 import os
 from InstallRelease.state import State, platform_path
-from InstallRelease.schemas import Release, ToolConfig
+from InstallRelease.schemas import ToolConfig
+from InstallRelease.providers.git.schemas import Release
 from InstallRelease.utils import logger
 
 HOME = os.path.expanduser("~")
 
-__bin_at__ = "bin"
-__dir_name__ = "install_release"
-
-__state_at__ = f"{__dir_name__}/state.json"
-__config_at__ = f"{__dir_name__}/config.json"
-
-
-state_path = {
-    "linux": f"{HOME}/.config/{__state_at__}",
-    "darwin": f"{HOME}/Library/.config/{__state_at__}",
+_PATHS = {
+    "linux": {
+        "state": f"{HOME}/.config/install_release/state.json",
+        "config": f"{HOME}/.config/install_release/config.json",
+        "bin": f"{HOME}/bin",
+    },
+    "darwin": {
+        "state": f"{HOME}/Library/.config/install_release/state.json",
+        "config": f"{HOME}/Library/.config/install_release/config.json",
+        "bin": f"{HOME}/bin",
+    },
 }
 
-config_path = {
-    "linux": f"{HOME}/.config/{__config_at__}",
-    "darwin": f"{HOME}/Library/.config/{__config_at__}",
-}
-
-bin_path = {
-    "linux": f"{HOME}/{__bin_at__}",
-    "darwin": f"{HOME}/{__bin_at__}",
-}
+state_path = {k: v["state"] for k, v in _PATHS.items()}
+config_path = {k: v["config"] for k, v in _PATHS.items()}
+bin_path = {k: v["bin"] for k, v in _PATHS.items()}
 
 if os.environ.get("installState", "") == "test":
     temp_dir = "../temp"
@@ -72,6 +68,12 @@ def load_config() -> ToolConfig:
 
 
 config: ToolConfig = load_config()
+
+
+def pre_release_enabled() -> bool:
+    """Return whether pre-release versions are enabled in the tool config."""
+    return bool(config.pre_release)
+
 
 # Handle the path, ensuring it's a string
 config_path_str = str(config.path) if config.path is not None else ""

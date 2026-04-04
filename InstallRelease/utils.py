@@ -15,12 +15,10 @@ import platform
 import subprocess
 import dataclasses
 from pathlib import Path
-from typing import List, Dict
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 from importlib.metadata import version, PackageNotFoundError
 
-# pipi
 import requests
 import zstandard as zstd
 from rich import print as pprint
@@ -55,35 +53,13 @@ _colors = {
 }
 
 
-def _logger(flag: str = "", format: str = ""):
-    if format == "" or format is None:
-        format = "%(levelname)s|%(name)s| %(message)s"
-
-    # message
+def _logger(flag: str = ""):
     logger = logging.getLogger(__name__)
-
-    if os.environ.get(flag) is not None:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-
-    # create console handler and set level to debug
-    # ch = logging.StreamHandler()
-    # ch.setLevel(logging.DEBUG)
-    # # create formatter
-    # # add formatter to ch
-    # formatter = logging.Formatter(format)
-    # ch.setFormatter(formatter)
-
-    # # add ch to logger
-    # logger.addHandler(ch)
-    handler = RichHandler(log_time_format="")
-    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG if os.environ.get(flag) else logging.INFO)
+    logger.addHandler(RichHandler(log_time_format=""))
     return logger
 
 
-# message
-# export LOG_LEVEL=true
 logger = _logger("LOG_LEVEL")
 
 
@@ -153,75 +129,33 @@ def is_none(val):
 
 @dataclass
 class ShellOutputs:
-    stdout: List[str]
-    stderr: List[str]
+    stdout: list[str]
+    stderr: list[str]
     returncode: int
 
 
-class Shell:
-    line_breaks = "\n"
-    popen_args = {"shell": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
-
-    def console_to_str(self, s):
-        console_encoding = sys.__stdout__.encoding
-
-        """ From pypa/pip project, pip.backwardwardcompat. License MIT. """
-        if s is None:
-            return
-        try:
-            return s.decode(console_encoding, "ignore")
-        except UnicodeDecodeError:
-            return s.decode("utf_8", "ignore")
-
-    def str_from_console(self, s):
-        text_type = str
-
-        try:
-            return text_type(s)
-        except UnicodeDecodeError:
-            return text_type(s, encoding="utf_8")
-
-    def cmd(self, cmd, interactive: bool = False) -> ShellOutputs:
-        try:
-            # For interactive commands, don't capture output
-            if interactive:
-                popen_args = {"shell": True}
-                process = subprocess.Popen(cmd, **popen_args)  # type: ignore
-                process.wait()
-                returncode = process.returncode
-                stdout = []
-                stderr = []
-            else:
-                # For non-interactive commands, capture output
-                process = subprocess.Popen(cmd, **self.popen_args)  # type: ignore
-                stdout, stderr = process.communicate()
-                returncode = process.returncode
-
-                stdout = self.console_to_str(stdout)
-                stdout = stdout.split(self.line_breaks)
-                stdout = list(filter(None, stdout))  # filter empty values
-
-                stderr = self.console_to_str(stderr)
-                stderr = stderr.split(self.line_breaks)
-                stderr = list(filter(None, stderr))  # filter empty values
-
-                if "has-session" in cmd and len(stderr):
-                    if not stdout:
-                        stdout = stderr[0]
-                logger.debug(f"stdout for {cmd}:\n{stdout}")
-
-        except Exception as e:
-            logger.error("Exception for %s: \n%s" % (subprocess.list2cmdline(cmd), e))
-            returncode = 1
-            stdout = []
-            stderr = []
-
-        return ShellOutputs(stdout=stdout, stderr=stderr, returncode=returncode)
-
-
 def sh(command: str, interactive: bool = False) -> ShellOutputs:
-    s = Shell()
-    return s.cmd(command, interactive=interactive)
+    """Run a shell command and return its output."""
+    try:
+        if interactive:
+            process = subprocess.Popen(command, shell=True)
+            process.wait()
+            return ShellOutputs(stdout=[], stderr=[], returncode=process.returncode)
+
+        process = subprocess.Popen(
+            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        raw_out, raw_err = process.communicate()
+
+        encoding = sys.__stdout__.encoding or "utf-8"
+        stdout = list(filter(None, raw_out.decode(encoding, "ignore").split("\n")))
+        stderr = list(filter(None, raw_err.decode(encoding, "ignore").split("\n")))
+
+        logger.debug(f"stdout for {command}:\n{stdout}")
+        return ShellOutputs(stdout=stdout, stderr=stderr, returncode=process.returncode)
+    except Exception as e:
+        logger.error(f"Exception for {command}: {e}")
+        return ShellOutputs(stdout=[], stderr=[], returncode=1)
 
 
 def mkdir(path: str):
@@ -316,7 +250,7 @@ def extract(path: str, at: str):
         raise Exception("Invalid file")
 
 
-def listItemsMatcher(patterns: List[str], word: str) -> float:
+def listItemsMatcher(patterns: list[str], word: str) -> float:
     """
     eg: listItemsMatcher(patterns=['a','b'], word='a-cc') --> 0.5
     """
@@ -344,11 +278,11 @@ def threads(funct, data, max_workers=5, return_result: bool = True):
 
 
 def show_table(
-    data: List[Dict], ignore_keys: List = [], title: str = "", border_style=""
+    data: list[dict], ignore_keys: list = [], title: str = "", border_style=""
 ):
     """rich table"""
 
-    def dict_list_tbl(items=List[dict], ignore_keys: list = []):
+    def dict_list_tbl(items=list[dict], ignore_keys: list = []):
         keys = []
         data = []
 
@@ -387,7 +321,7 @@ def show_table(
     console.print(table)
 
 
-def to_words(text: str, ignore_words: List[str] = []) -> List[str]:
+def to_words(text: str, ignore_words: list[str] = []) -> list[str]:
     text = text.lower().replace("_", "-").split("-")
     words = []
     for w in text:

@@ -3,7 +3,7 @@ import platform
 from typing import Optional
 from pathlib import Path
 from InstallRelease.utils import logger, sh
-from InstallRelease.schemas import _valid_package_types
+from InstallRelease.providers.git.schemas import _valid_package_types
 from InstallRelease.pkgs.base import PackageInstallerABC
 from InstallRelease.pkgs.deb import DebPackage
 from InstallRelease.pkgs.rpm import RpmPackage
