@@ -6,7 +6,7 @@ import requests
 from InstallRelease.utils import logger
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets, RepositoryInfo
 from InstallRelease.providers.base import Provider
-from InstallRelease.providers.git.release_scorer import ReleaseScorer
+from InstallRelease.helper.release_scorer import ReleaseScorer
 
 
 # ── Exceptions ──────────────────────────────────────────────────────────
