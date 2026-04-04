@@ -25,7 +25,7 @@ from InstallRelease.providers.git.base import (
 )
 from InstallRelease.providers.git.github import GitHubInfo
 from InstallRelease.providers.git.gitlab import GitlabInfo
-from InstallRelease.providers.git.release_scorer import PENALTY_EXTENSIONS
+from InstallRelease.helper.release_scorer import PENALTY_EXTENSIONS
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
 from InstallRelease.utils import (
     download,
