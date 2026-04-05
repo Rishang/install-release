@@ -12,12 +12,8 @@ from InstallRelease.config import config, dest
 from InstallRelease.helper import extract_url, install_bin, save_state
 from InstallRelease.providers.base import InteractProvider
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
-from InstallRelease.providers.mise.registry import (
-    AquaAsset,
-    MiseToolInfo,
-    get_backend,
-    resolve_download_url,
-)
+from InstallRelease.providers.mise.registry import get_backend, resolve_download_url
+from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
 from InstallRelease.utils import logger, mkdir, pprint, show_table
 
 _GITHUB_API = "https://api.github.com"

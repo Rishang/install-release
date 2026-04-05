@@ -1,64 +1,15 @@
 """Mise registry + Aqua registry resolution."""
 
-from __future__ import annotations
-
-import platform
 import tomllib
-from dataclasses import dataclass
 from typing import Optional
 
 import requests
 import yaml
 
+from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
 from InstallRelease.utils import logger
 
-_OS_MAP = {
-    "linux": "linux",
-    "darwin": "darwin",
-    "windows": "windows",
-}
-
-_ARCH_MAP = {
-    "x86_64": "amd64",
-    "amd64": "amd64",
-    "aarch64": "arm64",
-    "arm64": "arm64",
-    "armv7l": "arm",
-    "i386": "386",
-    "i686": "386",
-}
-
-_MISE_REGISTRY_BASE = (
-    "https://raw.githubusercontent.com/jdx/mise/refs/heads/main/registry"
-)
-_AQUA_REGISTRY_BASE = (
-    "https://raw.githubusercontent.com/aquaproj/aqua-registry/main/pkgs"
-)
-
-
-@dataclass
-class AquaAsset:
-    """Resolved download asset from the aqua registry."""
-
-    url: str
-    name: str
-    version: str
-    fmt: str
-    owner: str
-    repo: str
-    description: str = ""
-
-
-def _current_os() -> str:
-    return _OS_MAP.get(platform.system().lower(), platform.system().lower())
-
-
-def _current_arch() -> str:
-    return _ARCH_MAP.get(platform.machine().lower(), platform.machine().lower())
-
-
-def _trim_v(version: str) -> str:
-    return version.lstrip("v")
+from InstallRelease.providers.mise.config import _MISE_REGISTRY_BASE, _AQUA_REGISTRY_BASE, _current_os, _current_arch, _trim_v
 
 
 def _expand_template(
@@ -88,15 +39,6 @@ def get_aqua_registry_yaml(owner: str, repo: str) -> dict:
     response = requests.get(url, timeout=10)
     response.raise_for_status()
     return yaml.safe_load(response.text)
-
-
-@dataclass
-class MiseToolInfo:
-    """Resolved mise registry metadata."""
-
-    owner: str
-    repo: str
-    description: str = ""
 
 
 def get_backend(toolname: str) -> Optional[MiseToolInfo]:
@@ -172,8 +114,11 @@ def resolve_download_url(
     arch = arch or _current_arch()
     pkg_type = pkg.get("type", "github_release")
 
-    if pkg_type != "http":
-        logger.debug(
+    if pkg_type == "github_release":
+        logger.info(f"please use `ir get <github-url>` to install {toolname}")
+        return None
+    elif pkg_type != "http":
+        logger.info(
             f"Skipping unsupported aqua package type '{pkg_type}' for {toolname}"
         )
         return None
