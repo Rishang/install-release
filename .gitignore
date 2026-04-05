@@ -138,3 +138,4 @@ temp
 temp-*
 __main__.*
 !__main__.py
+CLAUDE.md

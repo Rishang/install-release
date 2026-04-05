@@ -2,10 +2,8 @@ import logging
 import os
 from typing import Optional
 
-# pipi
 import typer
 
-# locals
 from InstallRelease.utils import pprint, logger
 from InstallRelease.cli_interact import (
     pull_state,
@@ -19,7 +17,10 @@ from InstallRelease.cli_interact import (
     config,
     install_release_version,
 )
-from InstallRelease.core import get_repo_info
+from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
+from InstallRelease.providers.mise.main import MiseInteractProvider
+
+_MISE_PREFIX = "@mise/"
 
 
 def see_help(arg: str = ""):
@@ -90,17 +91,22 @@ def get(
     if url is None or url == "":
         see_help("get")
 
+    if url.startswith(_MISE_PREFIX):
+        _get(
+            MiseInteractProvider(url[len(_MISE_PREFIX) :]),
+            version=tag_name,
+            prompt=not approve,
+            name=name,
+        )
+        return
+
     url = "/".join(url.split("/")[:5])
-
-    repo = get_repo_info(url)
-
     _get(
-        repo,
-        tag_name=tag_name,
+        GitInteractProvider(get_repo_info(url), package_mode=pkg),
+        version=tag_name,
         asset_file=asset_file,
         prompt=not approve,
         name=name,
-        package_mode=pkg,
     )
 
 
@@ -120,15 +126,6 @@ def upgrade(
     | Upgrade all installed CLI tools from their repositories
     """
     setLogger(quiet, debug)
-    local_version = install_release_version.local_version()
-    latest_version = install_release_version.latest_version()
-    logger.debug(f"local_version: {local_version}")
-    logger.debug(f"latest_version: {latest_version}")
-    # if local_version != latest_version:
-    #     pprint(
-    #         "[bold]***INFO: New version of install-release is available, "
-    #         "run [yellow]ir me --upgrade[reset] to update. ***\n"
-    #     )
     _upgrade(force=force, skip_prompt=skip_prompt, packages_only=pkg)
 
 

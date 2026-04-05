@@ -1,14 +1,12 @@
 import os
 import json
 import platform
-from typing import Dict
 import dataclasses
 
-# locals
 from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass
 
 
-def platform_path(paths: Dict[str, str], alt: str = "") -> str:
+def platform_path(paths: dict[str, str], alt: str = "") -> str:
     """Provide path based on platform
 
     Args:
@@ -61,7 +59,7 @@ class State:
         with open(self.state_file, "w") as f:
             json.dump(self.state, f, cls=EnhancedJSONEncoder)
 
-    def get(self, key: str) -> Dict:
+    def get(self, key: str) -> dict:
         return self.state.get(key)  # type: ignore
 
     def set(self, key: str, value):
@@ -76,10 +74,10 @@ class State:
     def pop(self, key: str):
         self.state.pop(key)
 
-    def __getitem__(self, key: str) -> Dict:
+    def __getitem__(self, key: str) -> dict:
         return self.state[key]
 
-    def __setitem__(self, key: str, value: Dict):
+    def __setitem__(self, key: str, value: dict):
         self.state[key] = value
         self.save()
 

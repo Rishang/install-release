@@ -23,18 +23,7 @@ class RpmPackage(PackageInstallerABC):
         return None
 
     def _extract_package(self, source: str) -> Path | None:
-        """
-        Locate and validate the .rpm file, resolving the actual package name
-        from its metadata into `self.package_name`.
-        """
-        source_path = self.validate_source(source, ".rpm")
-        if not source_path:
-            return None
-        actual_name = self._query_package_name(str(source_path))
-        if actual_name:
-            logger.debug(f"RPM package name from metadata: {actual_name}")
-            self.package_name = actual_name
-        return source_path
+        return self._extract_package_base(source, ".rpm", "RPM")
 
     def install(self, source: str) -> str | None:
         """
@@ -47,22 +36,17 @@ class RpmPackage(PackageInstallerABC):
 
         logger.debug(f"Installing RPM package: {source_path}")
 
-        # Try dnf first (Fedora/RHEL 8+)
-        result = sh(f"sudo dnf install -y {source_path}", interactive=True)
-
-        if result.returncode != 0:
-            logger.debug("dnf not available, trying yum...")
-            # Fallback to yum (older RHEL/CentOS)
-            result = sh(f"sudo yum install -y {source_path}", interactive=True)
-
-            if result.returncode != 0:
-                logger.debug("yum failed, trying rpm...")
-                # Fallback to rpm (no dependency resolution)
-                result = sh(f"sudo rpm -ivh {source_path}", interactive=True)
-
-                if result.returncode != 0:
-                    logger.error(f"Failed to install RPM package: {result.stderr}")
-                    return None
+        for cmd in [
+            f"sudo dnf install -y {source_path}",
+            f"sudo yum install -y {source_path}",
+            f"sudo rpm -ivh {source_path}",
+        ]:
+            result = sh(cmd, interactive=True)
+            if result.returncode == 0:
+                break
+        else:
+            logger.error(f"Failed to install RPM package: {result.stderr}")
+            return None
 
         logger.debug(f"RPM package installed: {self.package_name}")
         return self.package_name
@@ -73,22 +57,17 @@ class RpmPackage(PackageInstallerABC):
         """
         logger.debug(f"Uninstalling RPM package: {self.package_name}")
 
-        # Try dnf first
-        result = sh(f"sudo dnf remove -y {self.package_name}", interactive=True)
-
-        if result.returncode != 0:
-            logger.debug("dnf not available, trying yum...")
-            # Fallback to yum
-            result = sh(f"sudo yum remove -y {self.package_name}", interactive=True)
-
-            if result.returncode != 0:
-                logger.debug("yum failed, trying rpm...")
-                # Fallback to rpm
-                result = sh(f"sudo rpm -e {self.package_name}", interactive=True)
-
-                if result.returncode != 0:
-                    logger.error(f"Failed to uninstall: {result.stderr}")
-                    return False
+        for cmd in [
+            f"sudo dnf remove -y {self.package_name}",
+            f"sudo yum remove -y {self.package_name}",
+            f"sudo rpm -e {self.package_name}",
+        ]:
+            result = sh(cmd, interactive=True)
+            if result.returncode == 0:
+                break
+        else:
+            logger.error(f"Failed to uninstall: {result.stderr}")
+            return False
 
         logger.debug(f"RPM package uninstalled: {self.package_name}")
         return True

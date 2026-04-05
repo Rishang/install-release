@@ -1,7 +1,7 @@
 import re
 import platform
 import subprocess
-from typing import List, Optional, Tuple, Dict, Any
+from typing import Optional, Any
 from InstallRelease.utils import logger, to_words
 
 PLATFORM_ARCH_ALIASES = {
@@ -32,7 +32,7 @@ class ReleaseScorer:
 
     def __init__(
         self,
-        extra_words: Optional[List[str]] = None,
+        extra_words: Optional[list[str]] = None,
         disable_adjustments: bool = False,  # FIX: renamed from disable_penalties —
         # the flag suppresses bonuses too, not just penalties.
     ):
@@ -46,8 +46,8 @@ class ReleaseScorer:
         self._extra_words_set = {w.lower() for w in self.extra_words}
 
         # never accidentally treat a plain string as a regex or vice-versa.
-        self._plain_patterns: Dict[str, float] = {}
-        self._regex_patterns: Dict[str, float] = {}
+        self._plain_patterns: dict[str, float] = {}
+        self._regex_patterns: dict[str, float] = {}
         self._build_patterns()
 
         # Total weight is used for normalisation — computed once.
@@ -182,7 +182,7 @@ class ReleaseScorer:
 
         return score
 
-    def _effective_total_weight(self, release_names: List[str]) -> float:
+    def _effective_total_weight(self, release_names: list[str]) -> float:
         """Compute effective total weight using only patterns that match at
         least one asset name.
 
@@ -204,7 +204,7 @@ class ReleaseScorer:
         return effective if effective > 0 else self._total_weight
 
     def select_best(
-        self, release_names: List[str], min_score: float = 0.2
+        self, release_names: list[str], min_score: float = 0.2
     ) -> Optional[str]:
         """Select the best matching release.
 
@@ -270,7 +270,7 @@ class ReleaseScorer:
         logger.debug(f"Selected: '{best_name}' (score: {best_score:.3f})")
         return best_name
 
-    def score_multiple(self, release_names: List[str]) -> List[Tuple[str, float]]:
+    def score_multiple(self, release_names: list[str]) -> list[tuple[str, float]]:
         """Score and sort multiple releases by descending score.
 
         Returns:
@@ -279,7 +279,7 @@ class ReleaseScorer:
         scored = [(name, self.score(name)) for name in release_names]
         return sorted(scored, key=lambda x: x[1], reverse=True)
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """
         Returns:
             Dictionary with platform, architecture, pattern weights, etc.
