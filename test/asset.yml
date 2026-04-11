@@ -16,3 +16,9 @@ repos:
   validate:
     cmd: ttyd --help
     grep: ttyd
+
+- name: terraform
+  cmd: ir get @mise/terraform -n terraform -y
+  validate:
+    cmd: terraform --version
+    grep: Terraform

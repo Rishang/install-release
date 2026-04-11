@@ -2,9 +2,10 @@ FROM ubuntu:25.10
 
 RUN apt-get update && apt-get install -y \
     curl \
-    libmagic1 sudo libmagic1 \
+    sudo \
+    libmagic1 \
     python3 \
-    python3-venv nginx \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv (binary from official image)
