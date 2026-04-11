@@ -22,4 +22,5 @@ class MiseToolInfo:
 
     owner: str
     repo: str
+    aqua_path: str
     description: str = ""

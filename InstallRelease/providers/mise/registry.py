@@ -39,9 +39,9 @@ def get_mise_toml(toolname: str) -> dict:
     return tomllib.loads(response.text)
 
 
-def get_aqua_registry_yaml(owner: str, repo: str) -> dict:
-    """Fetch and parse the aqua registry YAML for *owner/repo*."""
-    url = f"{_AQUA_REGISTRY_BASE}/{owner}/{repo}/registry.yaml"
+def get_aqua_registry_yaml(aqua_path: str) -> dict:
+    """Fetch and parse the aqua registry YAML for the given aqua path."""
+    url = f"{_AQUA_REGISTRY_BASE}/{aqua_path}/registry.yaml"
     response = requests.get(url, timeout=10)
     response.raise_for_status()
     return yaml.safe_load(response.text)
@@ -62,10 +62,13 @@ def get_backend(toolname: str) -> Optional[MiseToolInfo]:
     for backend in data.get("backends", []):
         if backend.startswith("aqua:"):
             path = backend[len("aqua:") :]
-            parts = path.split("/", 1)
-            if len(parts) == 2:
+            parts = path.split("/")
+            if len(parts) >= 2:
                 return MiseToolInfo(
-                    owner=parts[0], repo=parts[1], description=description
+                    owner=parts[0],
+                    repo=parts[1],
+                    aqua_path=path,
+                    description=description,
                 )
     return None
 
@@ -107,7 +110,7 @@ def resolve_download_url(
     description = backend.description
 
     try:
-        registry = get_aqua_registry_yaml(owner, repo)
+        registry = get_aqua_registry_yaml(backend.aqua_path)
     except Exception:
         return None
 
