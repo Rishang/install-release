@@ -50,12 +50,12 @@ This can be any tool you want to install, which is pre-compiled for your device 
     - [Method 2: Command-line Flag](#method-2-command-line-flag)
   - [List installed tools 📋](#list-installed-tools-)
   - [Remove installed release ❌](#remove-installed-release-)
-  - [Update all previously installed tools to the latest version 🕶️](#update-all-previously-installed-tools-to-the-latest-version-)
+  - [Update all previously installed tools to the latest version 🕶](#update-all-previously-installed-tools-to-the-latest-version-)
     - [Update installed system packages 📦](#update-installed-system-packages-)
   - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
   - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
-  - [Configure tool installation path 🗂️](#config-tool-installation-path)
-  - [Configure updates for pre-release versions 🔌](#config-updates-for-pre-release-versions-)
+  - [Configure tool installation path 🗂️](#configure-tool-installation-path)
+  - [Configure updates for pre-release versions 🔌](#configure-updates-for-pre-release-versions-)
   - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
 
 
@@ -348,7 +348,7 @@ Example: Installing the bore tool from GitHub with the release file name `bore-v
 INFO     Removed: gron
 ```
 
-#### Update all previously installed tools to the latest version 🕶️
+#### Update all previously installed tools to the latest version 🕶
     
 ```bash
 ❯ ir upgrade
