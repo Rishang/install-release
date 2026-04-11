@@ -65,17 +65,40 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 ### Installation
 
+#### Option 1: Standalone binary (recommended)
+
+Download the latest binary for your platform from [GitHub Releases](https://github.com/Rishang/install-release/releases) — no Python required.
+
+Requires [libmagic](https://github.com/ahupp/python-magic#installation) as a runtime dependency.
+
+```bash
+# Linux x86_64
+curl -Lo ~/bin/ir https://github.com/Rishang/install-release/releases/latest/download/install-release-linux-x86_64
+chmod +x ~/bin/ir
+
+# Bash
+# echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc 
+
+# Zsh
+# echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc 
+
+# Fish
+# echo 'set -gx PATH $HOME/bin $PATH' >> ~/.config/fish/config.fish 
+```
+
+#### Option 2: pip install
+
 **Prerequisites:**
 
 - Python 3.9 or higher
 - pip
 - [libmagic](https://github.com/ahupp/python-magic#installation)
 
-**Installation command:**
-
 ```bash
 pip install -U install-release
 ```
+
+---
 
 **Set up the PATH for shell (e.g. ~/.bashrc or ~/.zshrc):**
 
