@@ -141,7 +141,7 @@ For more details, check the [Table of Contents](#table-of-contents-).
 ❯ ir --help
 Usage: ir [OPTIONS] COMMAND [ARGS]...
 
-  GitHub / GitLab release installer based on your system (Linux/MacOS)
+  GitHub / GitLab / Mise release installer based on your system (Linux/MacOS)
 
   Options:
     --install-completion   Install completion for the current shell.
@@ -149,7 +149,7 @@ Usage: ir [OPTIONS] COMMAND [ARGS]...
     --help                Show this message and exit.
 
   Commands:
-    get      | Install GitHub/GitLab repository CLI tool from its releases
+    get      | Install CLI tool from GitHub/GitLab releases or mise registry
     upgrade  | Upgrade all installed CLI tools from their repositories
     ls       | List all installed CLI tools
     rm       | Remove any installed CLI tool

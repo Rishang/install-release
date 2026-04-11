@@ -56,7 +56,7 @@ if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
 app = typer.Typer(
-    help="GitHub / GitLab release installer based on your system (Linux/MacOS). Repo: https://github.com/Rishang/install-release",
+    help="GitHub / GitLab / Mise release installer based on your system (Linux/MacOS). Repo: https://github.com/Rishang/install-release",
     pretty_exceptions_enable=False,
 )
 
@@ -65,7 +65,7 @@ app = typer.Typer(
 def get(
     debug: bool = __optionDebug,
     quiet: bool = __optionQuiet,
-    url: str = typer.Argument(None, help="[URL] of GitHub/GitLab repository"),
+    url: str = typer.Argument(None, help="GitHub/GitLab URL or @mise/<tool-name>"),
     tag_name: str = typer.Option(
         "", "-t", "--tag", help="Select a specific release version."
     ),
@@ -84,7 +84,7 @@ def get(
     ),
 ):
     """
-    | Install GitHub/GitLab repository CLI tool from its releases
+    | Install CLI tool from GitHub/GitLab releases or mise registry
     """
 
     setLogger(quiet, debug)
