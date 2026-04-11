@@ -22,3 +22,9 @@ repos:
   validate:
     cmd: terraform --version
     grep: Terraform
+
+- name: kubectl
+  cmd: ir get @mise/kubectl -n kubectl -y
+  validate:
+    cmd: kubectl version --client
+    grep: 'Client Version:'
