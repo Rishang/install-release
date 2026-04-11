@@ -177,7 +177,6 @@ class GitInteractProvider(InteractProvider):
         In --pkg mode, filters assets to native package type (or AppImage fallback).
         Then tries exact name match from cache/--file, else scores all assets.
         """
-        releases = candidates
         extra_words: Optional[list[str]] = hints.get("extra_words")
         disable_adjustments: bool = hints.get("disable_adjustments", False)
         known_names: set[str] = hints.get("known_names", set())
@@ -193,7 +192,7 @@ class GitInteractProvider(InteractProvider):
             appimage_ok = platform.system().lower() in PACKAGE_ALIASES.get(
                 "AppImage", []
             )
-            for release in releases:
+            for release in candidates:
                 native = [
                     a
                     for a in release.assets
@@ -219,21 +218,21 @@ class GitInteractProvider(InteractProvider):
                     )
                     self.package_type = "AppImage"
 
-        if not releases:
+        if not candidates:
             return None
 
-        self._selected_release = releases[0]
+        self._selected_release = candidates[0]
 
         # Fast path: exact asset name match from --file flag or previous install
         if known_names:
-            for a in releases[0].assets:
+            for a in candidates[0].assets:
                 if a.name in known_names:
                     logger.debug(f"Exact asset match: '{a.name}'")
                     return a
 
         # Score all assets by OS/arch compatibility and pick the best
         result = get_release(
-            releases=releases,
+            releases=candidates,
             repo_url=self.repo.repo_url,
             extra_words=extra_words,
             disable_adjustments=disable_adjustments,
@@ -357,10 +356,8 @@ class GitInteractProvider(InteractProvider):
 
         cached_release = load_state(state_key)
         cached_custom_words = (
-            getattr(cached_release, "custom_release_words", None)
-            if cached_release
-            else None
-        ) or None
+            cached_release.custom_release_words if cached_release else None
+        )
         extra_words, disable_adjustments = _resolve_release_words(
             custom_release_words, cached_custom_words
         )

@@ -168,9 +168,7 @@ def upgrade(
 
 
 def show_state():
-    """
-    | Show state of all tools
-    """
+    """Print the raw state file contents for debugging."""
     state_info()
     if os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
@@ -237,13 +235,13 @@ def remove(name: str) -> None:
     """Uninstall a tool by name — removes the binary/package and clears state."""
     state_info()
     state: TypeState = cache.state
-    popKey = ""
+    pop_key = ""
 
     # Find the tool in state, uninstall its binary or package
     for key in state:
         i = irKey.parse(key)
         if i.name == name:
-            popKey = key
+            pop_key = key
             release = state[key]
 
             if is_package(state, key):
@@ -269,9 +267,9 @@ def remove(name: str) -> None:
             break
 
     # Purge from state after successful uninstall
-    if popKey:
+    if pop_key:
         try:
-            del state[popKey]
+            del state[pop_key]
             cache.save()
             logger.info(f"Removed: {name}")
         except Exception as e:
