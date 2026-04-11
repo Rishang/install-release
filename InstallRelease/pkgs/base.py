@@ -76,6 +76,23 @@ class PackageInstallerABC(ABC):
         """
         pass
 
+    def _extract_package_base(
+        self, source: str, extension: str, label: str
+    ) -> Path | None:
+        """Locate, validate, and resolve the actual package name from metadata.
+
+        Shared implementation for all concrete package installers — only the
+        file *extension* (e.g. ``.deb``) and log *label* (e.g. ``"DEB"``) differ.
+        """
+        source_path = self.validate_source(source, extension)
+        if not source_path:
+            return None
+        actual_name = self._query_package_name(str(source_path))
+        if actual_name:
+            logger.debug(f"{label} package name from metadata: {actual_name}")
+            self.package_name = actual_name
+        return source_path
+
     def validate_source(self, source: str, extension: str) -> Path | None:
         """
         Validate the source file exists and has the correct extension.

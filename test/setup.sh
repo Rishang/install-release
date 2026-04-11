@@ -14,7 +14,7 @@ case $1 in
   "ubuntu")
     docker rm -f ir-ubuntu
     docker images | grep install-release-ubuntu || build_ubuntu
-    docker run -itd \
+    docker run -d \
       --name ir-ubuntu \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
       -v "$HOME/.config/install_release/config.json":/root/.config/install_release/config.json:ro \
@@ -24,13 +24,13 @@ case $1 in
       -v u-ir:/app/.venv \
       -e HOME=/root \
       install-release-ubuntu:latest
-    docker exec -it ir-ubuntu bash -c '/usr/local/bin/uv sync'
+    docker exec ir-ubuntu bash -c '/usr/local/bin/uv sync'
     # docker exec -it ir-ubuntu bash
     ;;
   "fedora")
     docker rm -f ir-fedora
     docker images | grep install-release-fedora || build_fedora
-    docker run -itd \
+    docker run -d \
       --name ir-fedora \
       -v "$(pwd)/InstallRelease":/app/InstallRelease \
       -v "$HOME/.config/install_release/config.json":/root/.config/install_release/config.json:ro \
@@ -40,7 +40,7 @@ case $1 in
       -v f-ir:/app/.venv \
       -e HOME=/root \
       install-release-fedora:latest
-    docker exec -it ir-fedora bash -c '/usr/local/bin/uv sync'
+    docker exec ir-fedora bash -c '/usr/local/bin/uv sync'
     docker exec -it ir-fedora bash
 
     ;;

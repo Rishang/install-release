@@ -44,6 +44,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Install completion for cli 🎠](#install-completion-for-cli-)
   - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
     - [Install as system package (deb/rpm/appimage) 📦](#install-as-system-package-debrpmappimage-)
+  - [Install tool via mise registry 🧩](#install-tool-via-mise-registry-)
   - [Install specific release asset from GitHub/GitLab releases 🔦](#install-specific-release-asset-from-githubgitlab-releases-)
     - [Method 1: Interactive Selection (Recommended)](#method-1-interactive-selection-recommended)
     - [Method 2: Command-line Flag](#method-2-command-line-flag)
@@ -64,17 +65,40 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 ### Installation
 
+#### Option 1: Standalone binary (recommended)
+
+Download the latest binary for your platform from [GitHub Releases](https://github.com/Rishang/install-release/releases) — no Python required.
+
+Requires [libmagic](https://github.com/ahupp/python-magic#installation) as a runtime dependency.
+
+```bash
+# Linux x86_64
+curl -Lo ~/bin/ir https://github.com/Rishang/install-release/releases/latest/download/install-release-linux-x86_64
+chmod +x ~/bin/ir
+
+# Bash
+# echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc 
+
+# Zsh
+# echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc 
+
+# Fish
+# echo 'set -gx PATH $HOME/bin $PATH' >> ~/.config/fish/config.fish 
+```
+
+#### Option 2: pip install
+
 **Prerequisites:**
 
 - Python 3.9 or higher
 - pip
 - [libmagic](https://github.com/ahupp/python-magic#installation)
 
-**Installation command:**
-
 ```bash
 pip install -U install-release
 ```
+
+---
 
 **Set up the PATH for shell (e.g. ~/.bashrc or ~/.zshrc):**
 
@@ -93,7 +117,7 @@ If you want to change the installation path, you can use the `ir config --path <
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
 ```bash
-# Usage: ir get [GITHUB-URL or GITLAB-URL]
+# Usage: ir get [GITHUB-URL or GITLAB-URL or @mise/TOOL-NAME]
 ❯ ir get https://github.com/denoland/deno
 ```
 
@@ -140,7 +164,7 @@ For more details, check the [Table of Contents](#table-of-contents-).
 ❯ ir --help
 Usage: ir [OPTIONS] COMMAND [ARGS]...
 
-  GitHub / GitLab release installer based on your system (Linux/MacOS)
+  GitHub / GitLab / Mise release installer based on your system (Linux/MacOS)
 
   Options:
     --install-completion   Install completion for the current shell.
@@ -148,7 +172,7 @@ Usage: ir [OPTIONS] COMMAND [ARGS]...
     --help                Show this message and exit.
 
   Commands:
-    get      | Install GitHub/GitLab repository CLI tool from its releases
+    get      | Install CLI tool from GitHub/GitLab releases or mise registry
     upgrade  | Upgrade all installed CLI tools from their repositories
     ls       | List all installed CLI tools
     rm       | Remove any installed CLI tool
@@ -212,6 +236,29 @@ This is useful for tools that provide `.deb`, `.rpm` or `appimage` releases that
 # Example installation of RedisInsight, a dashboard to manage Redis
 ❯ ir get https://github.com/redis/RedisInsight --pkg
 ```
+
+#### Install tool via mise registry 🧩
+
+Some tools (like Terraform, Packer, etc.) don't publish platform-specific binaries on GitHub releases — they host their own download URLs instead. For these tools, `ir` can resolve the correct download URL via the [mise](https://mise.jdx.dev/) / [aqua](https://aquaproj.github.io/) registry using the `@mise/` prefix.
+
+```bash
+# Usage: ir get @mise/<tool-name>
+❯ ir get @mise/terraform
+```
+
+```
+                     Install terraform (via mise/aqua)
+┏━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Tool      ┃ Version  ┃ File                     ┃ URL                              ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ terraform │ v1.12.0  │ terraform_1.12.0_linu... │ https://releases.hashicorp.c...  │
+└───────────┴──────────┴──────────────────────────┴──────────────────────────────────┘
+Install this tool (Y/n): y
+```
+
+Tools installed via `@mise/` are also tracked by `ir ls` and upgraded with `ir upgrade` just like GitHub/GitLab tools.
+
+> **Note:** The mise provider currently only supports tools with **HTTP-based** download URLs in the aqua registry. Tools that use `github_release` type assets should be installed directly via their GitHub URL (`ir get <github-url>`) instead.
 
 ### Install specific release asset from GitHub/GitLab releases 🔦
 

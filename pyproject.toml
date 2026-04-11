@@ -1,6 +1,6 @@
 [project]
 name = "install-release"
-version = "0.7.0"
+version = "0.7.1"
 readme = "README.md"
 description = "Simple package manager to easily install, update and manage any tool directly from github or gitlab releases"
 authors = [
@@ -23,9 +23,10 @@ classifiers = [
 
 ]
 
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
   "python-magic>=0.4.27",
+  "pyyaml>=6.0.3",
   "requests>=2.32.5",
   "rich>=14.1.0",
   "typer>=0.17.3",

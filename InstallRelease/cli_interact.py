@@ -1,23 +1,14 @@
 import os
-from typing import Dict, Optional, cast
-from tempfile import TemporaryDirectory
-import platform
+import threading
+from typing import Optional
 
-# pipi
 from rich.progress import track
 from rich.console import Console
 
-# locals
-from InstallRelease.schemas import Release, irKey, TypeState, ReleaseAssets
-
-from InstallRelease.pkgs.main import (
-    detect_package_type_from_asset_name,
-    detect_package_type_from_os_release,
-    PackageInstaller,
-)
-from InstallRelease.pkgs.base import PACKAGE_ALIASES
+from InstallRelease.schemas import irKey
+from InstallRelease.providers.git.schemas import Release, TypeState
+from InstallRelease.pkgs.main import PackageInstaller
 from InstallRelease.utils import (
-    mkdir,
     pprint,
     logger,
     show_table,
@@ -25,449 +16,125 @@ from InstallRelease.utils import (
     threads,
     PackageVersion,
     requests_session,
-    to_words,
-    download,
 )
-
-from InstallRelease.core import (
-    get_release,
-    extract_release,
-    install_bin,
-    get_repo_info,
-    RepoInfo,
-)
-
-from InstallRelease.release_scorer import PENALTY_EXTENSIONS
-from InstallRelease.config import cache, cache_config, config, dest
+from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
+from InstallRelease.providers.git.base import RepoInfo
+from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
+from InstallRelease.providers.mise.main import MiseInteractProvider
+from InstallRelease.config import cache, cache_config, config, dest, pre_release_enabled  # noqa: F401
 
 
 console = Console(width=40)
-
 install_release_version = PackageVersion("install-release")
-os_package_type = detect_package_type_from_os_release()
-
-logger.debug(f"os_package_type: {os_package_type}")
 
 
 def is_package(state, k):
-    return hasattr(state[k], "install_method") and (
-        state[k].install_method == "package"
-    )
+    """Check if a tool was installed as an OS package (deb/rpm/appimage)."""
+    return state[k].is_package
 
 
 # ------- cli ----------
 
 
-def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
-    """Show all release assets in a table and let user select one by ID"""
-    if not release.assets:
-        pprint("[red]No assets available for this release[/red]")
-        return None
-
-    # Prepare data for table display
-    assets_data = []
-    for idx, asset in enumerate[ReleaseAssets](release.assets, start=1):
-        if any(word in asset.name.lower() for word in PENALTY_EXTENSIONS):
-            continue
-        assets_data.append(
-            {
-                "ID": idx,
-                "Filename": asset.name,
-                "Size (MB)": asset.size_mb() if hasattr(asset, "size_mb") else "N/A",
-                "Downloads": asset.download_count
-                if hasattr(asset, "download_count")
-                else "N/A",
-            }
-        )
-
-    # Display table
-    show_table(assets_data, title=f"📦 Available Assets for {toolname}")
-
-    # Get user selection
-    pprint(
-        "\n[yellow]Enter your desired file ID to install (or 'n' to cancel): [/yellow]",
-        end="",
-    )
-    selection = input().strip()
-
-    if selection.lower() == "n":
-        return None
-
-    try:
-        selected_id = int(selection)
-        if 1 <= selected_id <= len(release.assets):
-            return release.assets[selected_id - 1]
-        else:
-            pprint(
-                f"[red]Invalid ID. Please select between 1 and {len(release.assets)}[/red]"
-            )
-    except ValueError:
-        pprint("[red]Invalid input. Please enter a number or 'n' to cancel[/red]")
-    return None
-
-
 def state_info() -> None:
+    """Log current cache and install paths for debugging."""
     logger.debug(cache.state_file)
     logger.debug(cache_config.state_file)
     logger.debug(dest)
 
 
-def _extract_words_from_filename(asset_filename: str) -> list:
-    """Extract scoring keywords from an asset filename.
-
-    Strips the extension, replaces dots with hyphens, and tokenizes.
-    Returns: List of extracted keyword strings
-    """
-    basename = asset_filename.rsplit(".", 1)[0]
-    return to_words(text=basename.replace(".", "-"), ignore_words=["v", "unknown"])
-
-
-def _resolve_release_words(
-    custom_words: Optional[list], cached_words: Optional[list]
-) -> tuple:
-    """Resolve extra_words and disable_adjustments from custom and cached words.
-
-    Priority: custom > cached > None.
-
-    Returns: (extra_words, disable_adjustments) tuple
-    """
-    if custom_words:
-        return custom_words, True
-    if cached_words:
-        return cached_words, True
-    return None, False
-
-
-def _show_pkg_hint(releases: list, package_mode: bool) -> None:
-    """Show a one-time hint if a native OS package is available but not selected.
-
-    Only prints when package_mode is False and a matching package asset exists.
-
-    Args:
-        releases: List of Release objects
-        package_mode: Whether --pkg was already requested
-    """
-    if package_mode or not os_package_type:
-        return
-
-    for release in releases:
-        for asset in release.assets:
-            if detect_package_type_from_asset_name(asset.name) == os_package_type:
-                pprint(
-                    f"[bold green]\n[INFO]: A `{os_package_type}` package is "
-                    f"available for this release. Add `--pkg` to install it.[/bold green]"
-                )
-                return  # show hint only once
-
-
-def _install_asset(
-    asset: ReleaseAssets,
-    release: "Release",
-    package_mode: bool,
-    package_type: Optional[str],
-    toolname: str,
-    temp_dir: str,
-    local: bool,
-) -> bool:
-    """Download and install a release asset (package or binary).
-
-    On success, mutates `release` with the installed asset metadata.
-
-    Returns:
-        True if installation succeeded, False otherwise
-    """
-    asset_pkg = detect_package_type_from_asset_name(asset.name)
-    # Always trust the selected asset type first. In --pkg mode, package_type is
-    # only a preference (used during scoring/filtering), not a hard override.
-    effective_pkg = asset_pkg or (package_type if package_mode else None)
-
-    if effective_pkg:
-        if package_mode and package_type and effective_pkg != package_type:
-            logger.info(
-                f"Selected asset '{asset.name}' is {effective_pkg}; "
-                f"overriding requested {package_type} package type"
-            )
-        download(asset.browser_download_url, temp_dir)
-        logger.debug(f"Downloaded package to: {temp_dir}")
-
-        package_installer = PackageInstaller(package_type=effective_pkg, name=toolname)
-        success = package_installer.install(source=temp_dir)
-        if not success:
-            logger.error(f"Failed to install {toolname} as {effective_pkg} package")
-            return False
-
-        release.assets = [asset]
-        release.package_type = effective_pkg
-        release.install_method = "package"
-        # Store the actual package name as registered in the package manager.
-        # This may differ from the repo/toolname (e.g. repo "rio" installs as "rioterm").
-        release.package_name = package_installer.name
-    else:
-        extract_release(item=asset, at=temp_dir)
-        release.assets = [asset]
-        mkdir(dest)
-        if not install_bin(src=temp_dir, dest=dest, local=local, name=toolname):
-            return False
-
-    return True
-
-
 def get(
-    repo: RepoInfo,
-    tag_name: str = "",
+    provider: InteractProvider,
+    version: str = "",
     asset_file: str = "",
     local: bool = True,
     prompt: bool = False,
     name: Optional[str] = None,
-    package_mode: bool = False,
 ) -> None:
-    """Get a release from a GitHub/GitLab repository"""
+    """Install a tool via any InteractProvider."""
     state_info()
-
-    logger.debug(f"Python version: {platform.python_version()}")
-    logger.debug(f"Platform: {platform.platform()}")
-    try:
-        logger.debug(f"Platform version: {platform.version()}")
-        logger.debug(f"Platform release: {platform.release()}")
-    except Exception as e:
-        logger.error(f"Error getting platform info: {e}")
-
-    # --- Parse custom words from asset_file --------------------------------
-    custom_release_words = (
-        _extract_words_from_filename(asset_file) if not is_none(asset_file) else None
+    provider.get(
+        version=version, asset_file=asset_file, local=local, prompt=prompt, name=name
     )
-
-    # --- Fetch releases ----------------------------------------------------
-    pre_release = bool(config.pre_release) if hasattr(config, "pre_release") else False
-    releases = repo.release(tag_name=tag_name, pre_release=pre_release)
-
-    package_type = os_package_type
-    if package_mode:
-        if not package_type:
-            logger.error("Could not detect appropriate package type for your system")
-            return
-
-        appimage_supported = platform.system().lower() in PACKAGE_ALIASES.get(
-            "AppImage", []
-        )
-        for release in releases:
-            native = [
-                a
-                for a in release.assets
-                if detect_package_type_from_asset_name(a.name) == package_type
-            ]
-            if native:
-                release.assets = native
-                continue
-
-            fallback = (
-                [
-                    a
-                    for a in release.assets
-                    if detect_package_type_from_asset_name(a.name) == "AppImage"
-                ]
-                if appimage_supported
-                else []
-            )
-            release.assets = fallback
-
-            if fallback and package_type != "AppImage":
-                logger.info(
-                    f"No {package_type} package found, falling back to AppImage"
-                )
-                package_type = "AppImage"
-
-    if not releases:
-        logger.error(f"No releases found: {repo.repo_url}")
-        return
-
-    # ---  Resolve extra_words (custom > cached > None) ----------------------
-    toolname = repo.repo_name.lower() if is_none(name) else name.lower()
-
-    cached_release = cache.get(f"{repo.repo_url}#{toolname}")
-    cached_custom_words = (
-        cached_release.custom_release_words
-        if cached_release
-        and hasattr(cached_release, "custom_release_words")
-        and cached_release.custom_release_words
-        else None
-    )
-
-    extra_words, disable_adjustments = _resolve_release_words(
-        custom_release_words, cached_custom_words
-    )
-
-    logger.debug(f"custom_release_words: {custom_release_words}")
-    logger.debug(f"cached_custom_words: {cached_custom_words}")
-    logger.debug(f"extra_words: {extra_words}")
-    logger.debug(f"disable_adjustments: {disable_adjustments}")
-
-    # --- Validate package mode ---------------------------------------------
-    if package_mode:
-        logger.info(f"Package mode enabled; preferred package type: {package_type}")
-
-    # ---  Score & select asset ----------------------------------------------
-    # Try exact name match: explicit --file, or previously cached asset name
-    asset = None
-    known_names = set()
-    if not is_none(asset_file):
-        known_names.add(asset_file)
-    if cached_release and cached_release.assets:
-        known_names.add(cached_release.assets[0].name)
-
-    if known_names:
-        for a in releases[0].assets:
-            if a.name in known_names:
-                asset = a
-                logger.debug(f"Exact asset match: '{a.name}'")
-                break
-
-    if asset is None:
-        result = get_release(
-            releases=releases,
-            repo_url=repo.repo_url,
-            extra_words=extra_words,
-            disable_adjustments=disable_adjustments,
-            package_type=package_type if package_mode else None,
-        )
-
-        logger.debug(result)
-
-        if result is False:
-            logger.error("No suitable release assets found")
-            return
-
-        asset = cast(ReleaseAssets, result)
-
-    # --- Show pkg hint (only when not in --pkg mode) -----------------------
-    _show_pkg_hint(releases, package_mode)
-
-    # --- Prompt user -------------------------------------------------------
-    if prompt is not False:
-        pprint(
-            f"\n[green bold]📑 Repo     : {repo.info.full_name}"
-            f"\n[blue]🌟 Stars    : {repo.info.stargazers_count}"
-            f"\n[magenta]🔮 Language : {repo.info.language if repo.info.language else 'N/A'}"
-            f"\n[yellow]🔥 Title    : {repo.info.description}"
-        )
-        show_table(
-            data=[
-                {
-                    "Name": toolname,
-                    "Selected Item": asset.name,
-                    "Version": releases[0].tag_name,
-                    "Size Mb": asset.size_mb() if hasattr(asset, "size_mb") else "N/A",
-                    "Downloads": asset.download_count
-                    if hasattr(asset, "download_count")
-                    else "N/A",
-                }
-            ],
-            title=f"🚀 Install: {toolname}",
-        )
-        pprint(f"[color(6)]\nPath: {dest}")
-        pprint("[color(34)]Install this tool (Y/n/?): ", end="")
-        yn = input()
-
-        if yn.lower() == "?":
-            selected_asset = _show_and_select_asset(releases[0], toolname)
-            if selected_asset is None:
-                return
-            asset = selected_asset
-            custom_release_words = _extract_words_from_filename(asset.name)
-            pprint("\n[magenta]Downloading...[/magenta]")
-        elif yn.lower() != "y":
-            return
-        else:
-            pprint("\n[magenta]Downloading...[/magenta]")
-
-    # ---  Install (package or binary) ---------------------------------------
-    at = TemporaryDirectory(prefix=f"dn_{repo.repo_name}_")
-    if not _install_asset(
-        asset,
-        releases[0],
-        package_mode=package_mode,
-        package_type=package_type,
-        toolname=toolname,
-        temp_dir=at.name,
-        local=local,
-    ):
-        return
-
-    # ---  Persist to cache --------------------------------------------------
-    releases[0].hold_update = bool(tag_name)
-
-    # Persist custom_release_words: custom > cached
-    resolved_words, _ = _resolve_release_words(
-        custom_release_words, cached_custom_words
-    )
-    if resolved_words:
-        releases[0].custom_release_words = resolved_words
-    if repo.info.description and repo.info.description != "":
-        releases[0].description = repo.info.description
-
-    cache.set(f"{repo.repo_url}#{toolname}", value=releases[0])
-    cache.save()
 
 
 def upgrade(
     force: bool = False, skip_prompt: bool = False, packages_only: bool = False
 ) -> None:
-    """Upgrade all installed tools"""
+    """Check all installed tools for newer versions and upgrade them.
+
+    Phase 1: Concurrently fetch latest versions for all tools (git + mise).
+    Phase 2: Show pending upgrades, prompt user, then install sequentially.
+    """
     state_info()
 
     state: TypeState = cache.state
 
-    upgrades: Dict[str, RepoInfo] = {}
-    pkg_upgrades: Dict[str, RepoInfo] = {}
+    # Collect upgrade candidates across three buckets
+    upgrades: dict[str, RepoInfo] = {}  # git binary tools
+    pkg_upgrades: dict[str, RepoInfo] = {}  # git package tools (deb/rpm)
+    mise_upgrades: dict[
+        str, tuple[str, str]
+    ] = {}  # mise tools: bin_name -> (toolname, version)
+    _lock = threading.Lock()
+    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
 
     def task(k: str) -> None:
-        i = irKey(k)
+        """Fetch latest version for one tool and bucket it if newer."""
+        i = irKey.parse(k)
         release = state[k]
 
-        # Filter by package type if requested
-        if packages_only:
-            if (
-                not hasattr(release, "install_method")
-                or release.install_method != "package"
-            ):
-                return
+        if packages_only and not release.is_package:
+            return
 
-        try:
-            if state[k].hold_update is True:
-                return
-        except AttributeError:
-            pass
+        if release.hold_update:
+            return
 
+        # ── mise tools ──────────────────────────────────────────────────────
+        if i.url.startswith(_mise):
+            toolname = i.url[len(_mise) :]
+            pprint(f"Fetching: {toolname}")
+            versions = MiseInteractProvider(toolname).resolve()
+            if versions and (force or versions[0] != state[k].tag_name):
+                with _lock:
+                    mise_upgrades[i.name] = (toolname, versions[0])
+            return
+
+        # ── git tools ───────────────────────────────────────────────────────
         repo = get_repo_info(i.url)
         pprint(f"Fetching: {k}")
-        # Ensure pre_release is boolean
-        pre_release = (
-            bool(config.pre_release) if hasattr(config, "pre_release") else False
-        )
-        releases = repo.release(pre_release=pre_release)
+        releases = repo.release(pre_release=pre_release_enabled())
 
-        if releases[0].published_dt() > state[k].published_dt() or force is True:
-            if is_package(state, k) and not packages_only:
-                pkg_upgrades[i.name] = repo
-            else:
-                upgrades[i.name] = repo
+        if not releases:
+            logger.warning(f"No releases found for: {k}")
+            return
 
-    threads(task, data=[k for k in state], max_workers=20, return_result=False)
+        if releases[0].published_dt() > state[k].published_dt() or force:
+            with _lock:
+                if is_package(state, k) and not packages_only:
+                    pkg_upgrades[i.name] = repo
+                else:
+                    upgrades[i.name] = repo
 
-    if packages_only is False and len(pkg_upgrades) > 0:
+    # Phase 1: concurrent version checks
+    threads(task, data=list(state), max_workers=20, return_result=False)
+
+    # Notify about package upgrades when not in --pkg mode
+    if not packages_only and pkg_upgrades:
         pprint("\n[bold cyan]Following package can be upgraded.[/]\n")
         pprint("[bold indian_red]" + " ".join(pkg_upgrades.keys()))
         pprint(
             "\n[bold white]To upgrade packages, run: [green]ir upgrade --pkg[/green][/]\n"
         )
 
-    # ask prompt to upgrade listed tools
-    if len(upgrades) > 0:
+    # Phase 2: prompt and install pending upgrades
+    pending = list(upgrades.keys()) + list(mise_upgrades.keys())
+    if pending:
         pprint("\n[bold magenta]Following tool will get upgraded.\n")
-        console.print("[bold yellow]" + " ".join(upgrades.keys()))
+        console.print("[bold yellow]" + " ".join(pending))
         pprint("\n[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
-        if skip_prompt is False:
+        if not skip_prompt:
             r = input()
             if r.lower() != "y":
                 return
@@ -477,24 +144,33 @@ def upgrade(
 
     for name in track(upgrades, description="Upgrading...", disable=packages_only):
         repo = upgrades[name]
-        releases = repo.release()
         k = f"{repo.repo_url}#{name}"
 
         pprint(
             "[bold yellow]"
-            f"Updating: {name}, {state[k].tag_name} => {releases[0].tag_name}"
+            f"Updating: {name}, {state[k].tag_name} => {repo.release()[0].tag_name}"
             "[/]"
         )
 
-        get(repo, prompt=False, name=name, package_mode=is_package(state, k))
+        get(
+            GitInteractProvider(repo, package_mode=is_package(state, k)),
+            prompt=False,
+            name=name,
+        )
+
+    for name in track(mise_upgrades, description="Upgrading (mise)..."):
+        toolname, version = mise_upgrades[name]
+        k = f"{PROVIDER_STATE_KEY_PREFIXES['mise']}{toolname}#{name}"
+        pprint(
+            f"[bold yellow]Updating: {name} (mise), {state[k].tag_name} => {version}[/]"
+        )
+        get(MiseInteractProvider(toolname), version=version, prompt=False, name=name)
 
 
 def show_state():
-    """
-    | Show state of all tools
-    """
+    """Print the raw state file contents for debugging."""
     state_info()
-    if os.path.exists(cache.state_file) and os.path.isfile(cache.state_file):
+    if os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
             print(f.read())
 
@@ -504,7 +180,7 @@ def list_install(
     title: str = "Installed tools",
     hold_update: bool = False,
 ) -> None:
-    """List all installed tools"""
+    """Render a table of installed tools, optionally filtering to held ones only."""
     if state is None:
         state_info()
         state = cache.state
@@ -513,10 +189,8 @@ def list_install(
     _hold_table = []
     desc_length = 50
     for key in state:
-        i = irKey(key)
-        state[key]
+        i = irKey.parse(key)
         desc_raw = state[key].description or ""
-        # Keep table output readable for long descriptions.
         desc = (
             (desc_raw[:desc_length].rstrip() + "..")
             if len(desc_raw) > desc_length
@@ -524,7 +198,7 @@ def list_install(
         )
 
         if hold_update:
-            if state[key].hold_update is True:
+            if state[key].hold_update:
                 _hold_table.append(
                     {
                         "Name": i.name,
@@ -535,12 +209,11 @@ def list_install(
                 )
             continue
 
-        # Add package type info if it's a package
         version_str = state[key].tag_name
         if is_package(state, key):
             version_str += " [cyan](pkg)[/cyan]"
 
-        if state[key].hold_update is True:
+        if state[key].hold_update:
             version_str += "[yellow] *HOLD_UPDATE*[/yellow]"
 
         _table.append(
@@ -559,41 +232,31 @@ def list_install(
 
 
 def remove(name: str) -> None:
-    """
-    | Remove any cli tool
-    """
+    """Uninstall a tool by name — removes the binary/package and clears state."""
     state_info()
     state: TypeState = cache.state
-    popKey = ""
+    pop_key = ""
 
-    # Find the tool in the state
+    # Find the tool in state, uninstall its binary or package
     for key in state:
-        i = irKey(key)
+        i = irKey.parse(key)
         if i.name == name:
-            popKey = key
+            pop_key = key
             release = state[key]
 
             if is_package(state, key):
-                if not getattr(release, "package_type", None):
+                if not release.package_type or release.package_type == "binary":
                     logger.warning(f"{name} was not installed as a package")
                 else:
-                    # Use the stored package_name (actual name in the package manager DB)
-                    # which may differ from the repo/toolname (e.g. repo "rio" -> "rioterm").
-                    pkg_name = (
-                        release.package_name
-                        if hasattr(release, "package_name") and release.package_name
-                        else name
-                    )
+                    pkg_name = release.package_name or name
                     if pkg_name != name:
                         logger.debug(
                             f"Using actual package name '{pkg_name}' instead of '{name}'"
                         )
-                    package_installer = PackageInstaller(
+                    PackageInstaller(
                         pkg_name, package_type=release.package_type
-                    )
-                    package_installer.uninstall()
+                    ).uninstall()
             else:
-                # Remove binary file (existing code)
                 try:
                     tool_path = f"{dest}/{name}"
                     if os.path.exists(tool_path):
@@ -603,10 +266,10 @@ def remove(name: str) -> None:
                     logger.error(f"Failed to remove file: {e}")
             break
 
-    # Remove from state if found
-    if popKey:
+    # Purge from state after successful uninstall
+    if pop_key:
         try:
-            del state[popKey]
+            del state[pop_key]
             cache.save()
             logger.info(f"Removed: {name}")
         except Exception as e:
@@ -616,51 +279,47 @@ def remove(name: str) -> None:
 
 
 def hold(name: str, hold_update: bool) -> None:
-    """
-    | Holds updates of any cli tool.
-    """
+    """Toggle the hold_update flag for a tool, skipping it during upgrades."""
     state_info()
     state: TypeState = cache.state
 
     for _k in state:
-        key = irKey(_k)
+        key = irKey.parse(_k)
         if key.name == name:
             state[_k].hold_update = hold_update
             logger.info(f"Update on hold for, {name} to {hold_update}")
             break
     cache.save()
-    return None
 
 
 def pull_state(url: str = "", override: bool = False) -> None:
+    """Import tools from a remote state URL, installing any that are new or outdated."""
     logger.debug(url)
     if is_none(url):
         return None
-    r: dict = requests_session.get(url=url).json()
 
+    # Fetch remote state and parse into Release objects
+    r: dict = requests_session.get(url=url).json()
     data: dict[str, Release] = {k: Release(**r[k]) for k in r}
     state: TypeState = cache.state
 
+    # Filter to tools that need installing (new or version mismatch with override)
     temp: dict[str, Release] = {}
-
     for key in data:
         try:
-            i = irKey(key)
+            i = irKey.parse(key)
         except Exception:
             logger.warning(f"Invalid input: {key}")
             continue
 
-        if state.get(key) is not None and (
-            state[key].tag_name == data[key].tag_name or override is False
-        ):
+        if key in state and (state[key].tag_name == data[key].tag_name or not override):
             logger.debug(f"Skipping: {key}")
             continue
-        else:
-            temp[key] = data[key]
+        temp[key] = data[key]
 
     logger.debug(temp)
 
-    if len(temp) == 0:
+    if not temp:
         return None
 
     list_install(state=temp, title="Tools to be installed")
@@ -671,16 +330,20 @@ def pull_state(url: str = "", override: bool = False) -> None:
     if _i.lower() != "y":
         return None
 
+    # Route each tool to its provider (mise or git) and install
+    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
     for key in temp:
-        try:
-            i = irKey(key)
-        except Exception:
-            logger.warning(f"Invalid input: {key}")
-            continue
+        i = irKey.parse(key)
+
+        if i.url.startswith(_mise):
+            toolname = i.url[len(_mise) :]
+            provider = MiseInteractProvider(toolname)
+        else:
+            provider = GitInteractProvider(get_repo_info(i.url))
+
         get(
-            get_repo_info(i.url),
-            tag_name=temp[key].tag_name,
+            provider,
+            version=temp[key].tag_name,
             prompt=False,
             name=i.name,
         )
-    return None
