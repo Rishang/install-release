@@ -7,9 +7,15 @@ import requests
 import yaml
 
 from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
-from InstallRelease.utils import logger
+from InstallRelease.utils import logger, pprint
 
-from InstallRelease.providers.mise.config import _MISE_REGISTRY_BASE, _AQUA_REGISTRY_BASE, _current_os, _current_arch, _trim_v
+from InstallRelease.providers.mise.config import (
+    _MISE_REGISTRY_BASE,
+    _AQUA_REGISTRY_BASE,
+    _current_os,
+    _current_arch,
+    _trim_v,
+)
 
 
 def _expand_template(
@@ -115,7 +121,10 @@ def resolve_download_url(
     pkg_type = pkg.get("type", "github_release")
 
     if pkg_type == "github_release":
-        logger.info(f"please use `ir get <github-url>` to install {toolname}")
+        pprint(
+            f"\n[bold cyan]💡 [yellow]{toolname}[/yellow] uses GitHub releases. "
+            f"Install directly with: [green]ir get https://github.com/{owner}/{repo}[/green][/bold cyan]\n"
+        )
         return None
     elif pkg_type != "http":
         logger.info(

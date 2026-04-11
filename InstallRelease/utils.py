@@ -278,9 +278,13 @@ def threads(funct, data, max_workers=5, return_result: bool = True):
 
 
 def show_table(
-    data: list[dict], ignore_keys: list = [], title: str = "", border_style=""
+    data: list[dict],
+    ignore_keys: list = [],
+    title: str = "",
+    border_style="",
+    no_wrap: bool = True,
 ):
-    """rich table"""
+    """Render a rich table from a list of dicts."""
 
     def dict_list_tbl(items=list[dict], ignore_keys: list = []):
         keys = []
@@ -313,7 +317,7 @@ def show_table(
 
     for count, col in enumerate(columns):
         color = colors[count % len(colors)]
-        table.add_column(col, justify="left", style=color, no_wrap=True)
+        table.add_column(col, justify="left", style=color, no_wrap=no_wrap)
     for row in rows:
         table.add_row(*row)
 

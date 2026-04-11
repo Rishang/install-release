@@ -23,6 +23,7 @@ _AQUA_REGISTRY_BASE = (
     "https://raw.githubusercontent.com/aquaproj/aqua-registry/main/pkgs"
 )
 
+
 def _current_os() -> str:
     return _OS_MAP.get(platform.system().lower(), platform.system().lower())
 

@@ -8,6 +8,7 @@ from InstallRelease.providers.git.schemas import Release, RepositoryInfo
 PROVIDER_STATE_KEY_PREFIXES: dict[str, str] = {
     "github": "https://github.com",
     "gitlab": "https://gitlab.com",
+    "mise": "mise:",
 }
 
 

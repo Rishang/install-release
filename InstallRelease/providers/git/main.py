@@ -39,6 +39,7 @@ from InstallRelease.utils import (
 
 os_package_type = detect_package_type_from_os_release()
 
+# Maps provider name -> (RepoInfo subclass, token accessor)
 _PROVIDER_CLASSES: dict[str, Any] = {
     "github": (GitHubInfo, lambda cfg: cfg.token),
     "gitlab": (GitlabInfo, lambda cfg: cfg.gitlab_token),
@@ -68,6 +69,7 @@ def get_repo_info(repo_url: str, data: Optional[dict[str, Any]] = None) -> RepoI
 
 
 def _extract_words_from_filename(filename: str) -> list[str]:
+    """Split a release asset filename into searchable keywords."""
     basename = filename.rsplit(".", 1)[0]
     return to_words(text=basename.replace(".", "-"), ignore_words=["v", "unknown"])
 
@@ -76,28 +78,29 @@ def _resolve_release_words(
     custom: Optional[list[str]], cached: Optional[list[str]]
 ) -> tuple:
     """Return (extra_words, disable_adjustments); priority: custom > cached > None."""
-    if custom:
-        return custom, True
-    if cached:
-        return cached, True
-    return None, False
+    words = custom or cached
+    return words, bool(words)
 
 
-def _show_pkg_hint(releases: list[Release], package_mode: bool) -> None:
+def _show_pkg_hint(
+    releases: list[Release], package_mode: bool, repo_url: str = ""
+) -> None:
+    """Hint user about available OS package when not already in --pkg mode."""
     if package_mode or not os_package_type:
         return
     for release in releases:
         for asset in release.assets:
             if detect_package_type_from_asset_name(asset.name) == os_package_type:
                 pprint(
-                    f"[bold green]\n[INFO]: A `{os_package_type}` package is "
-                    f"available for this release. Add `--pkg` to install it.[/bold green]"
+                    f"\n[bold orange1]>> 📦 A [green]{os_package_type}[/green] package is "
+                    f"available for this release. Use [green]ir get {repo_url} --pkg[/green] to install it.[/bold orange1]"
                 )
                 return
 
 
 def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
     """Display all assets in a table and let the user pick one by ID."""
+
     if not release.assets:
         pprint("[red]No assets available for this release[/red]")
         return None
@@ -142,7 +145,11 @@ def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseA
 
 
 class GitInteractProvider(InteractProvider):
-    """Interactive installer for GitHub/GitLab repositories."""
+    """Interactive installer for GitHub/GitLab repositories.
+
+    Orchestrates: resolve (fetch releases) -> select (pick best asset)
+    -> prompt (confirm with user) -> install (extract + place binary) -> save_state.
+    """
 
     def __init__(
         self,
@@ -157,6 +164,7 @@ class GitInteractProvider(InteractProvider):
         self._selected_release: Optional[Release] = None
 
     def resolve(self, version: str = "", pre_release: bool = False) -> list[Release]:
+        """Fetch available releases from the git provider API."""
         pre_release = pre_release or pre_release_enabled()
         self._releases = self.repo.release(tag_name=version, pre_release=pre_release)
         return self._releases
@@ -164,11 +172,17 @@ class GitInteractProvider(InteractProvider):
     def select(
         self, candidates: list[Release], **hints: Any
     ) -> Optional[ReleaseAssets]:
+        """Pick the best matching asset from releases using scoring heuristics.
+
+        In --pkg mode, filters assets to native package type (or AppImage fallback).
+        Then tries exact name match from cache/--file, else scores all assets.
+        """
         releases = candidates
         extra_words: Optional[list[str]] = hints.get("extra_words")
         disable_adjustments: bool = hints.get("disable_adjustments", False)
         known_names: set[str] = hints.get("known_names", set())
 
+        # Filter assets to matching package type when in --pkg mode
         if self.package_mode:
             if not self.package_type:
                 logger.error(
@@ -210,12 +224,14 @@ class GitInteractProvider(InteractProvider):
 
         self._selected_release = releases[0]
 
+        # Fast path: exact asset name match from --file flag or previous install
         if known_names:
             for a in releases[0].assets:
                 if a.name in known_names:
                     logger.debug(f"Exact asset match: '{a.name}'")
                     return a
 
+        # Score all assets by OS/arch compatibility and pick the best
         result = get_release(
             releases=releases,
             repo_url=self.repo.repo_url,
@@ -234,6 +250,7 @@ class GitInteractProvider(InteractProvider):
         return cast(ReleaseAssets, result)
 
     def prompt(self, toolname: str, candidate: ReleaseAssets) -> str:
+        """Show repo info + selected asset details; return user's Y/n/? choice."""
         release = self._selected_release
         if release is None or self.repo.info is None:
             return "y"
@@ -264,6 +281,7 @@ class GitInteractProvider(InteractProvider):
     def install(
         self, candidate: ReleaseAssets, toolname: str, temp_dir: str, local: bool
     ) -> bool:
+        """Download and install the selected asset as a package or binary."""
         release = self._selected_release
         if release is None:
             return False
@@ -271,6 +289,7 @@ class GitInteractProvider(InteractProvider):
         asset_pkg = detect_package_type_from_asset_name(candidate.name)
         effective_pkg = asset_pkg or (self.package_type if self.package_mode else None)
 
+        # Package install path: download and delegate to OS package manager
         if effective_pkg:
             if (
                 self.package_mode
@@ -290,6 +309,7 @@ class GitInteractProvider(InteractProvider):
             release.package_type = effective_pkg
             release.install_method = "package"
             release.package_name = pkg_installer.name
+        # Binary install path: extract archive and copy binary to dest
         else:
             extract_url(candidate.browser_download_url, temp_dir)
             release.assets = [candidate]
@@ -300,6 +320,7 @@ class GitInteractProvider(InteractProvider):
         return True
 
     def save_state(self, key: str, result: Release) -> None:
+        """Persist the installed release to the local cache."""
         save_state(key, result)
 
     def get(
@@ -310,15 +331,17 @@ class GitInteractProvider(InteractProvider):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        """Orchestrate the full install flow: resolve -> select -> prompt -> install -> save."""
         asset_file: str = kwargs.get("asset_file", "")
 
+        # Extract keywords from --file flag for asset matching
         custom_release_words = (
             _extract_words_from_filename(asset_file)
             if not is_none(asset_file)
             else None
         )
 
-        # Step 1: resolve
+        # Step 1: fetch releases from the provider API
         releases = self.resolve(version=version)
         if not releases:
             logger.error(f"No releases found: {self.repo.repo_url}")
@@ -328,7 +351,7 @@ class GitInteractProvider(InteractProvider):
             logger.error("Could not detect appropriate package type for your system")
             return
 
-        # Resolve extra_words (custom > cached > None)
+        # Build asset-matching hints from --file flag, cached state, or defaults
         toolname = self.repo.repo_name.lower() if is_none(name) else name.lower()
         state_key = f"{self.repo.repo_url}#{toolname}"
 
@@ -349,9 +372,9 @@ class GitInteractProvider(InteractProvider):
         if cached_release and cached_release.assets:
             known_names.add(cached_release.assets[0].name)
 
-        _show_pkg_hint(releases, self.package_mode)
+        _show_pkg_hint(releases, self.package_mode, self.repo.repo_url)
 
-        # Step 2: select
+        # Step 2: pick the best matching asset for this OS/arch
         asset = self.select(
             releases,
             extra_words=extra_words,
@@ -361,7 +384,7 @@ class GitInteractProvider(InteractProvider):
         if asset is None:
             return
 
-        # Step 3: prompt
+        # Step 3: confirm with user; '?' lets them pick a different asset manually
         if prompt:
             decision = self.prompt(toolname, asset)
             if decision == "?":
@@ -378,16 +401,16 @@ class GitInteractProvider(InteractProvider):
             else:
                 pprint("\n[magenta]Downloading...[/magenta]")
 
-        # Step 4: install
+        # Step 4: download, extract, and install binary/package
         at = TemporaryDirectory(prefix=f"dn_{self.repo.repo_name}_")
         if not self.install(asset, toolname=toolname, temp_dir=at.name, local=local):
             return
 
-        # Step 5: save state
+        # Step 5: persist release metadata + custom words to local cache
         release = self._selected_release
         if release is None:
             return
-        release.hold_update = bool(version)
+        release.hold_update = bool(version)  # pin version if explicitly requested
 
         resolved_words, _ = _resolve_release_words(
             custom_release_words, cached_custom_words

@@ -10,7 +10,7 @@ import requests
 
 from InstallRelease.config import config, dest
 from InstallRelease.helper import extract_url, install_bin, save_state
-from InstallRelease.providers.base import InteractProvider
+from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
 from InstallRelease.providers.mise.registry import get_backend, resolve_download_url
 from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
@@ -107,18 +107,26 @@ class MiseInteractProvider(InteractProvider):
 
     # ── Step 3 ───────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _truncate(text: str, max_len: int) -> str:
+        """Truncate text with '..' suffix if it exceeds max_len."""
+        return (text[: max_len - 2].rstrip() + "..") if len(text) > max_len else text
+
     def prompt(self, toolname: str, candidate: AquaAsset) -> str:
+        """Show tool details and ask for install confirmation."""
+        url_display = self._truncate(candidate.url, 40)
         row: dict = {
             "Tool": toolname,
             "Version": candidate.version,
-            "File": candidate.name,
-            "URL": candidate.url,
+            "File": self._truncate(candidate.name, 40),
+            "URL": f"[link={candidate.url}]{url_display}[/link]",
         }
         if candidate.description:
-            row["Description"] = candidate.description
+            row["Description"] = self._truncate(candidate.description, 80)
         show_table(
             data=[row],
             title=f"Install {toolname} (via mise/aqua)",
+            no_wrap=False,
         )
         pprint("[color(34)]Install this tool (Y/n): ", end="")
         return input().strip().lower() or "y"
@@ -209,5 +217,5 @@ class MiseInteractProvider(InteractProvider):
         )
         release.hold_update = bool(version)
 
-        state_key = f"mise:{self.toolname}#{toolname}"
+        state_key = f"{PROVIDER_STATE_KEY_PREFIXES['mise']}{self.toolname}#{toolname}"
         self.save_state(state_key, release)

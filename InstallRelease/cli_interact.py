@@ -17,7 +17,7 @@ from InstallRelease.utils import (
     PackageVersion,
     requests_session,
 )
-from InstallRelease.providers.base import InteractProvider
+from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.git.base import RepoInfo
 from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
 from InstallRelease.providers.mise.main import MiseInteractProvider
@@ -29,6 +29,7 @@ install_release_version = PackageVersion("install-release")
 
 
 def is_package(state, k):
+    """Check if a tool was installed as an OS package (deb/rpm/appimage)."""
     return state[k].is_package
 
 
@@ -36,6 +37,7 @@ def is_package(state, k):
 
 
 def state_info() -> None:
+    """Log current cache and install paths for debugging."""
     logger.debug(cache.state_file)
     logger.debug(cache_config.state_file)
     logger.debug(dest)
@@ -59,17 +61,26 @@ def get(
 def upgrade(
     force: bool = False, skip_prompt: bool = False, packages_only: bool = False
 ) -> None:
-    """Upgrade all installed tools"""
+    """Check all installed tools for newer versions and upgrade them.
+
+    Phase 1: Concurrently fetch latest versions for all tools (git + mise).
+    Phase 2: Show pending upgrades, prompt user, then install sequentially.
+    """
     state_info()
 
     state: TypeState = cache.state
 
-    upgrades: dict[str, RepoInfo] = {}
-    pkg_upgrades: dict[str, RepoInfo] = {}
-    mise_upgrades: dict[str, tuple[str, str]] = {}  # bin_name -> (toolname, version)
+    # Collect upgrade candidates across three buckets
+    upgrades: dict[str, RepoInfo] = {}  # git binary tools
+    pkg_upgrades: dict[str, RepoInfo] = {}  # git package tools (deb/rpm)
+    mise_upgrades: dict[
+        str, tuple[str, str]
+    ] = {}  # mise tools: bin_name -> (toolname, version)
     _lock = threading.Lock()
+    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
 
     def task(k: str) -> None:
+        """Fetch latest version for one tool and bucket it if newer."""
         i = irKey.parse(k)
         release = state[k]
 
@@ -80,8 +91,8 @@ def upgrade(
             return
 
         # ── mise tools ──────────────────────────────────────────────────────
-        if i.url.startswith("mise:"):
-            toolname = i.url[len("mise:") :]
+        if i.url.startswith(_mise):
+            toolname = i.url[len(_mise) :]
             pprint(f"Fetching: {toolname}")
             versions = MiseInteractProvider(toolname).resolve()
             if versions and (force or versions[0] != state[k].tag_name):
@@ -98,29 +109,32 @@ def upgrade(
             logger.warning(f"No releases found for: {k}")
             return
 
-        if releases[0].published_dt() > state[k].published_dt() or force is True:
+        if releases[0].published_dt() > state[k].published_dt() or force:
             with _lock:
                 if is_package(state, k) and not packages_only:
                     pkg_upgrades[i.name] = repo
                 else:
                     upgrades[i.name] = repo
 
-    threads(task, data=[k for k in state], max_workers=20, return_result=False)
+    # Phase 1: concurrent version checks
+    threads(task, data=list(state), max_workers=20, return_result=False)
 
-    if packages_only is False and len(pkg_upgrades) > 0:
+    # Notify about package upgrades when not in --pkg mode
+    if not packages_only and pkg_upgrades:
         pprint("\n[bold cyan]Following package can be upgraded.[/]\n")
         pprint("[bold indian_red]" + " ".join(pkg_upgrades.keys()))
         pprint(
             "\n[bold white]To upgrade packages, run: [green]ir upgrade --pkg[/green][/]\n"
         )
 
+    # Phase 2: prompt and install pending upgrades
     pending = list(upgrades.keys()) + list(mise_upgrades.keys())
     if pending:
         pprint("\n[bold magenta]Following tool will get upgraded.\n")
         console.print("[bold yellow]" + " ".join(pending))
         pprint("\n[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
-        if skip_prompt is False:
+        if not skip_prompt:
             r = input()
             if r.lower() != "y":
                 return
@@ -146,7 +160,7 @@ def upgrade(
 
     for name in track(mise_upgrades, description="Upgrading (mise)..."):
         toolname, version = mise_upgrades[name]
-        k = f"mise:{toolname}#{name}"
+        k = f"{PROVIDER_STATE_KEY_PREFIXES['mise']}{toolname}#{name}"
         pprint(
             f"[bold yellow]Updating: {name} (mise), {state[k].tag_name} => {version}[/]"
         )
@@ -158,7 +172,7 @@ def show_state():
     | Show state of all tools
     """
     state_info()
-    if os.path.exists(cache.state_file) and os.path.isfile(cache.state_file):
+    if os.path.isfile(cache.state_file):
         with open(cache.state_file) as f:
             print(f.read())
 
@@ -168,7 +182,7 @@ def list_install(
     title: str = "Installed tools",
     hold_update: bool = False,
 ) -> None:
-    """List all installed tools"""
+    """Render a table of installed tools, optionally filtering to held ones only."""
     if state is None:
         state_info()
         state = cache.state
@@ -186,7 +200,7 @@ def list_install(
         )
 
         if hold_update:
-            if state[key].hold_update is True:
+            if state[key].hold_update:
                 _hold_table.append(
                     {
                         "Name": i.name,
@@ -201,7 +215,7 @@ def list_install(
         if is_package(state, key):
             version_str += " [cyan](pkg)[/cyan]"
 
-        if state[key].hold_update is True:
+        if state[key].hold_update:
             version_str += "[yellow] *HOLD_UPDATE*[/yellow]"
 
         _table.append(
@@ -220,13 +234,12 @@ def list_install(
 
 
 def remove(name: str) -> None:
-    """
-    | Remove any cli tool
-    """
+    """Uninstall a tool by name — removes the binary/package and clears state."""
     state_info()
     state: TypeState = cache.state
     popKey = ""
 
+    # Find the tool in state, uninstall its binary or package
     for key in state:
         i = irKey.parse(key)
         if i.name == name:
@@ -255,6 +268,7 @@ def remove(name: str) -> None:
                     logger.error(f"Failed to remove file: {e}")
             break
 
+    # Purge from state after successful uninstall
     if popKey:
         try:
             del state[popKey]
@@ -267,9 +281,7 @@ def remove(name: str) -> None:
 
 
 def hold(name: str, hold_update: bool) -> None:
-    """
-    | Holds updates of any cli tool.
-    """
+    """Toggle the hold_update flag for a tool, skipping it during upgrades."""
     state_info()
     state: TypeState = cache.state
 
@@ -280,20 +292,21 @@ def hold(name: str, hold_update: bool) -> None:
             logger.info(f"Update on hold for, {name} to {hold_update}")
             break
     cache.save()
-    return None
 
 
 def pull_state(url: str = "", override: bool = False) -> None:
+    """Import tools from a remote state URL, installing any that are new or outdated."""
     logger.debug(url)
     if is_none(url):
         return None
-    r: dict = requests_session.get(url=url).json()
 
+    # Fetch remote state and parse into Release objects
+    r: dict = requests_session.get(url=url).json()
     data: dict[str, Release] = {k: Release(**r[k]) for k in r}
     state: TypeState = cache.state
 
+    # Filter to tools that need installing (new or version mismatch with override)
     temp: dict[str, Release] = {}
-
     for key in data:
         try:
             i = irKey.parse(key)
@@ -301,17 +314,14 @@ def pull_state(url: str = "", override: bool = False) -> None:
             logger.warning(f"Invalid input: {key}")
             continue
 
-        if state.get(key) is not None and (
-            state[key].tag_name == data[key].tag_name or override is False
-        ):
+        if key in state and (state[key].tag_name == data[key].tag_name or not override):
             logger.debug(f"Skipping: {key}")
             continue
-        else:
-            temp[key] = data[key]
+        temp[key] = data[key]
 
     logger.debug(temp)
 
-    if len(temp) == 0:
+    if not temp:
         return None
 
     list_install(state=temp, title="Tools to be installed")
@@ -322,15 +332,13 @@ def pull_state(url: str = "", override: bool = False) -> None:
     if _i.lower() != "y":
         return None
 
+    # Route each tool to its provider (mise or git) and install
+    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
     for key in temp:
-        try:
-            i = irKey.parse(key)
-        except Exception:
-            logger.warning(f"Invalid input: {key}")
-            continue
+        i = irKey.parse(key)
 
-        if i.url.startswith("mise:"):
-            toolname = i.url[len("mise:") :]
+        if i.url.startswith(_mise):
+            toolname = i.url[len(_mise) :]
             provider = MiseInteractProvider(toolname)
         else:
             provider = GitInteractProvider(get_repo_info(i.url))
@@ -341,4 +349,3 @@ def pull_state(url: str = "", override: bool = False) -> None:
             prompt=False,
             name=i.name,
         )
-    return None

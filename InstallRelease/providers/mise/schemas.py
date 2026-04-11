@@ -1,4 +1,5 @@
 """Mise / Aqua registry dataclasses."""
+
 from dataclasses import dataclass
 
 
