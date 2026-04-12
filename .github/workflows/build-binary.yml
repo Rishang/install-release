@@ -14,11 +14,7 @@ permissions:
   contents: write
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
-
   build:
-    needs: test
     strategy:
       matrix:
         include:
