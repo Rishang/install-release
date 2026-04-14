@@ -14,7 +14,7 @@ from InstallRelease.helper import (
     load_state,
     save_state,
 )
-from InstallRelease.pkgs.base import PACKAGE_ALIASES
+from InstallRelease.helper.release_scorer import PACKAGE_ALIASES
 from InstallRelease.pkgs.main import PackageInstaller
 from InstallRelease.providers.base import InteractProvider, Provider
 from InstallRelease.providers.git.base import (

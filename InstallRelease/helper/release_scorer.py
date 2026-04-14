@@ -9,6 +9,24 @@ PLATFORM_ARCH_ALIASES = {
     "aarch64": ["arm64", "aarch64", "arm"],
 }
 
+PACKAGE_ALIASES = {
+    "deb": ["debian", "ubuntu", "mint", "pop", "elementary", "kali"],
+    "rpm": [
+        "fedora",
+        "rhel",
+        "centos",
+        "rocky",
+        "alma",
+        "opensuse",
+        "suse",
+        "centos stream",
+    ],
+    "dmg": ["macos"],
+    "exe": ["windows"],
+    "msi": ["windows"],
+    "AppImage": ["linux"],
+}
+
 PENALTY_SUBSTRINGS = {"debug"}
 PENALTY_EXTENSIONS = {
     ".dbg",
@@ -27,6 +45,25 @@ PENALTY_EXTENSIONS = {
 }
 
 
+def detect_package_family(system_name: str) -> Optional[str]:
+    """Detect native Linux package family (deb/rpm) from os-release."""
+    if system_name != "linux":
+        return None
+
+    try:
+        with open("/etc/os-release") as f:
+            os_release = f.read().lower()
+    except FileNotFoundError:
+        os_release = ""
+
+    if any(distro in os_release for distro in PACKAGE_ALIASES.get("rpm", [])):
+        return "rpm"
+    if any(distro in os_release for distro in PACKAGE_ALIASES.get("deb", [])):
+        return "deb"
+
+    return None
+
+
 class ReleaseScorer:
     """Score release names based on platform compatibility."""
 
@@ -40,6 +77,7 @@ class ReleaseScorer:
         self.platform = platform.system().lower()
         self.architecture = platform.machine().lower()
         self.is_glibc = self._detect_glibc()
+        self.package_family = detect_package_family(self.platform)
         self.extra_words = extra_words or []
         self.disable_adjustments = disable_adjustments
 
@@ -57,7 +95,7 @@ class ReleaseScorer:
 
         logger.debug(
             f"Platform: {self.platform}, Arch: {self.architecture}, "
-            f"glibc: {self.is_glibc}"
+            f"glibc: {self.is_glibc}, package_family: {self.package_family}"
         )
         logger.debug(
             f"Plain patterns: {self._plain_patterns}, "
@@ -109,6 +147,23 @@ class ReleaseScorer:
         # 5. User-specified words (treated as plain strings).
         for word in self.extra_words:
             self._plain_patterns[word] = 2.0
+
+    def _asset_package_type(self, name_lower: str) -> Optional[str]:
+        """Infer package type from asset extension."""
+        if name_lower.endswith(".deb"):
+            return "deb"
+        if name_lower.endswith(".rpm"):
+            return "rpm"
+        if name_lower.endswith(".appimage"):
+            return "AppImage"
+        return None
+
+    def _requested_package_type(self) -> Optional[str]:
+        """Return requested package type from scorer extra words."""
+        for pkg_type in ("deb", "rpm", "appimage"):
+            if pkg_type in self._extra_words_set:
+                return "AppImage" if pkg_type == "appimage" else pkg_type
+        return None
 
     def _is_penalised(self, name_lower: str) -> bool:
         """Return True if the release name should be penalised."""
@@ -179,6 +234,29 @@ class ReleaseScorer:
         if triggered:
             score *= 0.5
             logger.debug(f"Applied penalty for '{triggered}' -> {score:.3f}")
+
+        pkg_type = self._asset_package_type(name_lower)
+        requested_pkg_type = self._requested_package_type()
+        if pkg_type in {"deb", "rpm"}:
+            if requested_pkg_type not in {"deb", "rpm"}:
+                score *= 0.2
+                logger.debug(
+                    f"Applied native package penalty for '{pkg_type}' without --pkg hint "
+                    f"-> {score:.3f}"
+                )
+            elif pkg_type != requested_pkg_type:
+                score *= 0.1
+                logger.debug(
+                    f"Applied requested package mismatch penalty: wanted "
+                    f"{requested_pkg_type}, got {pkg_type} -> {score:.3f}"
+                )
+
+            if self.package_family and pkg_type != self.package_family:
+                score *= 0.1
+                logger.debug(
+                    f"Applied distro compatibility penalty: {pkg_type} on "
+                    f"{self.package_family} system -> {score:.3f}"
+                )
 
         return score
 
@@ -293,4 +371,5 @@ class ReleaseScorer:
             "is_glibc_system": self.is_glibc,
             "platform": self.platform,
             "architecture": self.architecture,
+            "package_family": self.package_family,
         }
