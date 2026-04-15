@@ -18,7 +18,6 @@ from InstallRelease.utils import (
     requests_session,
 )
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
-from InstallRelease.providers.git.base import RepoInfo
 from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
 from InstallRelease.providers.mise.main import MiseInteractProvider
 from InstallRelease.config import cache, cache_config, config, dest, pre_release_enabled  # noqa: F401
@@ -44,15 +43,22 @@ def state_info() -> None:
 
 
 def get(
-    provider: InteractProvider,
+    url: str,
     version: str = "",
     asset_file: str = "",
     local: bool = True,
     prompt: bool = False,
     name: Optional[str] = None,
+    pkg: bool = False,
 ) -> None:
-    """Install a tool via any InteractProvider."""
+    """Resolve URL to provider and install the tool."""
     state_info()
+    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
+    if url.startswith(_mise):
+        provider: InteractProvider = MiseInteractProvider(url[len(_mise) :])
+    else:
+        url = "/".join(url.split("/")[:5])
+        provider = GitInteractProvider(get_repo_info(url), package_mode=pkg)
     provider.get(
         version=version, asset_file=asset_file, local=local, prompt=prompt, name=name
     )
@@ -70,12 +76,9 @@ def upgrade(
 
     state: TypeState = cache.state
 
-    # Collect upgrade candidates across three buckets
-    upgrades: dict[str, RepoInfo] = {}  # git binary tools
-    pkg_upgrades: dict[str, RepoInfo] = {}  # git package tools (deb/rpm)
-    mise_upgrades: dict[
-        str, tuple[str, str]
-    ] = {}  # mise tools: bin_name -> (toolname, version)
+    # Collect upgrade candidates: name -> (url, new_version, is_package)
+    upgrades: dict[str, tuple[str, str, bool]] = {}
+    pkg_upgrades: set[str] = set()  # names only, for notification
     _lock = threading.Lock()
     _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
 
@@ -97,7 +100,7 @@ def upgrade(
             versions = MiseInteractProvider(toolname).resolve()
             if versions and (force or versions[0] != state[k].tag_name):
                 with _lock:
-                    mise_upgrades[i.name] = (toolname, versions[0])
+                    upgrades[i.name] = (i.url, versions[0], False)
             return
 
         # ── git tools ───────────────────────────────────────────────────────
@@ -112,9 +115,13 @@ def upgrade(
         if releases[0].published_dt() > state[k].published_dt() or force:
             with _lock:
                 if is_package(state, k) and not packages_only:
-                    pkg_upgrades[i.name] = repo
+                    pkg_upgrades.add(i.name)
                 else:
-                    upgrades[i.name] = repo
+                    upgrades[i.name] = (
+                        repo.repo_url,
+                        releases[0].tag_name,
+                        is_package(state, k),
+                    )
 
     # Phase 1: concurrent version checks
     threads(task, data=list(state), max_workers=20, return_result=False)
@@ -122,16 +129,15 @@ def upgrade(
     # Notify about package upgrades when not in --pkg mode
     if not packages_only and pkg_upgrades:
         pprint("\n[bold cyan]Following package can be upgraded.[/]\n")
-        pprint("[bold indian_red]" + " ".join(pkg_upgrades.keys()))
+        pprint("[bold indian_red]" + " ".join(pkg_upgrades))
         pprint(
             "\n[bold white]To upgrade packages, run: [green]ir upgrade --pkg[/green][/]\n"
         )
 
     # Phase 2: prompt and install pending upgrades
-    pending = list(upgrades.keys()) + list(mise_upgrades.keys())
-    if pending:
+    if upgrades:
         pprint("\n[bold magenta]Following tool will get upgraded.\n")
-        console.print("[bold yellow]" + " ".join(pending))
+        console.print("[bold yellow]" + " ".join(upgrades))
         pprint("\n[bold blue]Upgrade these tools, (Y/n):", end=" ")
 
         if not skip_prompt:
@@ -142,29 +148,13 @@ def upgrade(
         pprint("[bold green]All tools are onto latest version")
         return
 
-    for name in track(upgrades, description="Upgrading...", disable=packages_only):
-        repo = upgrades[name]
-        k = f"{repo.repo_url}#{name}"
-
+    for name in track(upgrades, description="Upgrading..."):
+        url, new_version, pkg_mode = upgrades[name]
+        k = f"{url}#{name}"
         pprint(
-            "[bold yellow]"
-            f"Updating: {name}, {state[k].tag_name} => {repo.release()[0].tag_name}"
-            "[/]"
+            f"[bold yellow]Updating: {name}, {state[k].tag_name} => {new_version}[/]"
         )
-
-        get(
-            GitInteractProvider(repo, package_mode=is_package(state, k)),
-            prompt=False,
-            name=name,
-        )
-
-    for name in track(mise_upgrades, description="Upgrading (mise)..."):
-        toolname, version = mise_upgrades[name]
-        k = f"{PROVIDER_STATE_KEY_PREFIXES['mise']}{toolname}#{name}"
-        pprint(
-            f"[bold yellow]Updating: {name} (mise), {state[k].tag_name} => {version}[/]"
-        )
-        get(MiseInteractProvider(toolname), version=version, prompt=False, name=name)
+        get(url, version=new_version, prompt=False, name=name, pkg=pkg_mode)
 
 
 def show_state():
@@ -330,20 +320,6 @@ def pull_state(url: str = "", override: bool = False) -> None:
     if _i.lower() != "y":
         return None
 
-    # Route each tool to its provider (mise or git) and install
-    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
     for key in temp:
         i = irKey.parse(key)
-
-        if i.url.startswith(_mise):
-            toolname = i.url[len(_mise) :]
-            provider = MiseInteractProvider(toolname)
-        else:
-            provider = GitInteractProvider(get_repo_info(i.url))
-
-        get(
-            provider,
-            version=temp[key].tag_name,
-            prompt=False,
-            name=i.name,
-        )
+        get(i.url, version=temp[key].tag_name, prompt=False, name=i.name)

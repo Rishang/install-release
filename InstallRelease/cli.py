@@ -17,10 +17,6 @@ from InstallRelease.cli_interact import (
     config,
     install_release_version,
 )
-from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
-from InstallRelease.providers.mise.main import MiseInteractProvider
-
-_MISE_PREFIX = "@mise/"
 
 
 def see_help(arg: str = ""):
@@ -90,23 +86,13 @@ def get(
     setLogger(quiet, debug)
     if url is None or url == "":
         see_help("get")
-
-    if url.startswith(_MISE_PREFIX):
-        _get(
-            MiseInteractProvider(url[len(_MISE_PREFIX) :]),
-            version=tag_name,
-            prompt=not approve,
-            name=name,
-        )
-        return
-
-    url = "/".join(url.split("/")[:5])
     _get(
-        GitInteractProvider(get_repo_info(url), package_mode=pkg),
+        url,
         version=tag_name,
         asset_file=asset_file,
         prompt=not approve,
         name=name,
+        pkg=pkg,
     )
 
 

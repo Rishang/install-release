@@ -51,7 +51,7 @@ def _install_binary(source: str, dest: str, name: str = "", local: bool = True) 
     if out.returncode != 0:
         logger.error(out.stderr)
         return False
-    logger.info(f"[bold yellow]Installed: {name}[/]", extra={"markup": True})
+    logger.info(f"[bold green]Installed: {name}[/]", extra={"markup": True})
     return True
 
 
