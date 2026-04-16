@@ -45,6 +45,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
   - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
     - [Install as system package (deb/rpm/appimage) 📦](#install-as-system-package-debrpmappimage-)
   - [Install tool via mise registry 🧩](#install-tool-via-mise-registry-)
+  - [Install Docker image as a CLI tool 🐳](#install-docker-image-as-a-cli-tool-)
   - [Install specific release asset from GitHub/GitLab releases 🔦](#install-specific-release-asset-from-githubgitlab-releases-)
     - [Method 1: Interactive Selection (Recommended)](#method-1-interactive-selection-recommended)
     - [Method 2: Command-line Flag](#method-2-command-line-flag)
@@ -117,8 +118,16 @@ If you want to change the installation path, you can use the `ir config --path <
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
 ```bash
-# Usage: ir get [GITHUB-URL or GITLAB-URL or @mise/TOOL-NAME]
+# Usage: ir get [GITHUB-URL or GITLAB-URL or mise@<TOOL> or docker@<IMAGE-URI>]
+
+# GitHub URL
 ❯ ir get https://github.com/denoland/deno
+
+# mise registry
+❯ ir get mise@terraform
+
+# Docker image with latest tag
+❯ ir get docker@hashicorp/terraform:latest
 ```
 
 Verify the installation:
@@ -239,11 +248,15 @@ This is useful for tools that provide `.deb`, `.rpm` or `appimage` releases that
 
 #### Install tool via mise registry 🧩
 
-Some tools (like Terraform, Packer, etc.) don't publish platform-specific binaries on GitHub releases — they host their own download URLs instead. For these tools, `ir` can resolve the correct download URL via the [mise](https://mise.jdx.dev/) / [aqua](https://aquaproj.github.io/) registry using the `@mise/` prefix.
+Some tools (like Terraform, Packer, etc.) don't publish platform-specific binaries on GitHub releases — they host their own download URLs instead. For these tools, `ir` can resolve the correct download URL via the [mise](https://mise.jdx.dev/) / [aqua](https://aquaproj.github.io/) registry using the `mise@` prefix.
 
 ```bash
-# Usage: ir get @mise/<tool-name>
-❯ ir get @mise/terraform
+# Usage: ir get mise@<tool-name>
+❯ ir get mise@terraform
+
+# Install a specific version (inline or via --tag)
+❯ ir get mise@terraform:v1.12.0
+❯ ir get mise@terraform -t v1.12.0
 ```
 
 ```
@@ -256,9 +269,39 @@ Some tools (like Terraform, Packer, etc.) don't publish platform-specific binari
 Install this tool (Y/n): y
 ```
 
-Tools installed via `@mise/` are also tracked by `ir ls` and upgraded with `ir upgrade` just like GitHub/GitLab tools.
+Tools installed via `mise@` are also tracked by `ir ls` and upgraded with `ir upgrade` just like GitHub/GitLab tools.
 
 > **Note:** The mise provider currently only supports tools with **HTTP-based** download URLs in the aqua registry. Tools that use `github_release` type assets should be installed directly via their GitHub URL (`ir get <github-url>`) instead.
+
+#### Install Docker image as a CLI tool 🐳
+
+`ir` can wrap any Docker image as a local CLI tool using the `docker@` prefix. It pulls the image, detects its entrypoint, and writes an executable wrapper script to `~/bin/<toolname>` that proxies all invocations through `docker run`.
+
+```bash
+# Usage: ir get docker@<image>[:<tag>]
+❯ ir get docker@hashicorp/terraform
+
+# Install a specific tag (inline or via --tag)
+❯ ir get docker@hashicorp/terraform:1.7.0
+❯ ir get docker@hashicorp/terraform -t 1.7.0
+
+# Custom tool name
+❯ ir get docker@mcr.microsoft.com/azure-cli -n az
+```
+
+```
+         Install terraform (via Docker)
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Tool      ┃ Image                 ┃ Tag    ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ terraform │ hashicorp/terraform   │ latest │
+└───────────┴───────────────────────┴────────┘
+Install this tool (Y/n): y
+```
+
+- **Latest tags** (`latest`) are checked for updates via digest comparison during `ir upgrade` — only re-pulled when the remote image has changed.
+- **Pinned tags** (e.g. `1.7.0`) are held from auto-upgrade; use `ir upgrade --force` to re-pull.
+- The wrapper mounts the current directory into the container at `/tmp/cmd`, so the tool sees your local files.
 
 ### Install specific release asset from GitHub/GitLab releases 🔦
 

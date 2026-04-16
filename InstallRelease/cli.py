@@ -61,7 +61,9 @@ app = typer.Typer(
 def get(
     debug: bool = __optionDebug,
     quiet: bool = __optionQuiet,
-    url: str = typer.Argument(None, help="GitHub/GitLab URL or @mise/<tool-name>"),
+    url: str = typer.Argument(
+        None, help="GitHub/GitLab URL, mise@<tool>, or docker@<image>"
+    ),
     tag_name: str = typer.Option(
         "", "-t", "--tag", help="Select a specific release version."
     ),
@@ -86,6 +88,13 @@ def get(
     setLogger(quiet, debug)
     if url is None or url == "":
         see_help("get")
+
+    # Allow inline version: mise@terraform:v1.12.0 or docker@image:tag
+    for prefix in ("mise@", "docker@"):
+        if url.startswith(prefix) and ":" in url[len(prefix) :] and not tag_name:
+            url, tag_name = url.rsplit(":", 1)
+            break
+
     _get(
         url,
         version=tag_name,

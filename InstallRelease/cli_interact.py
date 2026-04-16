@@ -20,6 +20,10 @@ from InstallRelease.utils import (
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
 from InstallRelease.providers.mise.main import MiseInteractProvider
+from InstallRelease.providers.docker.main import (
+    DockerInteractProvider,
+    needs_update as docker_needs_update,
+)
 from InstallRelease.config import cache, cache_config, config, dest, pre_release_enabled  # noqa: F401
 
 
@@ -53,9 +57,19 @@ def get(
 ) -> None:
     """Resolve URL to provider and install the tool."""
     state_info()
-    _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
-    if url.startswith(_mise):
-        provider: InteractProvider = MiseInteractProvider(url[len(_mise) :])
+
+    # User-facing prefixes (typed by the user)
+    # State-key prefixes (used internally by upgrade/pull_state)
+    _mise_user, _mise = "mise@", PROVIDER_STATE_KEY_PREFIXES["mise"]
+    _docker_user, _docker = "docker@", PROVIDER_STATE_KEY_PREFIXES["docker"]
+    if url.startswith(_mise_user):
+        provider: InteractProvider = MiseInteractProvider(url[len(_mise_user) :])
+    elif url.startswith(_mise):
+        provider = MiseInteractProvider(url[len(_mise) :])
+    elif url.startswith(_docker_user):
+        provider = DockerInteractProvider(url[len(_docker_user) :])
+    elif url.startswith(_docker):
+        provider = DockerInteractProvider(url[len(_docker) :])
     else:
         url = "/".join(url.split("/")[:5])
         provider = GitInteractProvider(get_repo_info(url), package_mode=pkg)
@@ -81,6 +95,7 @@ def upgrade(
     pkg_upgrades: set[str] = set()  # names only, for notification
     _lock = threading.Lock()
     _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
+    _docker = PROVIDER_STATE_KEY_PREFIXES["docker"]
 
     def task(k: str) -> None:
         """Fetch latest version for one tool and bucket it if newer."""
@@ -101,6 +116,21 @@ def upgrade(
             if versions and (force or versions[0] != state[k].tag_name):
                 with _lock:
                     upgrades[i.name] = (i.url, versions[0], False)
+            return
+
+        # ── docker tools ─────────────────────────────────────────────────────
+        if i.url.startswith(_docker):
+            image_ref = i.url[len(_docker) :]
+            tag = state[k].tag_name
+            cli_image = (
+                image_ref[len("library/") :]
+                if image_ref.startswith("library/")
+                else image_ref
+            )
+            pprint(f"Checking: docker@{cli_image}:{tag}")
+            if docker_needs_update(image_ref, tag, force=force):
+                with _lock:
+                    upgrades[i.name] = (i.url, tag, False)
             return
 
         # ── git tools ───────────────────────────────────────────────────────
