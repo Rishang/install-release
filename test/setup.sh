@@ -24,7 +24,7 @@ case $1 in
       -v u-ir:/app/.venv \
       -e HOME=/root \
       install-release-ubuntu:latest
-    docker exec ir-ubuntu bash -c '/usr/local/bin/uv sync'
+    docker exec ir-ubuntu bash -c '/usr/local/bin/uv sync --dev'
     # docker exec -it ir-ubuntu bash
     ;;
   "fedora")
@@ -40,7 +40,7 @@ case $1 in
       -v f-ir:/app/.venv \
       -e HOME=/root \
       install-release-fedora:latest
-    docker exec ir-fedora bash -c '/usr/local/bin/uv sync'
+    docker exec ir-fedora bash -c '/usr/local/bin/uv sync --dev'
     docker exec -it ir-fedora bash
 
     ;;

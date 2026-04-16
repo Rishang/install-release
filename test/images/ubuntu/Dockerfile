@@ -16,8 +16,8 @@ WORKDIR /app
 # Copy dependency manifests first for better layer caching (paths relative to context = repo root)
 COPY pyproject.toml uv.lock ./
 
-# Sync dependencies and install the package (CLI: ir, install-release)
-RUN uv sync --frozen
+# Sync dependencies (including dev tools like pytest) and install package
+RUN uv sync --frozen --dev
 
 # Ensure venv bin is on PATH so `ir` and `install-release` are available
 ENV PATH="/root/bin:/app/.venv/bin:$PATH"
