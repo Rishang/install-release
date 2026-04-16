@@ -1,12 +1,9 @@
-FROM ubuntu:25.10
+FROM python:3.13-slim
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     curl \
     sudo \
-    libmagic1 \
-    python3 \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+    libmagic1
 
 # Install uv (binary from official image)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
