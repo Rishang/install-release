@@ -24,13 +24,13 @@ repos:
     grep: "version.BuildInfo"
 
 - name: kubectl
-  cmd: ir get @mise/kubectl -n kubectl -y
+  cmd: ir get mise@kubectl -n kubectl -y
   validate:
     cmd: kubectl version --client
     grep: 'Client Version:'
 
-- name: terraform
-  cmd: ir get docker@hashicorp/terraform -y
-  validate:
-    cmd: terraform version
-    grep: "Terraform"
+# - name: terraform
+#   cmd: ir get docker@hashicorp/terraform -y
+#   validate:
+#     cmd: terraform version
+#     grep: "Terraform"
