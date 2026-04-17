@@ -9,6 +9,7 @@ PROVIDER_STATE_KEY_PREFIXES: dict[str, str] = {
     "github": "https://github.com",
     "gitlab": "https://gitlab.com",
     "mise": "mise:",
+    "docker": "docker:",
 }
 
 
@@ -64,5 +65,6 @@ class InteractProvider(ABC):
         local: bool = True,
         prompt: bool = False,
         name: Optional[str] = None,
+        hold: bool = False,
         **kwargs: Any,
     ) -> None: ...

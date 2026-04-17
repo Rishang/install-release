@@ -46,15 +46,15 @@ def test_get(repo):
     """Install a tool and validate it runs correctly."""
     # Install
     stdout, stderr, rc = docker_exec(CONTAINER, repo["cmd"])
-    print(stdout)
+    assert rc == 0, (
+        f"Install failed for {repo['name']}: stdout={stdout}, stderr={stderr}"
+    )
 
     # Validate
-    validate_cmd = (
-        f"{repo['validate']['cmd']} 2>&1 | grep -i '{repo['validate']['grep']}'"
-    )
-    stdout, stderr, rc = docker_exec(CONTAINER, validate_cmd)
-
-    assert rc == 0, (
+    stdout, stderr, rc = docker_exec(CONTAINER, repo["validate"]["cmd"])
+    output = f"{stdout}\n{stderr}".lower()
+    expected = repo["validate"]["grep"].lower()
+    assert rc == 0 and expected in output, (
         f"Validation failed for {repo['name']}: stdout={stdout}, stderr={stderr}"
     )
     print(f"Validation passed for {repo['name']}")

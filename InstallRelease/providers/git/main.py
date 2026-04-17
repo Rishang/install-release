@@ -243,7 +243,7 @@ class GitInteractProvider(InteractProvider):
             repo_name = self.repo.repo_url.rstrip("/").rsplit("/", 1)[-1]
             pprint(
                 f"[bold cyan]\nYou can retry installing via [mise] provider: "
-                f"\n[green]ir get @mise/{repo_name}[/green][/]\n"
+                f"\n[green]ir get mise@{repo_name}[/green][/]\n"
             )
             return None
         return cast(ReleaseAssets, result)
@@ -328,6 +328,7 @@ class GitInteractProvider(InteractProvider):
         local: bool = True,
         prompt: bool = False,
         name: Optional[str] = None,
+        hold: bool = False,
         **kwargs: Any,
     ) -> None:
         """Orchestrate the full install flow: resolve -> select -> prompt -> install -> save."""
@@ -407,7 +408,7 @@ class GitInteractProvider(InteractProvider):
         release = self._selected_release
         if release is None:
             return
-        release.hold_update = bool(version)  # pin version if explicitly requested
+        release.hold_update = hold
 
         resolved_words, _ = _resolve_release_words(
             custom_release_words, cached_custom_words
