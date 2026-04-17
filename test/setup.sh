@@ -2,6 +2,14 @@
 # set -x
 cd "$(dirname "$0")/.."
 
+function ensure_host_config_file {
+  local host_config="$HOME/.config/install_release/config.json"
+  mkdir -p "$(dirname "$host_config")"
+  if [ ! -f "$host_config" ]; then
+    echo '{}' >"$host_config"
+  fi
+}
+
 function build_ubuntu {
   docker build -t install-release-ubuntu:latest -f test/images/ubuntu/Dockerfile .
 }
@@ -12,6 +20,7 @@ function build_fedora {
 
 case $1 in
   "ubuntu")
+    ensure_host_config_file
     docker rm -f ir-ubuntu
     docker images | grep install-release-ubuntu || build_ubuntu
     docker run -d \
@@ -28,6 +37,7 @@ case $1 in
     # docker exec -it ir-ubuntu bash
     ;;
   "fedora")
+    ensure_host_config_file
     docker rm -f ir-fedora
     docker images | grep install-release-fedora || build_fedora
     docker run -d \
