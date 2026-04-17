@@ -111,7 +111,7 @@ def upgrade(
         # ── mise tools ──────────────────────────────────────────────────────
         if i.url.startswith(_mise):
             toolname = i.url[len(_mise) :]
-            pprint(f"Fetching: {toolname}")
+            pprint(f"Fetching: [blue]mise@{toolname}[/blue]")
             versions = MiseInteractProvider(toolname).resolve()
             if versions and (force or versions[0] != state[k].tag_name):
                 with _lock:
@@ -127,7 +127,7 @@ def upgrade(
                 if image_ref.startswith("library/")
                 else image_ref
             )
-            pprint(f"Checking: docker@{cli_image}:{tag}")
+            pprint(f"Checking: [blue]docker@{cli_image}:{tag}[/blue]")
             if docker_needs_update(image_ref, tag, force=force):
                 with _lock:
                     upgrades[i.name] = (i.url, tag, False)
