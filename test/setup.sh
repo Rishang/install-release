@@ -6,7 +6,7 @@ function ensure_host_config_file {
   local host_config="$HOME/.config/install_release/config.json"
   mkdir -p "$(dirname "$host_config")"
   if [ ! -f "$host_config" ]; then
-    echo '{}' >"$host_config"
+    echo '{"config": {}}' >"$host_config"
   fi
 }
 
