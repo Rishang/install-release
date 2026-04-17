@@ -243,7 +243,7 @@ class GitInteractProvider(InteractProvider):
             repo_name = self.repo.repo_url.rstrip("/").rsplit("/", 1)[-1]
             pprint(
                 f"[bold cyan]\nYou can retry installing via [mise] provider: "
-                f"\n[green]ir get @mise/{repo_name}[/green][/]\n"
+                f"\n[green]ir get mise@{repo_name}[/green][/]\n"
             )
             return None
         return cast(ReleaseAssets, result)
