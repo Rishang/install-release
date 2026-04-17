@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups --dev
 
+      - name: Ruff check
+        run: uv run ruff check .
+
       - name: Setup Task
         uses: arduino/setup-task@v2
         with:
