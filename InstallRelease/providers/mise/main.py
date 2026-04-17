@@ -166,6 +166,7 @@ class MiseInteractProvider(InteractProvider):
         local: bool = True,
         prompt: bool = False,
         name: Optional[str] = None,
+        hold: bool = False,
         **kwargs: Any,
     ) -> None:
         toolname = name or self.toolname
@@ -215,7 +216,7 @@ class MiseInteractProvider(InteractProvider):
             assets=[release_asset],
             description=asset.description or "Installed via mise/aqua registry",
         )
-        release.hold_update = bool(version)
+        release.hold_update = hold
 
         state_key = f"{PROVIDER_STATE_KEY_PREFIXES['mise']}{self.toolname}#{toolname}"
         self.save_state(state_key, release)

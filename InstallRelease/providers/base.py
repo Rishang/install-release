@@ -65,5 +65,6 @@ class InteractProvider(ABC):
         local: bool = True,
         prompt: bool = False,
         name: Optional[str] = None,
+        hold: bool = False,
         **kwargs: Any,
     ) -> None: ...

@@ -102,6 +102,7 @@ def get(
         prompt=not approve,
         name=name,
         pkg=pkg,
+        hold=bool(tag_name),
     )
 
 

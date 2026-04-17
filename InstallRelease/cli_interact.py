@@ -54,6 +54,7 @@ def get(
     prompt: bool = False,
     name: Optional[str] = None,
     pkg: bool = False,
+    hold: bool = False,
 ) -> None:
     """Resolve URL to provider and install the tool."""
     state_info()
@@ -74,7 +75,12 @@ def get(
         url = "/".join(url.split("/")[:5])
         provider = GitInteractProvider(get_repo_info(url), package_mode=pkg)
     provider.get(
-        version=version, asset_file=asset_file, local=local, prompt=prompt, name=name
+        version=version,
+        asset_file=asset_file,
+        local=local,
+        prompt=prompt,
+        name=name,
+        hold=hold,
     )
 
 
