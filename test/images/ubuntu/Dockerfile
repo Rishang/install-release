@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
 # Install uv (binary from official image)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
+ENV UV_LINK_MODE=copy
+
 WORKDIR /app
 
 # Copy dependency manifests first for better layer caching (paths relative to context = repo root)
