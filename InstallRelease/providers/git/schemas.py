@@ -1,8 +1,7 @@
 """Git / GitHub / GitLab release-related dataclasses."""
 
-from datetime import datetime
-from typing import Optional
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from InstallRelease.utils import FilterDataclass
 
@@ -45,14 +44,14 @@ class Release:
     prerelease: bool
     published_at: str
     assets: list[ReleaseAssets]
-    description: Optional[str] = field(default=None)
-    hold_update: Optional[bool] = field(default=False)
-    custom_release_words: Optional[list[str]] = field(default=None)
-    package_type: Optional[str] = field(
+    description: str | None = field(default=None)
+    hold_update: bool | None = field(default=False)
+    custom_release_words: list[str] | None = field(default=None)
+    package_type: str | None = field(
         default="binary"
     )  # "deb", "rpm", "AppImage", "binary"
-    install_method: Optional[str] = field(default="binary")  # "binary" or "package"
-    package_name: Optional[str] = field(default=None)
+    install_method: str | None = field(default="binary")  # "binary" or "package"
+    package_name: str | None = field(default=None)
 
     def __post_init__(self):
         if self.package_type and self.package_type.lower() == "appimage":

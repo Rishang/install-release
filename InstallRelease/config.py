@@ -3,9 +3,10 @@ This module handles the configuration of the tool.
 """
 
 import os
-from InstallRelease.state import State, platform_path
-from InstallRelease.schemas import ToolConfig
+
 from InstallRelease.providers.git.schemas import Release
+from InstallRelease.schemas import ToolConfig
+from InstallRelease.state import State, platform_path
 from InstallRelease.utils import logger
 
 HOME = os.path.expanduser("~")

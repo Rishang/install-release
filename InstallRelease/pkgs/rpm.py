@@ -4,8 +4,8 @@ RPM package (.rpm) installer.
 
 from pathlib import Path
 
-from InstallRelease.utils import logger, sh
 from InstallRelease.pkgs.base import PackageInstallerABC
+from InstallRelease.utils import logger, sh
 
 
 class RpmPackage(PackageInstallerABC):

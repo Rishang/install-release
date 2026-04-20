@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -145,7 +145,7 @@ class DockerInteractProvider(InteractProvider):
 
     # ── Step 2 ───────────────────────────────────────────────────────────
 
-    def select(self, candidates: list[str], **hints: Any) -> Optional[DockerImage]:
+    def select(self, candidates: list[str], **hints: Any) -> DockerImage | None:
         """Build a DockerImage for the first candidate tag."""
         if not candidates:
             return None
@@ -197,7 +197,7 @@ class DockerInteractProvider(InteractProvider):
         version: str = "",
         local: bool = True,
         prompt: bool = False,
-        name: Optional[str] = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Orchestrate the full install flow: resolve -> select -> prompt -> install -> save."""

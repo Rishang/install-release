@@ -1,13 +1,12 @@
-from typing import Any, Optional
 from abc import abstractmethod
+from typing import Any, ClassVar
 
 import requests
 
-from InstallRelease.utils import logger
-from InstallRelease.providers.git.schemas import Release, ReleaseAssets, RepositoryInfo
-from InstallRelease.providers.base import Provider
 from InstallRelease.helper.release_scorer import ReleaseScorer
-
+from InstallRelease.providers.base import Provider
+from InstallRelease.providers.git.schemas import Release, ReleaseAssets, RepositoryInfo
+from InstallRelease.utils import logger
 
 # ── Exceptions ──────────────────────────────────────────────────────────
 
@@ -30,12 +29,12 @@ class ApiError(RepositoryError):
 class RepoInfo(Provider):
     """Abstract base for git-hosted repository providers (GitHub, GitLab)."""
 
-    headers: dict[str, str] = {}
-    response: Optional[list[Release]] = None
+    headers: ClassVar[dict[str, str]] = {}
+    response: list[Release] | None = None
     api: str = ""
     token: str = ""
-    data: dict[str, Any] = {}
-    info: RepositoryInfo = RepositoryInfo()
+    data: dict[str, Any] | None = None
+    info: RepositoryInfo | None = None
 
     def _validate_url(self, repo_url: str, domain: str) -> str:
         if domain not in repo_url:
@@ -62,9 +61,9 @@ class RepoInfo(Provider):
 def get_release(
     releases: list[Release],
     repo_url: str,
-    extra_words: Optional[list[str]] = None,
+    extra_words: list[str] | None = None,
     disable_adjustments: bool = False,
-    package_type: Optional[str] = None,
+    package_type: str | None = None,
 ) -> ReleaseAssets | bool:
     """Select the best-matching release asset using the platform scorer."""
     extra_words = list(extra_words or [])

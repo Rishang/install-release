@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from tempfile import TemporaryDirectory
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -54,9 +54,9 @@ class MiseInteractProvider(InteractProvider):
 
     def __init__(self, toolname: str) -> None:
         self.toolname = toolname
-        self._asset: Optional[AquaAsset] = None
+        self._asset: AquaAsset | None = None
         self._version: str = ""
-        self._backend: Optional[MiseToolInfo] = None
+        self._backend: MiseToolInfo | None = None
 
     def _ensure_backend(self) -> bool:
         if self._backend is None:
@@ -88,7 +88,7 @@ class MiseInteractProvider(InteractProvider):
 
     # ── Step 2 ───────────────────────────────────────────────────────────
 
-    def select(self, candidates: list[str], **hints: Any) -> Optional[AquaAsset]:
+    def select(self, candidates: list[str], **hints: Any) -> AquaAsset | None:
         """Expand the aqua URL template for the latest (or pinned) version."""
         if not candidates:
             return None
@@ -165,7 +165,7 @@ class MiseInteractProvider(InteractProvider):
         version: str = "",
         local: bool = True,
         prompt: bool = False,
-        name: Optional[str] = None,
+        name: str | None = None,
         hold: bool = False,
         **kwargs: Any,
     ) -> None:

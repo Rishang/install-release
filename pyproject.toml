@@ -62,6 +62,26 @@ package = true
 [tool.setuptools.packages.find]
 include = ["InstallRelease*"]
 
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501", # line too long (handled by formatter)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
 [project.scripts]
 install-release = "InstallRelease.cli:app"
 ir = "InstallRelease.cli:app"
+

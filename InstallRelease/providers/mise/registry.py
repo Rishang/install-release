@@ -1,21 +1,18 @@
 """Mise registry + Aqua registry resolution."""
 
-import tomllib
-from typing import Optional
-
 import requests
+import tomllib
 import yaml
 
-from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
-from InstallRelease.utils import logger, pprint
-
 from InstallRelease.providers.mise.config import (
-    _MISE_REGISTRY_BASE,
     _AQUA_REGISTRY_BASE,
-    _current_os,
+    _MISE_REGISTRY_BASE,
     _current_arch,
+    _current_os,
     _trim_v,
 )
+from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
+from InstallRelease.utils import logger, pprint
 
 
 def _expand_template(
@@ -47,7 +44,7 @@ def get_aqua_registry_yaml(aqua_path: str) -> dict:
     return yaml.safe_load(response.text)
 
 
-def get_backend(toolname: str) -> Optional[MiseToolInfo]:
+def get_backend(toolname: str) -> MiseToolInfo | None:
     """Return mise registry info for the first aqua backend.
 
     Returns ``None`` if no aqua backend is declared or the tool is not found.
@@ -73,7 +70,7 @@ def get_backend(toolname: str) -> Optional[MiseToolInfo]:
     return None
 
 
-def _pick_latest_override(pkg: dict) -> Optional[dict]:
+def _pick_latest_override(pkg: dict) -> dict | None:
     """Return the version_override with constraint ``"true"`` (latest template).
 
     Aqua uses ``"true"`` as the catch-all / latest-version constraint.
@@ -88,9 +85,9 @@ def resolve_download_url(
     toolname: str,
     version: str,
     *,
-    os_name: Optional[str] = None,
-    arch: Optional[str] = None,
-) -> Optional[AquaAsset]:
+    os_name: str | None = None,
+    arch: str | None = None,
+) -> AquaAsset | None:
     """Resolve the download URL for *toolname* at *version* via the aqua registry.
 
     Args:

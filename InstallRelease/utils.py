@@ -2,30 +2,30 @@
 All the re-usable utilities independent of the application logic for the project are here
 """
 
-import os
-import re
-import sys
-import json
 import bz2
-import tarfile
-import gzip
-import shutil
-import logging
-import platform
-import subprocess
 import dataclasses
-from pathlib import Path
-from dataclasses import dataclass
+import gzip
+import json
+import logging
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import tarfile
 from concurrent.futures import ThreadPoolExecutor
-from importlib.metadata import version, PackageNotFoundError
+from dataclasses import dataclass
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 import requests
 import zstandard as zstd
 from rich import print as pprint
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.text import Text
 from rich.table import Table
+from rich.text import Text
 
 try:
     from magic.compat import detect_from_filename
@@ -107,8 +107,8 @@ class PackageVersion:
 def FilterDataclass(data: dict, obj):
     """"""
 
-    out: dict = dict()
-    names = set([f.name for f in dataclasses.fields(obj)])
+    out: dict = {}
+    names = {f.name for f in dataclasses.fields(obj)}
     for k, v in data.items():
         if k in names:
             out[k] = v
@@ -247,7 +247,7 @@ def extract(path: str, at: str):
         return True
     except Exception as e:
         logger.error(f"can't extract: {path}, error: {e}")
-        raise Exception("Invalid file")
+        raise Exception("Invalid file") from e
 
 
 def listItemsMatcher(patterns: list[str], word: str) -> float:
@@ -279,20 +279,22 @@ def threads(funct, data, max_workers=5, return_result: bool = True):
 
 def show_table(
     data: list[dict],
-    ignore_keys: list = [],
+    ignore_keys: list | None = None,
     title: str = "",
     border_style="",
     no_wrap: bool = True,
 ):
     """Render a rich table from a list of dicts."""
 
-    def dict_list_tbl(items=list[dict], ignore_keys: list = []):
+    ignore_keys = ignore_keys or []
+
+    def dict_list_tbl(items: list[dict], ignored_keys: list[str]):
         keys = []
         data = []
 
         for item in items:
             _tmp: tuple = ()
-            for key in [i for i in item.keys() if i not in ignore_keys]:
+            for key in [i for i in item.keys() if i not in ignored_keys]:
                 if key not in keys:
                     keys.append(key)
                 _tmp += (str(item[key]),)
@@ -325,7 +327,8 @@ def show_table(
     console.print(table)
 
 
-def to_words(text: str, ignore_words: list[str] = []) -> list[str]:
+def to_words(text: str, ignore_words: list[str] | None = None) -> list[str]:
+    ignore_words = ignore_words or []
     text = text.lower().replace("_", "-").split("-")
     words = []
     for w in text:

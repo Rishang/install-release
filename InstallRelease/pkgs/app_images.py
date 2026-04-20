@@ -18,9 +18,9 @@ class AppImage(PackageInstallerABC):
     def __init__(
         self,
         name: str,
-        desktop_entry_path: str = None,
-        icon_path: str = None,
-        appimage_path: str = None,
+        desktop_entry_path: str | None = None,
+        icon_path: str | None = None,
+        appimage_path: str | None = None,
     ):
         super().__init__(name)
 

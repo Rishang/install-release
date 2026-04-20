@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from InstallRelease.providers.git.schemas import Release, RepositoryInfo
 
@@ -19,15 +19,15 @@ class Provider(ABC):
     repo_url: str = ""
     repo_name: str = ""
     owner: str = ""
-    info: "RepositoryInfo | None" = None
+    info: RepositoryInfo | None = None
 
     @abstractmethod
     def release(
         self, tag_name: str = "", pre_release: bool = False
-    ) -> "list[Release]": ...
+    ) -> list[Release]: ...
 
     @staticmethod
-    def resolve_provider(url: str) -> Optional[str]:
+    def resolve_provider(url: str) -> str | None:
         for name, prefix in PROVIDER_STATE_KEY_PREFIXES.items():
             if url.startswith(prefix):
                 return name
@@ -45,7 +45,7 @@ class InteractProvider(ABC):
     def resolve(self, version: str = "", pre_release: bool = False) -> list[Any]: ...
 
     @abstractmethod
-    def select(self, candidates: list[Any], **hints: Any) -> Optional[Any]: ...
+    def select(self, candidates: list[Any], **hints: Any) -> Any | None: ...
 
     @abstractmethod
     def prompt(self, toolname: str, candidate: Any) -> str: ...
@@ -64,7 +64,7 @@ class InteractProvider(ABC):
         version: str = "",
         local: bool = True,
         prompt: bool = False,
-        name: Optional[str] = None,
+        name: str | None = None,
         hold: bool = False,
         **kwargs: Any,
     ) -> None: ...

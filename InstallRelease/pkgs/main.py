@@ -1,16 +1,16 @@
 import glob
 import platform
-from typing import Optional
 from pathlib import Path
-from InstallRelease.utils import logger, sh
-from InstallRelease.providers.git.schemas import _valid_package_types
+
+from InstallRelease.pkgs.app_images import AppImage
 from InstallRelease.pkgs.base import PackageInstallerABC
 from InstallRelease.pkgs.deb import DebPackage
 from InstallRelease.pkgs.rpm import RpmPackage
-from InstallRelease.pkgs.app_images import AppImage
+from InstallRelease.providers.git.schemas import _valid_package_types
+from InstallRelease.utils import logger, sh
 
 
-def detect_package_type_from_asset_name(name: str) -> Optional[str]:
+def detect_package_type_from_asset_name(name: str) -> str | None:
     """Infer package type from asset filename. Returns None if not a known package."""
     ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
     if ext == "appimage":
@@ -18,7 +18,7 @@ def detect_package_type_from_asset_name(name: str) -> Optional[str]:
     return ext if ext in _valid_package_types else None
 
 
-def detect_package_type_from_os_release() -> Optional[str]:
+def detect_package_type_from_os_release() -> str | None:
     """Detect the appropriate package type for the current OS"""
 
     package_type = ""
@@ -85,7 +85,7 @@ def detect_package_type_from_os_release() -> Optional[str]:
 
 
 class PackageInstaller(PackageInstallerABC):
-    def __init__(self, name: str, package_type: str = None):
+    def __init__(self, name: str, package_type: str | None = None):
         super().__init__(name)
         self.package_type = (
             package_type if package_type else detect_package_type_from_os_release()

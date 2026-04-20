@@ -6,7 +6,6 @@ import glob
 import os
 import platform
 import re
-from typing import Optional
 
 from magic.compat import detect_from_filename
 
@@ -59,8 +58,8 @@ def install_bin(
     src: str,
     dest: str,
     local: bool,
-    name: Optional[str] = None,
-    skip_extensions: Optional[list[str]] = None,
+    name: str | None = None,
+    skip_extensions: list[str] | None = None,
 ) -> bool:
     """Find the single executable inside *src* and install it to *dest*.
 
