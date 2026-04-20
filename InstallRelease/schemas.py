@@ -1,13 +1,13 @@
-from typing import NamedTuple, Optional
 from dataclasses import dataclass, field
+from typing import NamedTuple
 
 
 @dataclass
 class ToolConfig:
-    token: Optional[str] = field(default_factory=str)
-    gitlab_token: Optional[str] = field(default_factory=str)
-    path: Optional[str] = field(default_factory=str)
-    pre_release: Optional[bool] = field(default=False)
+    token: str | None = field(default_factory=str)
+    gitlab_token: str | None = field(default_factory=str)
+    path: str | None = field(default_factory=str)
+    pre_release: bool | None = field(default=False)
 
 
 class irKey(NamedTuple):

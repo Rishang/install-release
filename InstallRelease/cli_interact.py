@@ -1,31 +1,37 @@
 import os
 import threading
-from typing import Optional
 
-from rich.progress import track
 from rich.console import Console
+from rich.progress import track
 
-from InstallRelease.schemas import irKey
-from InstallRelease.providers.git.schemas import Release, TypeState
-from InstallRelease.pkgs.main import PackageInstaller
-from InstallRelease.utils import (
-    pprint,
-    logger,
-    show_table,
-    is_none,
-    threads,
-    PackageVersion,
-    requests_session,
+from InstallRelease.config import (  # noqa: F401
+    cache,
+    cache_config,
+    config,
+    dest,
+    pre_release_enabled,
 )
+from InstallRelease.pkgs.main import PackageInstaller
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
-from InstallRelease.providers.git.main import get_repo_info, GitInteractProvider
-from InstallRelease.providers.mise.main import MiseInteractProvider
 from InstallRelease.providers.docker.main import (
     DockerInteractProvider,
+)
+from InstallRelease.providers.docker.main import (
     needs_update as docker_needs_update,
 )
-from InstallRelease.config import cache, cache_config, config, dest, pre_release_enabled  # noqa: F401
-
+from InstallRelease.providers.git.main import GitInteractProvider, get_repo_info
+from InstallRelease.providers.git.schemas import Release, TypeState
+from InstallRelease.providers.mise.main import MiseInteractProvider
+from InstallRelease.schemas import irKey
+from InstallRelease.utils import (
+    PackageVersion,
+    is_none,
+    logger,
+    pprint,
+    requests_session,
+    show_table,
+    threads,
+)
 
 console = Console(width=40)
 install_release_version = PackageVersion("install-release")
@@ -52,7 +58,7 @@ def get(
     asset_file: str = "",
     local: bool = True,
     prompt: bool = False,
-    name: Optional[str] = None,
+    name: str | None = None,
     pkg: bool = False,
     hold: bool = False,
 ) -> None:
@@ -202,7 +208,7 @@ def show_state():
 
 
 def list_install(
-    state: Optional[TypeState] = None,
+    state: TypeState | None = None,
     title: str = "Installed tools",
     hold_update: bool = False,
 ) -> None:

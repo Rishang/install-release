@@ -1,24 +1,24 @@
-from typing import Any, Optional
+from typing import Any, ClassVar
 from urllib.parse import quote
 
 import requests
 
-from InstallRelease.utils import logger, FilterDataclass
+from InstallRelease.providers.git.base import ApiError, RepoInfo
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets, RepositoryInfo
-from InstallRelease.providers.git.base import RepoInfo, ApiError
+from InstallRelease.utils import FilterDataclass, logger
 
 
 class GitlabInfo(RepoInfo):
     """GitLab repository information handler."""
 
-    headers: dict[str, str] = {"Accept": "application/json"}
-    response: Optional[list[Release]] = None
+    headers: ClassVar[dict[str, str]] = {"Accept": "application/json"}
+    response: list[Release] | None = None
 
     def __init__(
         self,
         repo_url: str,
-        data: Optional[dict[str, Any]] = None,
-        token: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        token: str | None = None,
     ) -> None:
         data = data or {}
 
@@ -53,8 +53,10 @@ class GitlabInfo(RepoInfo):
 
             self.info = FilterDataclass(github_compatible_info, obj=RepositoryInfo)
         except Exception as e:
-            logger.error(f"Failed to fetch GitLab repository information: {str(e)}")
-            raise ApiError(f"Failed to fetch GitLab repository information: {str(e)}")
+            logger.error(f"Failed to fetch GitLab repository information: {e!s}")
+            raise ApiError(
+                f"Failed to fetch GitLab repository information: {e!s}"
+            ) from e
 
     def _req(self, url: str) -> dict[str, Any]:
         headers = self.headers.copy()

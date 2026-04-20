@@ -1,9 +1,9 @@
-import os
-import json
-import platform
 import dataclasses
+import json
+import os
+import platform
 
-from InstallRelease.utils import logger, EnhancedJSONEncoder, FilterDataclass
+from InstallRelease.utils import EnhancedJSONEncoder, FilterDataclass, logger
 
 
 def platform_path(paths: dict[str, str], alt: str = "") -> str:
@@ -47,7 +47,7 @@ class State:
 
     def load(self):
         if os.path.exists(self.state_file):
-            with open(self.state_file, "r") as f:
+            with open(self.state_file) as f:
                 _s = json.load(f)
                 if len(_s) == 0:
                     return

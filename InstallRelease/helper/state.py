@@ -7,8 +7,6 @@ import config directly just for persistence.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from InstallRelease.config import cache
 from InstallRelease.providers.git.schemas import Release
 
@@ -19,6 +17,6 @@ def save_state(key: str, release: Release) -> None:
     cache.save()
 
 
-def load_state(key: str) -> Optional[Release]:
+def load_state(key: str) -> Release | None:
     """Return the cached ``Release`` for *key*, or ``None`` if not found."""
     return cache.get(key)

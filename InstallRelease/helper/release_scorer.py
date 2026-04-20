@@ -1,7 +1,8 @@
-import re
 import platform
+import re
 import subprocess
-from typing import Optional, Any
+from typing import Any
+
 from InstallRelease.utils import logger, to_words
 
 PLATFORM_ARCH_ALIASES = {
@@ -45,7 +46,7 @@ PENALTY_EXTENSIONS = {
 }
 
 
-def detect_package_family(system_name: str) -> Optional[str]:
+def detect_package_family(system_name: str) -> str | None:
     """Detect native Linux package family (deb/rpm) from os-release."""
     if system_name != "linux":
         return None
@@ -69,7 +70,7 @@ class ReleaseScorer:
 
     def __init__(
         self,
-        extra_words: Optional[list[str]] = None,
+        extra_words: list[str] | None = None,
         disable_adjustments: bool = False,  # FIX: renamed from disable_penalties —
         # the flag suppresses bonuses too, not just penalties.
     ):
@@ -124,7 +125,7 @@ class ReleaseScorer:
         self._plain_patterns[self.platform] = 5.0
 
         # 2. Architecture aliases.
-        for canonical, aliases in PLATFORM_ARCH_ALIASES.items():
+        for _canonical, aliases in PLATFORM_ARCH_ALIASES.items():
             if self.architecture in aliases:
                 for alias in aliases:
                     self._plain_patterns[alias] = 3.0
@@ -148,7 +149,7 @@ class ReleaseScorer:
         for word in self.extra_words:
             self._plain_patterns[word] = 2.0
 
-    def _asset_package_type(self, name_lower: str) -> Optional[str]:
+    def _asset_package_type(self, name_lower: str) -> str | None:
         """Infer package type from asset extension."""
         if name_lower.endswith(".deb"):
             return "deb"
@@ -158,7 +159,7 @@ class ReleaseScorer:
             return "AppImage"
         return None
 
-    def _requested_package_type(self) -> Optional[str]:
+    def _requested_package_type(self) -> str | None:
         """Return requested package type from scorer extra words."""
         for pkg_type in ("deb", "rpm", "appimage"):
             if pkg_type in self._extra_words_set:
@@ -283,7 +284,7 @@ class ReleaseScorer:
 
     def select_best(
         self, release_names: list[str], min_score: float = 0.2
-    ) -> Optional[str]:
+    ) -> str | None:
         """Select the best matching release.
 
         When ``disable_adjustments`` is True and ``extra_words`` are provided,

@@ -1,22 +1,25 @@
 import logging
 import os
-from typing import Optional
 
 import typer
 
-from InstallRelease.utils import pprint, logger
 from InstallRelease.cli_interact import (
-    pull_state,
-    get as _get,
-    upgrade as _upgrade,
-    remove,
-    list_install,
-    show_state,
-    hold,
     cache_config,
     config,
+    hold,
     install_release_version,
+    list_install,
+    pull_state,
+    remove,
+    show_state,
 )
+from InstallRelease.cli_interact import (
+    get as _get,
+)
+from InstallRelease.cli_interact import (
+    upgrade as _upgrade,
+)
+from InstallRelease.utils import logger, pprint
 
 
 def see_help(arg: str = ""):
@@ -35,7 +38,7 @@ __optionSkipPrompt = typer.Option(
 )
 
 
-def setLogger(quite: Optional[bool] = None, debug: Optional[bool] = None) -> None:
+def setLogger(quite: bool | None = None, debug: bool | None = None) -> None:
     """Set logger level based on verbosity options
 
     Args:

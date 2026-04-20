@@ -3,7 +3,7 @@ from __future__ import annotations
 import platform
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from InstallRelease.config import config, dest, pre_release_enabled
 from InstallRelease.helper import (
@@ -14,7 +14,7 @@ from InstallRelease.helper import (
     load_state,
     save_state,
 )
-from InstallRelease.helper.release_scorer import PACKAGE_ALIASES
+from InstallRelease.helper.release_scorer import PACKAGE_ALIASES, PENALTY_EXTENSIONS
 from InstallRelease.pkgs.main import PackageInstaller
 from InstallRelease.providers.base import InteractProvider, Provider
 from InstallRelease.providers.git.base import (
@@ -25,7 +25,6 @@ from InstallRelease.providers.git.base import (
 )
 from InstallRelease.providers.git.github import GitHubInfo
 from InstallRelease.providers.git.gitlab import GitlabInfo
-from InstallRelease.helper.release_scorer import PENALTY_EXTENSIONS
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
 from InstallRelease.utils import (
     download,
@@ -46,7 +45,7 @@ _PROVIDER_CLASSES: dict[str, Any] = {
 }
 
 
-def get_repo_info(repo_url: str, data: Optional[dict[str, Any]] = None) -> RepoInfo:
+def get_repo_info(repo_url: str, data: dict[str, Any] | None = None) -> RepoInfo:
     """Factory: return the appropriate RepoInfo subclass for *repo_url*."""
     data = data or {}
     provider_name = Provider.resolve_provider(repo_url)
@@ -74,9 +73,7 @@ def _extract_words_from_filename(filename: str) -> list[str]:
     return to_words(text=basename.replace(".", "-"), ignore_words=["v", "unknown"])
 
 
-def _resolve_release_words(
-    custom: Optional[list[str]], cached: Optional[list[str]]
-) -> tuple:
+def _resolve_release_words(custom: list[str] | None, cached: list[str] | None) -> tuple:
     """Return (extra_words, disable_adjustments); priority: custom > cached > None."""
     words = custom or cached
     return words, bool(words)
@@ -98,7 +95,7 @@ def _show_pkg_hint(
                 return
 
 
-def _show_and_select_asset(release: Release, toolname: str) -> Optional[ReleaseAssets]:
+def _show_and_select_asset(release: Release, toolname: str) -> ReleaseAssets | None:
     """Display all assets in a table and let the user pick one by ID."""
 
     if not release.assets:
@@ -155,13 +152,13 @@ class GitInteractProvider(InteractProvider):
         self,
         repo: RepoInfo,
         package_mode: bool = False,
-        package_type: Optional[str] = None,
+        package_type: str | None = None,
     ) -> None:
         self.repo = repo
         self.package_mode = package_mode
-        self.package_type: Optional[str] = package_type or os_package_type
+        self.package_type: str | None = package_type or os_package_type
         self._releases: list[Release] = []
-        self._selected_release: Optional[Release] = None
+        self._selected_release: Release | None = None
 
     def resolve(self, version: str = "", pre_release: bool = False) -> list[Release]:
         """Fetch available releases from the git provider API."""
@@ -169,15 +166,13 @@ class GitInteractProvider(InteractProvider):
         self._releases = self.repo.release(tag_name=version, pre_release=pre_release)
         return self._releases
 
-    def select(
-        self, candidates: list[Release], **hints: Any
-    ) -> Optional[ReleaseAssets]:
+    def select(self, candidates: list[Release], **hints: Any) -> ReleaseAssets | None:
         """Pick the best matching asset from releases using scoring heuristics.
 
         In --pkg mode, filters assets to native package type (or AppImage fallback).
         Then tries exact name match from cache/--file, else scores all assets.
         """
-        extra_words: Optional[list[str]] = hints.get("extra_words")
+        extra_words: list[str] | None = hints.get("extra_words")
         disable_adjustments: bool = hints.get("disable_adjustments", False)
         known_names: set[str] = hints.get("known_names", set())
 
@@ -327,7 +322,7 @@ class GitInteractProvider(InteractProvider):
         version: str = "",
         local: bool = True,
         prompt: bool = False,
-        name: Optional[str] = None,
+        name: str | None = None,
         hold: bool = False,
         **kwargs: Any,
     ) -> None:

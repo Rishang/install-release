@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import subprocess
-import yaml
-import pytest
 
+import pytest
+import yaml
 
 CONTAINER = "ir-ubuntu"
 
 
 def load_config() -> dict:
     """Load test repos from asset.yml."""
-    with open("./asset.yml", "r") as f:
+    with open("./asset.yml") as f:
         return yaml.safe_load(f)
 
 
