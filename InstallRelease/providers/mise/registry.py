@@ -12,7 +12,7 @@ from InstallRelease.providers.mise.config import (
     _trim_v,
 )
 from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
-from InstallRelease.utils import logger, pprint
+from InstallRelease.utils import logger
 
 
 def _expand_template(
@@ -57,16 +57,18 @@ def get_backend(toolname: str) -> MiseToolInfo | None:
     description = data.get("description", "")
 
     for backend in data.get("backends", []):
-        if backend.startswith("aqua:"):
-            path = backend[len("aqua:") :]
-            parts = path.split("/")
-            if len(parts) >= 2:
-                return MiseToolInfo(
-                    owner=parts[0],
-                    repo=parts[1],
-                    aqua_path=path,
-                    description=description,
-                )
+        backend_str = backend.get("full", "") if isinstance(backend, dict) else backend
+        if not backend_str.startswith("aqua:"):
+            continue
+        path = backend_str.removeprefix("aqua:")
+        parts = path.split("/")
+        if len(parts) >= 2:
+            return MiseToolInfo(
+                owner=parts[0],
+                repo=parts[1],
+                aqua_path=path,
+                description=description,
+            )
     return None
 
 
@@ -87,14 +89,16 @@ def resolve_download_url(
     *,
     os_name: str | None = None,
     arch: str | None = None,
+    registry: dict | None = None,
 ) -> AquaAsset | None:
     """Resolve the download URL for *toolname* at *version* via the aqua registry.
 
     Args:
-        toolname: Tool name as it appears in the mise registry (e.g. ``"fzf"``).
-        version:  Version tag (e.g. ``"v0.55.0"``).
-        os_name:  Override detected OS (useful for tests / cross-resolution).
-        arch:     Override detected architecture.
+        toolname:  Tool name as it appears in the mise registry (e.g. ``"fzf"``).
+        version:   Version tag (e.g. ``"v0.55.0"``).
+        os_name:   Override detected OS (useful for tests / cross-resolution).
+        arch:      Override detected architecture.
+        registry:  Pre-fetched aqua registry dict; fetched if not provided.
 
     Returns:
         An ``AquaAsset`` with the expanded download URL, or ``None`` on failure.
@@ -106,10 +110,11 @@ def resolve_download_url(
     owner, repo = backend.owner, backend.repo
     description = backend.description
 
-    try:
-        registry = get_aqua_registry_yaml(backend.aqua_path)
-    except Exception:
-        return None
+    if registry is None:
+        try:
+            registry = get_aqua_registry_yaml(backend.aqua_path)
+        except Exception:
+            return None
 
     packages = registry.get("packages", [])
     if not packages:
@@ -120,13 +125,7 @@ def resolve_download_url(
     arch = arch or _current_arch()
     pkg_type = pkg.get("type", "github_release")
 
-    if pkg_type == "github_release":
-        pprint(
-            f"\n[bold cyan]💡 [yellow]{toolname}[/yellow] uses GitHub releases. "
-            f"Install directly with: [green]ir get https://github.com/{owner}/{repo}[/green][/bold cyan]\n"
-        )
-        return None
-    elif pkg_type != "http":
+    if pkg_type not in ("github_release", "http"):
         logger.info(
             f"Skipping unsupported aqua package type '{pkg_type}' for {toolname}"
         )
@@ -135,8 +134,6 @@ def resolve_download_url(
     override = _pick_latest_override(pkg)
 
     # ── type: http ─────────────────────────────────────────────────────────
-    # The package declares a full URL template rather than a GitHub asset name.
-    # The override may narrow the URL, but if absent the pkg-level url is used.
     if pkg_type == "http":
         url_template = pkg.get("url", "")
         if override:
@@ -148,7 +145,15 @@ def resolve_download_url(
             if override
             else pkg.get("format", "zip")
         )
-        download_url = _expand_template(url_template, version, os_name, arch, fmt)
+        replacements: dict = {
+            **pkg.get("replacements", {}),
+            **(override.get("replacements", {}) if override else {}),
+        }
+        resolved_os = replacements.get(os_name, os_name)
+        resolved_arch = replacements.get(arch, arch)
+        download_url = _expand_template(
+            url_template, version, resolved_os, resolved_arch, fmt
+        )
         filename = download_url.split("/")[-1]
         return AquaAsset(
             url=download_url,
@@ -160,21 +165,30 @@ def resolve_download_url(
             description=description,
         )
 
-    # ── type: github_release (default) ─────────────────────────────────────
+    # ── type: github_release ───────────────────────────────────────────────
     if override:
         asset_template = override.get("asset", pkg.get("asset", ""))
         fmt = override.get("format", pkg.get("format", "tar.gz"))
+        replacements: dict = {
+            **pkg.get("replacements", {}),
+            **override.get("replacements", {}),
+        }
         for os_override in override.get("overrides", []):
             if os_override.get("goos") == os_name:
                 fmt = os_override.get("format", fmt)
     else:
         asset_template = pkg.get("asset", "")
         fmt = pkg.get("format", "tar.gz")
+        replacements = pkg.get("replacements", {})
 
     if not asset_template:
         return None
 
-    filename = _expand_template(asset_template, version, os_name, arch, fmt)
+    resolved_os = replacements.get(os_name, os_name)
+    resolved_arch = replacements.get(arch, arch)
+    filename = _expand_template(
+        asset_template, version, resolved_os, resolved_arch, fmt
+    )
     download_url = (
         f"https://github.com/{owner}/{repo}/releases/download/{version}/{filename}"
     )

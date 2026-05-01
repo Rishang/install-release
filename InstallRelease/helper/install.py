@@ -111,6 +111,12 @@ def install_bin(
 
         bin_files.append(file)
 
+    # If multiple binaries are found, use the name to disambiguate
+    if len(bin_files) > 1 and name:
+        named = [f for f in bin_files if os.path.basename(f) == name]
+        if len(named) == 1:
+            bin_files = named
+
     if len(bin_files) != 1:
         logger.error(f"Expected a single binary, found: {bin_files}")
         return False

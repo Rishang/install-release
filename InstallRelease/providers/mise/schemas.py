@@ -24,3 +24,4 @@ class MiseToolInfo:
     repo: str
     aqua_path: str
     description: str = ""
+    version_source: str = "github_release"

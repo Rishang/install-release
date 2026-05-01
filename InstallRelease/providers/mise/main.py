@@ -12,7 +12,11 @@ from InstallRelease.config import config, dest
 from InstallRelease.helper import extract_url, install_bin, save_state
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
-from InstallRelease.providers.mise.registry import get_backend, resolve_download_url
+from InstallRelease.providers.mise.registry import (
+    get_aqua_registry_yaml,
+    get_backend,
+    resolve_download_url,
+)
 from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
 from InstallRelease.utils import logger, mkdir, pprint, show_table
 
@@ -20,23 +24,38 @@ _GITHUB_API = "https://api.github.com"
 
 
 def _get_github_versions(
-    owner: str, repo: str, token: str = "", pre_release: bool = False
+    owner: str,
+    repo: str,
+    token: str = "",
+    *,
+    use_tags: bool = False,
+    pre_release: bool = False,
 ) -> list[str]:
-    """Return stable release tag names from GitHub (newest first), excluding drafts."""
+    """Return version tags from GitHub (newest first).
+
+    Uses the tags API when ``use_tags`` is True, otherwise the releases API
+    (which filters out drafts and optionally pre-releases).
+    """
     headers = {"Accept": "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"token {token}"
-    url = f"{_GITHUB_API}/repos/{owner}/{repo}/releases"
+    endpoint = "tags" if use_tags else "releases"
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = requests.get(
+            f"{_GITHUB_API}/repos/{owner}/{repo}/{endpoint}",
+            headers=headers,
+            timeout=10,
+        )
         resp.raise_for_status()
+        if use_tags:
+            return [t["name"] for t in resp.json()]
         return [
             r["tag_name"]
             for r in resp.json()
             if not r.get("draft") and (pre_release or not r.get("prerelease"))
         ]
     except Exception as e:
-        logger.debug(f"Failed to fetch GitHub releases for {owner}/{repo}: {e}")
+        logger.debug(f"Failed to fetch GitHub {endpoint} for {owner}/{repo}: {e}")
         return []
 
 
@@ -57,11 +76,24 @@ class MiseInteractProvider(InteractProvider):
         self._asset: AquaAsset | None = None
         self._version: str = ""
         self._backend: MiseToolInfo | None = None
+        self._registry: dict = {}
 
     def _ensure_backend(self) -> bool:
+        if self._backend is not None:
+            return True
+        self._backend = get_backend(self.toolname)
         if self._backend is None:
-            self._backend = get_backend(self.toolname)
-        return self._backend is not None
+            return False
+        try:
+            self._registry = get_aqua_registry_yaml(self._backend.aqua_path)
+            pkgs = self._registry.get("packages", [])
+            if pkgs:
+                self._backend.version_source = pkgs[0].get(
+                    "version_source", "github_release"
+                )
+        except Exception:
+            pass
+        return True
 
     # ── Step 1 ───────────────────────────────────────────────────────────
 
@@ -81,9 +113,12 @@ class MiseInteractProvider(InteractProvider):
 
         owner, repo = self._backend.owner, self._backend.repo  # type: ignore[union-attr]
         token = getattr(config, "token", "")
-        versions = _get_github_versions(owner, repo, token, pre_release=pre_release)
+        use_tags = self._backend.version_source == "github_tag"  # type: ignore[union-attr]
+        versions = _get_github_versions(
+            owner, repo, token, use_tags=use_tags, pre_release=pre_release
+        )
         if not versions:
-            logger.warning(f"No releases found for {owner}/{repo}")
+            logger.warning(f"No versions found for {owner}/{repo}")
         return versions
 
     # ── Step 2 ───────────────────────────────────────────────────────────
@@ -94,7 +129,7 @@ class MiseInteractProvider(InteractProvider):
             return None
 
         version = candidates[0]
-        asset = resolve_download_url(self.toolname, version)
+        asset = resolve_download_url(self.toolname, version, registry=self._registry)
         if asset is None:
             logger.error(
                 f"Could not resolve download URL for '{self.toolname}' {version}"
