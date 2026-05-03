@@ -18,9 +18,48 @@ CLI to install any CLI
 
 
 
-**Install Release** is a CLI tool by name `ir` to install any single-binary executable package for your device(Linux/MacOS/WSL) directly from their GitHub or GitLab releases and keep them updated. Consider it as a CLI to install, update and remove any single binary tools from GitHub/GitLab releases.
+**Install Release** gives you the `ir` command to install and keep single-binary CLI tools updated on Linux, macOS, and WSL. It works with GitHub/GitLab releases and supports mise/aqua registry entries and Docker images.
 
-This can be any tool you want to install, which is pre-compiled for your device and present on GitHub or GitLab releases.
+This can be any tool you want to install, which is pre-compiled for your device and present on a supported provider.
+
+## Highlights
+
+#### [GitHub and GitLab releases](#install-tool-from-githubgitlab-releases-)
+
+`ir` is mainly built for installing CLI tools straight from GitHub or GitLab releases. Give it a repo URL, and it finds the right release asset for your system.
+
+```bash
+# Install from GitHub
+ir get https://github.com/denoland/deno
+
+# Install from GitLab
+ir get https://gitlab.com/gitlab-org/cli -n glab
+```
+
+#### [Package mode (`--pkg`)](#install-as-system-package-debrpmappimage-)
+
+Some tools ship better as `.deb`, `.rpm`, or `AppImage` packages. Use `--pkg` when you want `ir` to install that package instead of picking a standalone binary.
+
+```bash
+# Install any package from GitHub releases
+ir get https://github.com/redis/RedisInsight --pkg
+```
+
+#### Extra providers
+
+- [mise/aqua](#install-tool-via-mise-registry-): Install tools from registry metadata.
+
+```bash
+# Install from mise/aqua registry
+ir get mise@terraform
+```
+
+- [Docker](#install-docker-image-as-a-cli-tool-): Run container images like local CLIs.
+
+```bash
+# Install from Docker image (with custom name)
+ir get docker@mcr.microsoft.com/azure-cli -n az
+```
 
 <!-- <a href="https://asciinema.org/a/fzvnZV9t4l9irF5F?autoplay=1"><img src="https://asciinema.org/a/fzvnZV9t4l9irF5F.svg" alt="asciinema CLI demo" width="100%" /></a> -->
 
@@ -37,6 +76,7 @@ This can be any tool you want to install, which is pre-compiled for your device 
 ## Table of Contents 📚
 
 - [Table of Contents 📚](#table-of-contents-)
+- [Highlights](#highlights)
 - [Getting started ⚡](#getting-started)
   - [Installation](#installation)
   - [Manage your tools](#manage-your-tools)
