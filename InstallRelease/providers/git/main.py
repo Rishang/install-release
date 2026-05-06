@@ -269,7 +269,7 @@ class GitInteractProvider(InteractProvider):
             title=f"🚀 Install: {toolname}",
         )
         pprint(f"[color(6)]\nPath: {dest}")
-        pprint("[color(34)]Install this tool (Y/n/?): ", end="")
+        pprint("[color(34)]Install selected tool? [Y/n/]: ", end="")
         return input().strip().lower() or "y"
 
     def install(
