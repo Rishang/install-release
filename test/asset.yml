@@ -29,6 +29,12 @@ repos:
     cmd: kubectl version --client
     grep: 'Client Version:'
 
+- name: aws-cli
+  cmd: ir get mise@aws-cli -n aws -y
+  validate:
+    cmd: aws --version
+    grep: "aws-cli"
+
 # - name: terraform
 #   cmd: ir get docker@hashicorp/terraform -y
 #   validate:

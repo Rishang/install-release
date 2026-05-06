@@ -49,6 +49,7 @@ tasks:
           exit 1
         elif [ "{{.CLI_ARGS}}" = "py" ]; then
           docker inspect -f '{{`{{.State.Running}}`}}' ir-ubuntu 2>/dev/null | grep -q true || bash setup.sh ubuntu
+          docker exec ir-ubuntu /usr/local/bin/uv sync --dev
           uv run pytest -s .
         else
           bash setup.sh {{.CLI_ARGS}}
