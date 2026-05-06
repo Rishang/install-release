@@ -163,7 +163,7 @@ class MiseInteractProvider(InteractProvider):
             title=f"Install {toolname} (via mise/aqua)",
             no_wrap=False,
         )
-        pprint("[color(34)]Install this tool (Y/n): ", end="")
+        pprint("[color(34)]Install selected tool? [Y/n]: ", end="")
         return input().strip().lower() or "y"
 
     # ── Step 4 ───────────────────────────────────────────────────────────

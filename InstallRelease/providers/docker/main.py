@@ -159,7 +159,7 @@ class DockerInteractProvider(InteractProvider):
             data=[{"Tool": toolname, "Image": candidate.image, "Tag": candidate.tag}],
             title=f"Install {toolname} (via Docker)",
         )
-        pprint("[color(34)]Install this tool (Y/n): ", end="")
+        pprint("[color(34)]Install selected tool [Y/n]: ", end="")
         return input().strip().lower() or "y"
 
     # ── Step 4 ───────────────────────────────────────────────────────────
