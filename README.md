@@ -260,7 +260,7 @@ ir --install-completion zsh
 ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
 │ kubectx │ kubectx_v0.9.4_linux_x86_64.tar.gz │ v0.9.4  │ 1.0     │ 43811     │
 └─────────┴────────────────────────────────────┴─────────┴─────────┴───────────┘
-Install selected tool? [Y/n/? to choose another]: y
+Install selected tool? [Y/n/? to choose other]: y
  INFO     Downloaded: 'kubectx_v0.9.4_linux_x86_64.tar.gz' at /tmp/dn_kubectx_ph6i7dmk                                                               utils.py:159
  INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/bin/kubectx                                                                  core.py:132
  INFO     Installed: kubectx
@@ -306,7 +306,7 @@ Some tools (like Terraform, Packer, etc.) don't publish platform-specific binari
 ┡━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ terraform │ v1.12.0  │ terraform_1.12.0_linu... │ https://releases.hashicorp.c...  │
 └───────────┴──────────┴──────────────────────────┴──────────────────────────────────┘
-Install selected tool? [Y/n/? to choose another]: y
+Install selected tool? [Y/n/? to choose other]: y
 ```
 
 Tools installed via `mise@` are also tracked by `ir ls` and upgraded with `ir upgrade` just like GitHub/GitLab tools.
@@ -336,7 +336,7 @@ Tools installed via `mise@` are also tracked by `ir ls` and upgraded with `ir up
 ┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
 │ terraform │ hashicorp/terraform   │ latest │
 └───────────┴───────────────────────┴────────┘
-Install selected tool? [Y/n/? to choose another]: y
+Install selected tool? [Y/n/? to choose other]: y
 ```
 
 - **Latest tags** (`latest`) are checked for updates via digest comparison during `ir upgrade` — only re-pulled when the remote image has changed.
@@ -367,7 +367,7 @@ During the installation prompt, type `?` to view all available release assets an
 └──────┴──────────────────────────────────────────┴─────────┴─────────┴───────────┘
 
 Path: /home/noobi/bin
-Install selected tool? [Y/n/? to choose another]: ?
+Install selected tool? [Y/n/? to choose other]: ?
 
                     📦 Available Assets for bore
 ┏━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
