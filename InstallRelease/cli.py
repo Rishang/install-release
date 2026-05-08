@@ -240,12 +240,12 @@ def _hold(
     name: str = typer.Argument(
         None, help="Name of CLI tool for which updates will be kept on hold."
     ),
-    unset: bool = typer.Option(True, "--unset", help="Remove from hold."),
+    unset: bool = typer.Option(False, "--unset", help="Remove from hold."),
 ):
     """
     | Keep an installed CLI tool's updates on hold.
     """
-    hold(name, hold_update=unset)
+    hold(name, hold_update=not unset)
 
 
 @app.command(name="me")
