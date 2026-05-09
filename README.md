@@ -22,7 +22,6 @@ CLI to install any CLI
 
 This can be any tool you want to install, which is pre-compiled for your device and present on a supported provider.
 
-## Highlights
 
 <!-- <a href="https://asciinema.org/a/fzvnZV9t4l9irF5F?autoplay=1"><img src="https://asciinema.org/a/fzvnZV9t4l9irF5F.svg" alt="asciinema CLI demo" width="100%" /></a> -->
 
@@ -33,6 +32,8 @@ This can be any tool you want to install, which is pre-compiled for your device 
 <p align="center">
   <img src=".github/images/flow.png" alt="How it works" width="800">
 </p>
+
+## Highlights
 
 #### [GitHub and GitLab releases](#install-tool-from-githubgitlab-releases-)
 
