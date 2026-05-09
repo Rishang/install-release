@@ -24,6 +24,16 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 ## Highlights
 
+<!-- <a href="https://asciinema.org/a/fzvnZV9t4l9irF5F?autoplay=1"><img src="https://asciinema.org/a/fzvnZV9t4l9irF5F.svg" alt="asciinema CLI demo" width="100%" /></a> -->
+
+<a href="#getting-started"><img src=".github/images/787536.gif" alt="asciinema CLI demo" width="100%" /></a>
+
+> INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman, brew` etc.
+
+<p align="center">
+  <img src=".github/images/flow.png" alt="How it works" width="800">
+</p>
+
 #### [GitHub and GitLab releases](#install-tool-from-githubgitlab-releases-)
 
 `ir` is mainly built for installing CLI tools straight from GitHub or GitLab releases. Give it a repo URL, and it finds the right release asset for your system.
@@ -60,17 +70,6 @@ ir get mise@terraform
 # Install from Docker image (with custom name)
 ir get docker@mcr.microsoft.com/azure-cli -n az
 ```
-
-<!-- <a href="https://asciinema.org/a/fzvnZV9t4l9irF5F?autoplay=1"><img src="https://asciinema.org/a/fzvnZV9t4l9irF5F.svg" alt="asciinema CLI demo" width="100%" /></a> -->
-
-<a href="#getting-started"><img src=".github/images/787536.gif" alt="asciinema CLI demo" width="100%" /></a>
-
-> INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman, brew` etc.
-
-<p align="center">
-  <img src=".github/images/flow.png" alt="How it works" width="800">
-</p>
-
 <!-- Table of content -->
 
 ## Table of Contents 📚
