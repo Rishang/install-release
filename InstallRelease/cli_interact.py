@@ -184,7 +184,8 @@ def upgrade(
 
         if not skip_prompt:
             r = input()
-            if r.lower() != "y":
+            # default to Y on no input
+            if not (r.lower() == "y" or r.lower() == ""):
                 return
     else:
         pprint("[bold green]All tools are onto latest version")
