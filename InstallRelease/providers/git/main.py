@@ -95,46 +95,54 @@ def _show_pkg_hint(
                 return
 
 
-def _show_and_select_asset(release: Release, toolname: str) -> ReleaseAssets | None:
-    """Display all assets in a table and let the user pick one by ID."""
-
-    if not release.assets:
-        pprint("[red]No assets available for this release[/red]")
-        return None
-
-    assets_data = []
-    idx_map: dict[int, int] = {}
+def _selectable_assets(release: Release) -> dict[int, ReleaseAssets]:
+    """Return display IDs mapped to installable release assets."""
+    choices: dict[int, ReleaseAssets] = {}
     display_id = 1
-    for actual_idx, asset in enumerate(release.assets):
+    for asset in release.assets:
         if any(asset.name.lower().endswith(ext) for ext in PENALTY_EXTENSIONS):
             continue
+        choices[display_id] = asset
+        display_id += 1
+    return choices
+
+
+def _show_release_assets(release: Release, toolname: str) -> dict[int, ReleaseAssets]:
+    """Display release assets and return display IDs mapped to assets."""
+    choices = _selectable_assets(release)
+
+    if not choices:
+        pprint("[red]No assets available for this release[/red]")
+        return choices
+
+    assets_data = []
+    for display_id, asset in choices.items():
         assets_data.append(
             {
-                "ID": display_id,
+                "Asset ID": display_id,
                 "Filename": asset.name,
                 "Size (MB)": asset.size_mb(),
                 "Downloads": asset.download_count,
             }
         )
-        idx_map[display_id] = actual_idx
-        display_id += 1
 
     show_table(assets_data, title=f"📦 Available Assets for {toolname}")
-    pprint(
-        "\n[yellow]Enter your desired file ID to install (or 'n' to cancel): [/yellow]",
-        end="",
-    )
-    selection = input().strip()
+    return choices
 
-    if selection.lower() == "n":
-        return None
+
+def _select_asset_by_id(release: Release, selection: str) -> ReleaseAssets | None:
+    """Return the asset matching a display ID, or None for invalid input."""
+    choices = _selectable_assets(release)
     try:
         selected_id = int(selection)
-        if selected_id in idx_map:
-            return release.assets[idx_map[selected_id]]
-        pprint(f"[red]Invalid ID. Please select between 1 and {len(idx_map)}[/red]")
     except ValueError:
         pprint("[red]Invalid input. Please enter a number or 'n' to cancel[/red]")
+        return None
+
+    if selected_id in choices:
+        return choices[selected_id]
+
+    pprint(f"[red]Invalid ID. Please select between 1 and {len(choices)}[/red]")
     return None
 
 
@@ -244,7 +252,7 @@ class GitInteractProvider(InteractProvider):
         return cast(ReleaseAssets, result)
 
     def prompt(self, toolname: str, candidate: ReleaseAssets) -> str:
-        """Show repo info + selected asset details; return user's Y/n/? choice."""
+        """Show repo/assets info; return user's Y/n/asset ID choice."""
         release = self._selected_release
         if release is None or self.repo.info is None:
             return "y"
@@ -256,6 +264,7 @@ class GitInteractProvider(InteractProvider):
             f"\n[magenta]🔮 Language : {info.language or 'N/A'}"
             f"\n[yellow]🔥 Title    : {info.description}"
         )
+        _show_release_assets(release, toolname)
         show_table(
             data=[
                 {
@@ -269,7 +278,7 @@ class GitInteractProvider(InteractProvider):
             title=f"🚀 Install: {toolname}",
         )
         pprint(f"[color(6)]\nPath: {dest}")
-        pprint("[color(34)]Install selected tool? [Y/n/? to choose other]: ", end="")
+        pprint("[color(34)]Install selected tool? [Y/n/ Asset ID]: ", end="")
         return input().strip().lower() or "y"
 
     def install(
@@ -377,21 +386,21 @@ class GitInteractProvider(InteractProvider):
         if asset is None:
             return
 
-        # Step 3: confirm with user; '?' lets them pick a different asset manually
+        # Step 3: confirm with user or select a different asset by ID
         if prompt:
             decision = self.prompt(toolname, asset)
-            if decision == "?":
+            if decision == "y":
+                pprint("\n[magenta]Downloading...[/magenta]")
+            elif decision == "n":
+                return
+            else:
                 if self._selected_release is None:
                     return
-                selected = _show_and_select_asset(self._selected_release, toolname)
+                selected = _select_asset_by_id(self._selected_release, decision)
                 if selected is None:
                     return
                 asset = selected
                 custom_release_words = _extract_words_from_filename(asset.name)
-                pprint("\n[magenta]Downloading...[/magenta]")
-            elif decision != "y":
-                return
-            else:
                 pprint("\n[magenta]Downloading...[/magenta]")
 
         # Step 4: download, extract, and install binary/package

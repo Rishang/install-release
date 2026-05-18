@@ -254,13 +254,20 @@ ir --install-completion zsh
 ✨ Language : Go
 🔥 Title    : Faster way to switch between clusters and namespaces in kubectl
 
+                    📦 Available Assets for kubectx
+┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Asset ID ┃ Filename                           ┃ Size (MB) ┃ Downloads ┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ 1        │ kubectx_v0.9.4_linux_x86_64.tar.gz │ 1.0       │ 43811     │
+└──────────┴────────────────────────────────────┴───────────┴───────────┘
+
                               🚀 Install: kubectx
 ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
 ┃ Name    ┃ Selected Item                      ┃ Version ┃ Size Mb ┃ Downloads ┃
 ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
 │ kubectx │ kubectx_v0.9.4_linux_x86_64.tar.gz │ v0.9.4  │ 1.0     │ 43811     │
 └─────────┴────────────────────────────────────┴─────────┴─────────┴───────────┘
-Install selected tool? [Y/n/? to choose other]: y
+Install selected tool? [Y/n/ Asset ID]: y
  INFO     Downloaded: 'kubectx_v0.9.4_linux_x86_64.tar.gz' at /tmp/dn_kubectx_ph6i7dmk                                                               utils.py:159
  INFO     install /tmp/dn_kubectx_ph6i7dmk/kubectx /home/noobi/bin/kubectx                                                                  core.py:132
  INFO     Installed: kubectx
@@ -306,7 +313,7 @@ Some tools (like Terraform, Packer, etc.) don't publish platform-specific binari
 ┡━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ terraform │ v1.12.0  │ terraform_1.12.0_linu... │ https://releases.hashicorp.c...  │
 └───────────┴──────────┴──────────────────────────┴──────────────────────────────────┘
-Install selected tool? [Y/n/? to choose other]: y
+Install selected tool? [Y/n]: y
 ```
 
 Tools installed via `mise@` are also tracked by `ir ls` and upgraded with `ir upgrade` just like GitHub/GitLab tools.
@@ -336,7 +343,7 @@ Tools installed via `mise@` are also tracked by `ir ls` and upgraded with `ir up
 ┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
 │ terraform │ hashicorp/terraform   │ latest │
 └───────────┴───────────────────────┴────────┘
-Install selected tool? [Y/n/? to choose other]: y
+Install selected tool? [Y/n]: y
 ```
 
 - **Latest tags** (`latest`) are checked for updates via digest comparison during `ir upgrade` — only re-pulled when the remote image has changed.
@@ -349,7 +356,7 @@ In rare cases where install-release does not automatically find the correct rele
 
 ##### Method 1: Interactive Selection (Recommended)
 
-During the installation prompt, type `?` to view all available release assets and select the one you want:
+During the installation prompt, review the available release assets and type the asset ID you want to install:
 
 ```bash
 ❯ ir get https://github.com/ekzhang/bore
@@ -359,6 +366,17 @@ During the installation prompt, type `?` to view all available release assets an
 ✨ Language : Rust
 🔥 Title    : A simple CLI tool for making tunnels to localhost
 
+                    📦 Available Assets for bore
+┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Asset ID ┃ Filename                                        ┃ Size (MB) ┃ Downloads ┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ 1        │ bore-v0.4.0-x86_64-unknown-linux-musl.tar.gz    │ 1.2       │ 1523      │
+│ 2        │ bore-v0.4.0-x86_64-unknown-linux-gnu.rpm        │ 1.3       │ 845       │
+│ 3        │ bore-v0.4.0-aarch64-unknown-linux-musl.deb      │ 1.1       │ 234       │
+│ 4        │ bore-v0.4.0-x86_64-apple-darwin.dmg             │ 1.2       │ 456       │
+│ 5        │ bore-v0.4.0-x86_64-apple-darwin.tar.gz          │ 1.2       │ 1523      │
+└──────────┴─────────────────────────────────────────────────┴───────────┴───────────┘
+
                               🚀 Install: bore
 ┏━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
 ┃ Name ┃ Selected Item                            ┃ Version ┃ Size Mb ┃ Downloads ┃
@@ -367,20 +385,7 @@ During the installation prompt, type `?` to view all available release assets an
 └──────┴──────────────────────────────────────────┴─────────┴─────────┴───────────┘
 
 Path: /home/noobi/bin
-Install selected tool? [Y/n/? to choose other]: ?
-
-                    📦 Available Assets for bore
-┏━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃ ID ┃ Filename                                        ┃ Size (MB) ┃ Downloads ┃
-┡━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
-│ 1  │ bore-v0.4.0-x86_64-unknown-linux-musl.tar.gz    │ 1.2       │ 1523      │
-│ 2  │ bore-v0.4.0-x86_64-unknown-linux-gnu.rpm        │ 1.3       │ 845       │
-│ 3  │ bore-v0.4.0-aarch64-unknown-linux-musl.deb      │ 1.1       │ 234       │
-│ 4  │ bore-v0.4.0-x86_64-apple-darwin.dmg             │ 1.2       │ 456       │
-│ 5  │ bore-v0.4.0-x86_64-apple-darwin.tar.gz          │ 1.2       │ 1523      │
-└────┴─────────────────────────────────────────────────┴───────────┴───────────┘
-
-Enter your desired file ID to install (or 'n' to cancel): 3
+Install selected tool? [Y/n/ Asset ID]: 3
 ```
 
 The tool will automatically parse the selected filename into keywords and store them for future upgrades.
