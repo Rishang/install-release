@@ -105,11 +105,12 @@ def _show_pkg_hint(
 
 
 def _selectable_assets(release: Release) -> dict[int, ReleaseAssets]:
-    return {
-        i: asset
-        for i, asset in enumerate(release.assets, 1)
+    selectable = [
+        asset
+        for asset in release.assets
         if not any(asset.name.lower().endswith(ext) for ext in PENALTY_EXTENSIONS)
-    }
+    ]
+    return dict(enumerate(selectable, 1))
 
 
 def _show_release_assets(release: Release, toolname: str) -> dict[int, ReleaseAssets]:
