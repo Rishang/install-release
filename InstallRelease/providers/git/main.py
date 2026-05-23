@@ -27,6 +27,7 @@ from InstallRelease.providers.git.github import GitHubInfo
 from InstallRelease.providers.git.gitlab import GitlabInfo
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
 from InstallRelease.utils import (
+    DIM_TABLE_THEME,
     download,
     is_none,
     logger,
@@ -127,6 +128,7 @@ def _show_release_assets(release: Release, toolname: str) -> dict[int, ReleaseAs
             for did, a in choices.items()
         ],
         title=f"📦 Available Assets for {toolname}",
+        theme=DIM_TABLE_THEME,
     )
     return choices
 
