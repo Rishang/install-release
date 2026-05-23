@@ -24,6 +24,15 @@ import zstandard as zstd
 from rich import print as pprint
 from rich.console import Console
 from rich.logging import RichHandler
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 from rich.table import Table
 from rich.text import Text
 
@@ -41,6 +50,8 @@ except ImportError:
 requests_session = requests.Session()
 
 console = Console()
+REQUEST_TIMEOUT = (10, 60)
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024
 
 _colors = {
     "green": "#8CC265",
@@ -50,6 +61,13 @@ _colors = {
     "yellow": "#F0A45D bold",
     "red": "#E8678A",
     "purple": "#8782E9 bold",
+}
+
+_dim_colors = {
+    "title": "#B0B0B0",
+    "table": "#6F6F6F",
+    "border": "#565656",
+    "columns": ("#B0B0B0", "#9A9A9A", "#848484", "#9A9A9A", "#B0B0B0"),
 }
 
 
@@ -89,7 +107,7 @@ class PackageVersion:
             if self._latest_version is not None:
                 return self._latest_version
 
-            response = requests_session.get(self.url)
+            response = requests_session.get(self.url, timeout=REQUEST_TIMEOUT)
             logger.debug(
                 f"pipi response for package '{self.package_name}': " + str(response)
             )
@@ -134,6 +152,29 @@ class ShellOutputs:
     returncode: int
 
 
+@dataclass(frozen=True)
+class TableTheme:
+    title_style: str = _colors["light_green"]
+    table_style: str = _colors["purple"]
+    border_style: str = ""
+    column_styles: tuple[str, ...] = (
+        _colors["yellow"],
+        _colors["red"],
+        _colors["green"],
+        _colors["cyan"],
+        _colors["blue"],
+    )
+
+
+DIM_TABLE_THEME = TableTheme(
+    title_style=_dim_colors["title"],
+    table_style=_dim_colors["table"],
+    border_style=_dim_colors["border"],
+    column_styles=_dim_colors["columns"],
+)
+DEFAULT_TABLE_THEME = TableTheme()
+
+
 def sh(command: str, interactive: bool = False) -> ShellOutputs:
     """Run a shell command and return its output."""
     try:
@@ -172,19 +213,37 @@ def mkdir(path: str):
 def download(url: str, at: str):
     """Download a file"""
 
-    file = requests_session.get(url, stream=True)
-    if not os.path.exists(at):
-        os.makedirs(at)
-
     file_name: str = url.split("/")[-1]
-    if file.status_code == 200:
-        with open(f"{at}/{file_name}", "wb") as fw:
-            fw.write(file.content)
-        logger.info(f"""Downloaded: \'{file_name}\' at {at}""")
-        return f"{at}/{file_name}"
-    else:
-        logger.info(f"url: {url}, status_code: {file.status_code}")
-        exit()
+    if not os.path.exists(at):
+        os.makedirs(at, exist_ok=True)
+
+    with requests_session.get(url, stream=True, timeout=REQUEST_TIMEOUT) as file:
+        file.raise_for_status()
+        output_path = f"{at}/{file_name}"
+        total_bytes = int(file.headers.get("content-length") or 0)
+        progress_columns = [
+            SpinnerColumn(),
+            TextColumn("{task.description}"),
+            BarColumn(),
+            DownloadColumn(),
+            TransferSpeedColumn(),
+            TimeRemainingColumn(),
+        ]
+
+        with open(output_path, "wb") as fw, Progress(
+            *progress_columns,
+            console=console,
+            transient=True,
+        ) as progress:
+            task_id = progress.add_task(f"Downloading {file_name}", total=total_bytes or None)
+            for chunk in file.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
+                if not chunk:
+                    continue
+                fw.write(chunk)
+                progress.update(task_id, advance=len(chunk))
+
+    logger.info(f"""Downloaded: \'{file_name}\' at {at}""")
+    return f"{output_path}"
 
 
 def extract(path: str, at: str):
@@ -283,10 +342,12 @@ def show_table(
     title: str = "",
     border_style="",
     no_wrap: bool = True,
+    theme: TableTheme | None = None,
 ):
     """Render a rich table from a list of dicts."""
 
     ignore_keys = ignore_keys or []
+    theme = theme or DEFAULT_TABLE_THEME
 
     def dict_list_tbl(items: list[dict], ignored_keys: list[str]):
         keys = []
@@ -302,23 +363,19 @@ def show_table(
 
         return keys, data
 
-    text = Text(title, style=_colors["light_green"])
+    text = Text(title, style=theme.title_style)
 
     print()
 
-    table = Table(title=text, style=_colors["purple"], border_style=border_style)
+    table = Table(
+        title=text,
+        style=theme.table_style,
+        border_style=border_style or theme.border_style,
+    )
     columns, rows = dict_list_tbl(data, ignore_keys)
 
-    colors = {
-        0: _colors["yellow"],
-        1: _colors["red"],
-        2: _colors["green"],
-        3: _colors["cyan"],
-        4: _colors["blue"],
-    }
-
     for count, col in enumerate(columns):
-        color = colors[count % len(colors)]
+        color = theme.column_styles[count % len(theme.column_styles)]
         table.add_column(col, justify="left", style=color, no_wrap=no_wrap)
     for row in rows:
         table.add_row(*row)

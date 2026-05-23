@@ -1,25 +1,23 @@
 [project]
 name = "install-release"
-version = "0.7.6"
+version = "0.7.7"
 readme = "README.md"
 description = "Simple package manager to easily install, update and manage any tool directly from github or gitlab releases"
-authors = [
-  { name = "Rishang", email = "rishangbhavsarcs@gmail.com" }
-]
+authors = [{ name = "Rishang", email = "rishangbhavsarcs@gmail.com" }]
 
 classifiers = [
-    "Intended Audience :: Information Technology",
-    "Intended Audience :: System Administrators",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development :: Build Tools",
-    "Topic :: Software Development",
-    "Typing :: Typed",
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development",
+  "Typing :: Typed",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
 
 ]
 
@@ -64,17 +62,17 @@ include = ["InstallRelease*"]
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "UP",  # pyupgrade
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "RUF", # ruff-specific rules
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "RUF", # ruff-specific rules
 ]
 ignore = [
-    "E501", # line too long (handled by formatter)
+  "E501", # line too long (handled by formatter)
 ]
 
 [tool.ruff.format]
@@ -84,4 +82,3 @@ indent-style = "space"
 [project.scripts]
 install-release = "InstallRelease.cli:app"
 ir = "InstallRelease.cli:app"
-
