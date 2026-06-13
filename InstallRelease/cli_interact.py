@@ -28,6 +28,7 @@ from InstallRelease.utils import (
     logger,
     pprint,
     requests_session,
+    sh,
     show_table,
     threads,
 )
