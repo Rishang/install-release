@@ -2,7 +2,6 @@ import os
 import threading
 
 from rich.console import Console
-from rich.progress import track
 
 from InstallRelease.config import (  # noqa: F401
     cache,
@@ -100,6 +99,13 @@ def upgrade(
     """
     state_info()
 
+    if packages_only:
+        pprint("[bold]Need sudo access for installing packages...[/]")
+        result = sh("sudo -v", interactive=True)
+        if result.returncode != 0:
+            pprint("[bold red]Failed to acquire sudo. Aborting.[/]")
+            return
+
     state: TypeState = cache.state
 
     # Collect upgrade candidates: name -> (url, new_version, is_package)
@@ -190,11 +196,13 @@ def upgrade(
         pprint("[bold green]All tools are onto latest version")
         return
 
-    for name in track(upgrades, description="Upgrading..."):
+    total = len(upgrades)
+    for idx, name in enumerate(upgrades, 1):
         url, new_version, pkg_mode = upgrades[name]
         k = f"{url}#{name}"
+        pct = int(idx * 100 / total)
         pprint(
-            f"[bold yellow]Updating: {name}, {state[k].tag_name} => {new_version}[/]"
+            f"[bold yellow]({pct}%) Updating: {name}, {state[k].tag_name} => {new_version}[/]"
         )
         get(url, version=new_version, prompt=False, name=name, pkg=pkg_mode)
 
