@@ -128,6 +128,12 @@ class MiseInteractProvider(InteractProvider):
         if not candidates:
             return None
 
+        if not self._ensure_backend():
+            logger.error(
+                f"No aqua backend found in mise registry for '{self.toolname}'"
+            )
+            return None
+
         version = candidates[0]
         asset = resolve_download_url(self.toolname, version, registry=self._registry)
         if asset is None:
