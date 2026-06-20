@@ -166,9 +166,10 @@ def sh(command: str, interactive: bool = False) -> ShellOutputs:
 
         proc = subprocess.run(command, shell=True, capture_output=True)
         enc = sys.__stdout__.encoding or "utf-8"
-        decode = lambda b: [
-            line for line in b.decode(enc, "ignore").split("\n") if line
-        ]
+        def decode(b):
+            return [
+                    line for line in b.decode(enc, "ignore").split("\n") if line
+                ]
         stdout = decode(proc.stdout)
         logger.debug(f"stdout for {command}:\n{stdout}")
         return ShellOutputs(stdout, decode(proc.stderr), proc.returncode)
