@@ -1,5 +1,5 @@
 """
-All the re-usable utilities independent of the application logic for the project are here
+Re-usable utilities independent of the application logic.
 """
 
 import bz2
@@ -14,9 +14,13 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import (
+    version as pkg_version,
+)  # renamed to avoid shadow in PackageVersion
 from pathlib import Path
 
 import requests
@@ -40,20 +44,20 @@ try:
     from magic.compat import detect_from_filename
 except ImportError:
     pprint(
-        "[red]Failed to find libmagic.  Check your installation\n"
-        "refer this url to install libmagic first: https://github.com/ahupp/python-magic#installation [/]"
+        "[red]Failed to find libmagic. Check your installation\n"
+        "Refer: https://github.com/ahupp/python-magic#installation [/]"
     )
     sys.exit(1)
 
-# logging.basicConfig(level=logging.INFO)
-
 requests_session = requests.Session()
-
 console = Console()
+
 REQUEST_TIMEOUT = (10, 60)
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024
+DOWNLOAD_MAX_RETRIES = 5
 
-_colors = {
+# PEP 8: module-level constants are UPPER_CASE
+_COLORS = {
     "green": "#8CC265",
     "light_green": "#D0FF5E bold",
     "blue": "#4AA5F0",
@@ -62,23 +66,18 @@ _colors = {
     "red": "#E8678A",
     "purple": "#8782E9 bold",
 }
-
-_dim_colors = {
+_DIM_COLORS = {
     "title": "#B0B0B0",
     "table": "#6F6F6F",
     "border": "#565656",
     "columns": ("#B0B0B0", "#9A9A9A", "#848484", "#9A9A9A", "#B0B0B0"),
 }
 
-
-def _logger(flag: str = ""):
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG if os.environ.get(flag) else logging.INFO)
+# Direct setup; guard prevents duplicate handlers on module reload
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logger.setLevel(logging.DEBUG if os.environ.get("LOG_LEVEL") else logging.INFO)
     logger.addHandler(RichHandler(log_time_format=""))
-    return logger
-
-
-logger = _logger("LOG_LEVEL")
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -95,54 +94,36 @@ class PackageVersion:
         self._local_version = self.local_version()
         self._latest_version = None
 
-    def local_version(self):
+    def local_version(self) -> str | None:
         try:
-            _version = version(self.package_name)
-            return _version
+            return pkg_version(self.package_name)
         except PackageNotFoundError:
             return None
 
-    def latest_version(self):
+    def latest_version(self) -> str | None:
+        if self._latest_version is not None:
+            return self._latest_version
         try:
-            if self._latest_version is not None:
-                return self._latest_version
-
-            response = requests_session.get(self.url, timeout=REQUEST_TIMEOUT)
-            logger.debug(
-                f"pipi response for package '{self.package_name}': " + str(response)
-            )
-            data = response.json()
-            version = data["info"]["version"]
-            self._latest_version = version
-
-            return version
-
+            data = requests_session.get(self.url, timeout=REQUEST_TIMEOUT).json()
+            self._latest_version = data["info"]["version"]
+            return self._latest_version
         except requests.RequestException:
-            print(f"Failed to fetch data for {self.package_name}")
+            logger.warning(f"Failed to fetch version for {self.package_name}")
             return None
 
 
-def FilterDataclass(data: dict, obj):
-    """"""
-
-    out: dict = {}
-    names = {f.name for f in dataclasses.fields(obj)}
-    for k, v in data.items():
-        if k in names:
-            out[k] = v
-    return obj(**out)
+def filter_dataclass(data: dict, obj):
+    """Filter a dict to only fields present in the dataclass, then instantiate it."""
+    fields = {f.name for f in dataclasses.fields(obj)}
+    return obj(**{k: v for k, v in data.items() if k in fields})
 
 
-def is_none(val):
-    if val is None:
-        return True
-    elif isinstance(val, str) and val != "":
-        return False
-    elif isinstance(val, dict) and val != {}:
-        return False
-    elif isinstance(val, list) and val != []:
-        return False
-    return True
+FilterDataclass = filter_dataclass  # backward-compat alias
+
+
+def is_none(val) -> bool:
+    """True for None, empty str/dict/list, or any non-collection type."""
+    return not isinstance(val, (str, dict, list)) or not val
 
 
 @dataclass
@@ -154,23 +135,23 @@ class ShellOutputs:
 
 @dataclass(frozen=True)
 class TableTheme:
-    title_style: str = _colors["light_green"]
-    table_style: str = _colors["purple"]
+    title_style: str = _COLORS["light_green"]
+    table_style: str = _COLORS["purple"]
     border_style: str = ""
     column_styles: tuple[str, ...] = (
-        _colors["yellow"],
-        _colors["red"],
-        _colors["green"],
-        _colors["cyan"],
-        _colors["blue"],
+        _COLORS["yellow"],
+        _COLORS["red"],
+        _COLORS["green"],
+        _COLORS["cyan"],
+        _COLORS["blue"],
     )
 
 
 DIM_TABLE_THEME = TableTheme(
-    title_style=_dim_colors["title"],
-    table_style=_dim_colors["table"],
-    border_style=_dim_colors["border"],
-    column_styles=_dim_colors["columns"],
+    title_style=_DIM_COLORS["title"],
+    table_style=_DIM_COLORS["table"],
+    border_style=_DIM_COLORS["border"],
+    column_styles=_DIM_COLORS["columns"],
 )
 DEFAULT_TABLE_THEME = TableTheme()
 
@@ -179,218 +160,194 @@ def sh(command: str, interactive: bool = False) -> ShellOutputs:
     """Run a shell command and return its output."""
     try:
         if interactive:
-            process = subprocess.Popen(command, shell=True)
-            process.wait()
-            return ShellOutputs(stdout=[], stderr=[], returncode=process.returncode)
+            proc = subprocess.Popen(command, shell=True)
+            proc.wait()
+            return ShellOutputs([], [], proc.returncode)
 
-        process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        raw_out, raw_err = process.communicate()
-
-        encoding = sys.__stdout__.encoding or "utf-8"
-        stdout = list(filter(None, raw_out.decode(encoding, "ignore").split("\n")))
-        stderr = list(filter(None, raw_err.decode(encoding, "ignore").split("\n")))
-
+        proc = subprocess.run(command, shell=True, capture_output=True)
+        enc = sys.__stdout__.encoding or "utf-8"
+        decode = lambda b: [
+            line for line in b.decode(enc, "ignore").split("\n") if line
+        ]
+        stdout = decode(proc.stdout)
         logger.debug(f"stdout for {command}:\n{stdout}")
-        return ShellOutputs(stdout=stdout, stderr=stderr, returncode=process.returncode)
+        return ShellOutputs(stdout, decode(proc.stderr), proc.returncode)
     except Exception as e:
         logger.error(f"Exception for {command}: {e}")
-        return ShellOutputs(stdout=[], stderr=[], returncode=1)
+        return ShellOutputs([], [], 1)
 
 
 def mkdir(path: str):
-    file_path = Path(path)
-    file_path = file_path.expanduser()
-
-    if not file_path.is_dir():
-        logger.debug(f"creating dir: {file_path.absolute()}")
-        os.makedirs(name=file_path.absolute())
-    else:
-        ...
+    Path(path).expanduser().mkdir(parents=True, exist_ok=True)
 
 
-def download(url: str, at: str):
-    """Download a file"""
+def download(url: str, at: str) -> str:
+    """Download a file with retry/resume support via HTTP Range headers."""
+    file_name = url.split("/")[-1]
+    output_path = os.path.join(at, file_name)
+    os.makedirs(at, exist_ok=True)
 
-    file_name: str = url.split("/")[-1]
-    if not os.path.exists(at):
-        os.makedirs(at, exist_ok=True)
+    progress_columns = [
+        SpinnerColumn(),
+        TextColumn("{task.description}"),
+        BarColumn(),
+        DownloadColumn(),
+        TransferSpeedColumn(),
+        TimeRemainingColumn(),
+    ]
 
-    with requests_session.get(url, stream=True, timeout=REQUEST_TIMEOUT) as file:
-        file.raise_for_status()
-        output_path = f"{at}/{file_name}"
-        total_bytes = int(file.headers.get("content-length") or 0)
-        progress_columns = [
-            SpinnerColumn(),
-            TextColumn("{task.description}"),
-            BarColumn(),
-            DownloadColumn(),
-            TransferSpeedColumn(),
-            TimeRemainingColumn(),
-        ]
+    with (
+        open(output_path, "wb+") as fw,
+        Progress(*progress_columns, console=console, transient=True) as progress,
+    ):
+        task_id = None
+        for attempt in range(1, DOWNLOAD_MAX_RETRIES + 1):
+            resume_at = fw.tell()
+            try:
+                with requests_session.get(
+                    url,
+                    stream=True,
+                    timeout=REQUEST_TIMEOUT,
+                    headers={"Range": f"bytes={resume_at}-"} if resume_at else {},
+                ) as resp:
+                    resp.raise_for_status()
+                    if resume_at and resp.status_code != 206:
+                        fw.seek(0)
+                        fw.truncate()
+                        resume_at = 0
 
-        with open(output_path, "wb") as fw, Progress(
-            *progress_columns,
-            console=console,
-            transient=True,
-        ) as progress:
-            task_id = progress.add_task(f"Downloading {file_name}", total=total_bytes or None)
-            for chunk in file.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
-                if not chunk:
-                    continue
-                fw.write(chunk)
-                progress.update(task_id, advance=len(chunk))
+                    if task_id is None:
+                        total = int(resp.headers.get("content-length") or 0) + resume_at
+                        task_id = progress.add_task(
+                            f"Downloading {file_name}", total=total or None
+                        )
+                    progress.update(task_id, completed=resume_at)
 
-    logger.info(f"""Downloaded: \'{file_name}\' at {at}""")
-    return f"{output_path}"
+                    for chunk in resp.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
+                        if chunk:
+                            fw.write(chunk)
+                            progress.update(task_id, advance=len(chunk))
+                break
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.Timeout,
+            ) as e:
+                # ponytail: bounded retry + Range resume. Ceiling: assumes the
+                # server honours Range (we restart on a 200) and serves raw bytes
+                # (no transfer Content-Encoding, true for GitHub/GitLab release
+                # assets) so offsets match what we wrote. Upgrade: verify a checksum.
+                if attempt == DOWNLOAD_MAX_RETRIES:
+                    raise
+                fw.flush()
+                logger.warning(
+                    f"Download interrupted ({e.__class__.__name__}); "
+                    f"resuming from {fw.tell()} bytes (attempt {attempt}/{DOWNLOAD_MAX_RETRIES - 1})"
+                )
+                time.sleep(2 ** (attempt - 1))
+
+    logger.info(f"Downloaded: '{file_name}' at {at}")
+    return output_path
 
 
-def extract(path: str, at: str):
-    """Extract tar/archived files, including .pkg.tar.zst"""
-
+def extract(path: str, at: str) -> bool:
+    """Extract compressed/archived files including .pkg.tar.zst."""
     try:
-        system = platform.system().lower()
-        file_info = detect_from_filename(path)
-        logger.debug(file_info)
-        if file_info.mime_type == "application/javascript":
+        mime = detect_from_filename(path).mime_type
+        logger.debug(f"Extracting {path!r} (mime: {mime})")
+
+        if mime == "application/javascript":
             return True
 
-        if file_info.mime_type == "application/x-7z-compressed":
-            if system in ["linux"]:
-                cmd = f"7z x {path} -o{at}"
-                logger.debug("command: " + cmd)
-                sh(cmd)
-            elif system == "windows":
-                # 'C:\\Program Files\\7-zip\\7z.exe'
-                pass
-        elif file_info.mime_type == "application/x-bzip2" or path.endswith(
-            (".bz2", ".tbz")
-        ):
-            logger.debug(f"Extracting bzip2 file: {path}")
-            if path.endswith(".bz2") and not path.endswith(".tar.bz2"):
-                # Single file compressed with bz2
-                with bz2.open(path, "rb") as f_in:
-                    output_file = os.path.join(at, os.path.basename(path)[:-4])
-                    with open(output_file, "wb") as f_out:
-                        f_out.write(f_in.read())
-            else:
-                # Tar archive compressed with bz2
+        if mime == "application/x-7z-compressed":
+            if platform.system().lower() == "linux":
+                sh(f"7z x {path} -o{at}")
+
+        elif mime == "application/x-bzip2" or path.endswith((".bz2", ".tbz")):
+            if path.endswith(".tar.bz2") or path.endswith(".tbz"):
                 with tarfile.open(path, "r:bz2") as tar:
                     tar.extractall(path=at)
+            else:
+                with (
+                    bz2.open(path, "rb") as f_in,
+                    open(Path(at) / Path(path).stem, "wb") as f_out,
+                ):
+                    shutil.copyfileobj(f_in, f_out)
 
         elif path.endswith(".gz") and not path.endswith((".tar.gz", ".tgz")):
-            # Single file compressed with gzip
-            logger.debug(f"Extracting gzip file: {path}")
-            # Single file compressed with gzip
-            with gzip.open(path, "rb") as f_in:
-                # Remove .gz extension for output filename
-                output_file = os.path.join(at, os.path.basename(path)[:-3])
-                with open(output_file, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-                logger.debug(f"Extracted to: {output_file}")
+            with (
+                gzip.open(path, "rb") as f_in,
+                open(Path(at) / Path(path).stem, "wb") as f_out,
+            ):
+                shutil.copyfileobj(f_in, f_out)
 
         elif path.endswith((".pkg.tar.zst", ".tar.zst")):
-            logger.debug(f"Extracting zstd tar file: {path}")
-            dctx = zstd.ZstdDecompressor()
-            with open(path, "rb") as compressed:
-                with dctx.stream_reader(compressed) as reader:
-                    # Wrap the stream in tarfile
-                    with tarfile.open(fileobj=reader, mode="r|") as tar:
-                        tar.extractall(path=at)
-            logger.debug(f"Extracted to: {at}")
+            with (
+                open(path, "rb") as f,
+                zstd.ZstdDecompressor().stream_reader(f) as reader,
+            ):
+                with tarfile.open(fileobj=reader, mode="r|") as tar:
+                    tar.extractall(path=at)
 
         else:
             shutil.unpack_archive(path, at)
 
         return True
     except Exception as e:
-        logger.error(f"can't extract: {path}, error: {e}")
+        logger.error(f"Can't extract {path!r}: {e}")
         raise Exception("Invalid file") from e
 
 
 def listItemsMatcher(patterns: list[str], word: str) -> float:
-    """
-    eg: listItemsMatcher(patterns=['a','b'], word='a-cc') --> 0.5
-    """
-
-    count = 0
-
-    for pattern in patterns:
-        if re.search(pattern.lower(), word.lower()):
-            count += 1
-
-    if count == 0:
-        return 0
-
-    return count / len(patterns)
+    if not patterns:
+        return 0.0
+    return sum(1 for p in patterns if re.search(p.lower(), word.lower())) / len(
+        patterns
+    )
 
 
-def threads(funct, data, max_workers=5, return_result: bool = True):
-    results = []
+def threads(funct, data, max_workers: int = 5, return_result: bool = True) -> list:
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future = executor.map(funct, data)
-        if return_result is True:
-            for i in future:
-                results.append(i)
-    return results
+        results = list(executor.map(funct, data))
+    return results if return_result else []
 
 
 def show_table(
     data: list[dict],
     ignore_keys: list | None = None,
     title: str = "",
-    border_style="",
+    border_style: str = "",
     no_wrap: bool = True,
     theme: TableTheme | None = None,
 ):
     """Render a rich table from a list of dicts."""
-
     ignore_keys = ignore_keys or []
     theme = theme or DEFAULT_TABLE_THEME
 
-    def dict_list_tbl(items: list[dict], ignored_keys: list[str]):
-        keys = []
-        data = []
-
-        for item in items:
-            _tmp: tuple = ()
-            for key in [i for i in item.keys() if i not in ignored_keys]:
-                if key not in keys:
-                    keys.append(key)
-                _tmp += (str(item[key]),)
-            data.append(_tmp)
-
-        return keys, data
-
-    text = Text(title, style=theme.title_style)
-
-    print()
-
     table = Table(
-        title=text,
+        title=Text(title, style=theme.title_style),
         style=theme.table_style,
         border_style=border_style or theme.border_style,
     )
-    columns, rows = dict_list_tbl(data, ignore_keys)
+    keys = [k for k in (data[0] if data else {}) if k not in ignore_keys]
+    for i, col in enumerate(keys):
+        table.add_column(
+            col,
+            justify="left",
+            style=theme.column_styles[i % len(theme.column_styles)],
+            no_wrap=no_wrap,
+        )
+    for row in data:
+        table.add_row(*[str(row.get(k, "")) for k in keys])
 
-    for count, col in enumerate(columns):
-        color = theme.column_styles[count % len(theme.column_styles)]
-        table.add_column(col, justify="left", style=color, no_wrap=no_wrap)
-    for row in rows:
-        table.add_row(*row)
-
-    console = Console()
-    console.print(table)
+    print()
+    Console().print(table)
 
 
 def to_words(text: str, ignore_words: list[str] | None = None) -> list[str]:
     ignore_words = ignore_words or []
-    text = text.lower().replace("_", "-").split("-")
-    words = []
-    for w in text:
-        if w not in ignore_words:
-            w = re.sub(r"\d", "", w)
-            if w != "":
-                words.append(w)
-    return words
+    return [
+        w
+        for part in text.lower().replace("_", "-").split("-")
+        if (w := re.sub(r"\d", "", part)) and w not in ignore_words
+    ]
