@@ -100,13 +100,6 @@ def upgrade(
     """
     state_info()
 
-    if packages_only:
-        pprint("[bold]Need sudo access for installing packages...[/]")
-        result = sh("sudo -v", interactive=True)
-        if result.returncode != 0:
-            pprint("[bold red]Failed to acquire sudo. Aborting.[/]")
-            return
-
     state: TypeState = cache.state
 
     # Collect upgrade candidates: name -> (url, new_version, is_package)
@@ -193,6 +186,14 @@ def upgrade(
             r = input()
             if r.lower() != "y":
                 return
+
+        if packages_only:
+            pprint("\n\n[bold]Need sudo access for installing packages...[/]")
+            result = sh("sudo -v", interactive=True)
+            if result.returncode != 0:
+                pprint("[bold red]Failed to acquire sudo. Aborting.[/]")
+                return
+            pprint()
     else:
         pprint("[bold green]All tools are onto latest version")
         return

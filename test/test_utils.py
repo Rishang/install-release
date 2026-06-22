@@ -32,7 +32,9 @@ class _FakeResponse:
 
     @property
     def content(self):
-        raise AssertionError("download() should stream chunks instead of reading content")
+        raise AssertionError(
+            "download() should stream chunks instead of reading content"
+        )
 
 
 def test_download_streams_to_disk_and_uses_timeout(tmp_path, monkeypatch):
@@ -45,9 +47,13 @@ def test_download_streams_to_disk_and_uses_timeout(tmp_path, monkeypatch):
         return fake_response
 
     monkeypatch.setattr(utils.requests_session, "get", fake_get)
-    monkeypatch.setattr(utils, "console", Console(file=io.StringIO(), force_terminal=False))
+    monkeypatch.setattr(
+        utils, "console", Console(file=io.StringIO(), force_terminal=False)
+    )
 
-    output = utils.download("https://example.com/helm-v4.2.0-linux-amd64.tar.gz", str(tmp_path))
+    output = utils.download(
+        "https://example.com/helm-v4.2.0-linux-amd64.tar.gz", str(tmp_path)
+    )
 
     assert output == f"{tmp_path}/helm-v4.2.0-linux-amd64.tar.gz"
     assert (tmp_path / "helm-v4.2.0-linux-amd64.tar.gz").read_bytes() == b"abcdef"
