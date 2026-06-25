@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="./.github/images/icon.png" alt="icon" width="120" align="center" style="display: block; margin: 0 auto;" /><br>
+<img src="./.github/images/banner.png" alt="icon" width="120" align="center" style="display: block; margin: 0 auto;" /><br>
 🐧 Install Release 
 </h1>
 <p align="center">
