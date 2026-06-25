@@ -1,9 +1,8 @@
-<h1 align="center">
-<img src="./.github/images/banner.png" alt="icon" width="120" align="center" style="display: block; margin: 0 auto;" /><br>
-🐧 Install Release 
-</h1>
 <p align="center">
-CLI to install any CLI
+  <img src="./.github/images/banner.png" alt="Install Release — easily install any release" width="100%" />
+</p>
+<p align="center">
+  <em>CLI to install any CLI</em>
   <br><br>
   <a href="https://shields.io/">
     <img src="https://img.shields.io/badge/Python-3.10_to_3.14-xx.svg" alt="Python Version" />
