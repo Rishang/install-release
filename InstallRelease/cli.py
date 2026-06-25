@@ -65,7 +65,7 @@ def get(
     debug: bool = __optionDebug,
     quiet: bool = __optionQuiet,
     url: str = typer.Argument(
-        None, help="GitHub/GitLab URL, mise@<tool>, or docker@<image>"
+        None, help="GitHub/GitLab/Codeberg URL, mise@<tool>, or docker@<image>"
     ),
     tag_name: str = typer.Option(
         "", "-t", "--tag", help="Select a specific release version."
@@ -168,6 +168,11 @@ def _config(
         "--gitlab-token",
         help="Set your GitLab token to solve API rate-limiting issues.",
     ),
+    codeberg_token: str = typer.Option(
+        "",
+        "--codeberg-token",
+        help="Set your Codeberg/Forgejo token to solve API rate-limiting issues.",
+    ),
     path: str = typer.Option(
         "",
         "--path",
@@ -191,6 +196,9 @@ def _config(
     if gitlab_token != "":
         config.gitlab_token = gitlab_token
         logger.info("Updated GitLab token")
+    if codeberg_token != "":
+        config.codeberg_token = codeberg_token
+        logger.info("Updated Codeberg token")
     if path != "":
         config.path = path
         logger.info(f"Updated path to {path}")
