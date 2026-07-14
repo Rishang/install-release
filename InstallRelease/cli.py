@@ -6,6 +6,7 @@ import typer
 from InstallRelease.cli_interact import (
     cache_config,
     config,
+    get_info,
     hold,
     install_release_version,
     list_install,
@@ -140,6 +141,16 @@ def ls(
     | List all installed CLI tools
     """
     list_install(hold_update=hold)
+
+
+@app.command()
+def info(
+    name: str = typer.Argument(..., help="CLI command name"),
+):
+    """
+    | Show info about an installed CLI tool
+    """
+    get_info(name)
 
 
 @app.command()

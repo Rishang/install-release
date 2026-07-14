@@ -89,6 +89,7 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
     - [Method 1: Interactive Selection (Recommended)](#method-1-interactive-selection-recommended)
     - [Method 2: Command-line Flag](#method-2-command-line-flag)
   - [List installed tools 📋](#list-installed-tools-)
+  - [Show info about an installed tool ℹ️](#show-info-about-an-installed-tool-️)
   - [Remove installed release ❌](#remove-installed-release-)
   - [Update all previously installed tools to the latest version 🕶](#update-all-previously-installed-tools-to-the-latest-version-)
     - [Update installed system packages 📦](#update-installed-system-packages-)
@@ -223,6 +224,7 @@ Usage: ir [OPTIONS] COMMAND [ARGS]...
     get      | Install CLI tool from GitHub/GitLab releases or mise registry
     upgrade  | Upgrade all installed CLI tools from their repositories
     ls       | List all installed CLI tools
+    info     | Show info about an installed CLI tool
     rm       | Remove any installed CLI tool
     config   | Set configs for Install-Release
     state    | Show the current stored state of Install-Release
@@ -423,6 +425,20 @@ Example: Installing the bore tool from GitHub with the release file name `bore-v
 │ gron      │ v0.7.1  │ https://github.com/tomnomnom/gron    │
 │ kubectx   │ v0.9.4  │ https://github.com/ahmetb/kubectx    │
 └───────────┴─────────┴──────────────────────────────────────┘
+```
+
+#### Show info about an installed tool ℹ️
+
+```bash
+❯ ir info kubectx
+
+                Info: kubectx
+┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Name    ┃ Description                            ┃ Url                              ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ kubectx │ Faster way to switch between clusters  │ https://github.com/ahmetb/kubectx │
+│         │ and namespaces in kubectl              │                                  │
+└─────────┴────────────────────────────────────────┴──────────────────────────────────┘
 ```
 
 #### Remove installed release ❌
