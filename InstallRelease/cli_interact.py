@@ -273,6 +273,32 @@ def list_install(
         show_table(_table, title=title)
 
 
+def get_info(name: str) -> None:
+    """Print stored info (name, description, url) for an installed tool."""
+    state_info()
+    state: TypeState = cache.state
+
+    for key in state:
+        i = irKey.parse(key)
+        if i.name == name:
+            release = state[key]
+            show_table(
+                [
+                    {
+                        "Name": i.name,
+                        "Description": release.description or "N/A",
+                        "Url": release.url,
+                    }
+                ],
+                title=f"Info: {name}",
+                no_wrap=False,
+            )
+            return
+
+    pprint(f"[red]Tool not found: {name}")
+    exit(1)
+
+
 def remove(name: str) -> None:
     """Uninstall a tool by name — removes the binary/package and clears state."""
     state_info()
