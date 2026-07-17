@@ -76,11 +76,20 @@ class Release:
         return self.install_method == "package"
 
     def published_dt(self):
+        # GitHub uses Z-suffixed UTC; Forgejo/Gitea use ISO 8601 with a numeric
+        # timezone offset (e.g. "+02:00"). Try the fast strptime paths first,
+        # then fall back to fromisoformat for offset-aware timestamps.
         for fmt in ["%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%fZ"]:
             try:
                 return datetime.strptime(self.published_at, fmt)
             except ValueError:
                 continue
+
+        try:
+            # Python 3.10's fromisoformat doesn't accept a 'Z' suffix; normalise it.
+            return datetime.fromisoformat(self.published_at.replace("Z", "+00:00"))
+        except ValueError:
+            pass
 
         raise ValueError(f"Cannot parse date: {self.published_at}")
 

@@ -23,6 +23,7 @@ from InstallRelease.providers.git.base import (
     UnsupportedRepositoryError,
     get_release,
 )
+from InstallRelease.providers.git.forgejo import ForgejoInfo
 from InstallRelease.providers.git.github import GitHubInfo
 from InstallRelease.providers.git.gitlab import GitlabInfo
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
@@ -42,6 +43,7 @@ os_package_type = detect_package_type_from_os_release()
 _PROVIDER_CLASSES: dict[str, Any] = {
     "github": (GitHubInfo, lambda cfg: cfg.token),
     "gitlab": (GitlabInfo, lambda cfg: cfg.gitlab_token),
+    "codeberg": (ForgejoInfo, lambda cfg: cfg.codeberg_token),
 }
 
 
