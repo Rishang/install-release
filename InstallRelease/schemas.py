@@ -6,6 +6,7 @@ from typing import NamedTuple
 class ToolConfig:
     token: str | None = field(default_factory=str)
     gitlab_token: str | None = field(default_factory=str)
+    codeberg_token: str | None = field(default_factory=str)
     path: str | None = field(default_factory=str)
     pre_release: bool | None = field(default=False)
 
