@@ -1,3 +1,4 @@
+import os
 import platform
 import re
 import subprocess
@@ -81,6 +82,7 @@ class ReleaseScorer:
         self.package_family = detect_package_family(self.platform)
         self.extra_words = extra_words or []
         self.disable_adjustments = disable_adjustments
+        self._has_desktop_env = os.environ.get("XDG_SESSION_DESKTOP") is not None
 
         self._extra_words_set = {w.lower() for w in self.extra_words}
 
@@ -258,6 +260,13 @@ class ReleaseScorer:
                     f"Applied distro compatibility penalty: {pkg_type} on "
                     f"{self.package_family} system -> {score:.3f}"
                 )
+
+        if pkg_type == "AppImage" and not self._has_desktop_env:
+            score *= 0.01
+            logger.debug(
+                f"Applied AppImage penalty: no desktop env (XDG_SESSION_DESKTOP not set) "
+                f"-> {score:.3f}"
+            )
 
         return score
 
