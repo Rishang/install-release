@@ -17,7 +17,7 @@
 
 
 
-**Install Release** gives you the `ir` command to install and keep single-binary CLI tools updated on Linux, macOS, and WSL. It works with GitHub/GitLab releases and supports mise/aqua registry entries and Docker images.
+**Install Release** gives you the `ir` command to install and keep single-binary CLI tools updated on Linux, macOS, and WSL. It works with GitHub, GitLab, and Forgejo-powered Codeberg releases, and supports mise/aqua registry entries and Docker images.
 
 This can be any tool you want to install, which is pre-compiled for your device and present on a supported provider.
 
@@ -34,9 +34,9 @@ This can be any tool you want to install, which is pre-compiled for your device 
 
 ## Highlights
 
-#### [GitHub and GitLab releases](#install-tool-from-githubgitlab-releases-)
+#### [GitHub, GitLab, and Codeberg releases](#install-tool-from-github-gitlab-and-codeberg-releases-)
 
-`ir` is mainly built for installing CLI tools straight from GitHub or GitLab releases. Give it a repo URL, and it finds the right release asset for your system.
+`ir` is mainly built for installing CLI tools straight from GitHub, GitLab, or Codeberg releases. Codeberg support uses its Forgejo-compatible API. Give `ir` a repository URL, and it finds the right release asset for your system.
 
 ```bash
 # Install from GitHub
@@ -44,6 +44,9 @@ ir get https://github.com/denoland/deno
 
 # Install from GitLab
 ir get https://gitlab.com/gitlab-org/cli -n glab
+
+# Install from Codeberg (Forgejo)
+ir get https://codeberg.org/forgejo/forgejo
 ```
 
 #### [Package mode (`--pkg`)](#install-as-system-package-debrpmappimage-)
@@ -81,11 +84,11 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
   - [Manage your tools](#manage-your-tools)
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
   - [Install completion for cli 🎠](#install-completion-for-cli-)
-  - [Install tool from GitHub/GitLab releases 🌈](#install-tool-from-githubgitlab-releases-)
+  - [Install tool from GitHub, GitLab, and Codeberg releases 🌈](#install-tool-from-github-gitlab-and-codeberg-releases-)
     - [Install as system package (deb/rpm/appimage) 📦](#install-as-system-package-debrpmappimage-)
   - [Install tool via mise registry 🧩](#install-tool-via-mise-registry-)
   - [Install Docker image as a CLI tool 🐳](#install-docker-image-as-a-cli-tool-)
-  - [Install specific release asset from GitHub/GitLab releases 🔦](#install-specific-release-asset-from-githubgitlab-releases-)
+  - [Install specific release asset from GitHub, GitLab, or Codeberg releases 🔦](#install-specific-release-asset-from-github-gitlab-or-codeberg-releases-)
     - [Method 1: Interactive Selection (Recommended)](#method-1-interactive-selection-recommended)
     - [Method 2: Command-line Flag](#method-2-command-line-flag)
   - [List installed tools 📋](#list-installed-tools-)
@@ -97,7 +100,7 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
   - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
   - [Configure tool installation path 🗂️](#configure-tool-installation-path)
   - [Configure updates for pre-release versions 🔌](#configure-updates-for-pre-release-versions-)
-  - [Configure GitHub/GitLab tokens for higher rate limit 🔑](#configure-githubgitlab-tokens-for-higher-rate-limit-)
+  - [Configure provider tokens for higher rate limits 🔑](#configure-provider-tokens-for-higher-rate-limits-)
 
 
 ## Getting started
@@ -158,7 +161,7 @@ If you want to change the installation path, you can use the `ir config --path <
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
 ```bash
-# Usage: ir get [GITHUB-URL or GITLAB-URL or mise@<TOOL> or docker@<IMAGE-URI>]
+# Usage: ir get [GITHUB-URL or GITLAB-URL or CODEBERG-URL or mise@<TOOL> or docker@<IMAGE-URI>]
 
 # GitHub URL
 ❯ ir get https://github.com/denoland/deno
@@ -196,6 +199,12 @@ Verify the installation:
 glab 1.80.0 ...
 ```
 
+Codeberg repositories use the same install and update workflow. For example, install [Forgejo](https://codeberg.org/forgejo/forgejo) from its Codeberg releases:
+
+```bash
+❯ ir get https://codeberg.org/forgejo/forgejo
+```
+
 Once installed, you can manage your tools with these simple commands:
 
 - **List**: `ir ls` — See all installed tools and versions.
@@ -213,7 +222,7 @@ For more details, check the [Table of Contents](#table-of-contents-).
 ❯ ir --help
 Usage: ir [OPTIONS] COMMAND [ARGS]...
 
-  GitHub / GitLab / Mise release installer based on your system (Linux/MacOS)
+  GitHub / GitLab / Codeberg / Mise release installer based on your system (Linux/MacOS)
 
   Options:
     --install-completion   Install completion for the current shell.
@@ -221,7 +230,7 @@ Usage: ir [OPTIONS] COMMAND [ARGS]...
     --help                Show this message and exit.
 
   Commands:
-    get      | Install CLI tool from GitHub/GitLab releases or mise registry
+    get      | Install CLI tool from GitHub/GitLab/Codeberg releases or mise registry
     upgrade  | Upgrade all installed CLI tools from their repositories
     ls       | List all installed CLI tools
     info     | Show info about an installed CLI tool
@@ -245,7 +254,24 @@ Example: `ir get --help`
 ir --install-completion zsh
 ```
 
-#### Install tool from GitHub/GitLab releases 🌈
+#### Install tool from GitHub, GitLab, and Codeberg releases 🌈
+
+Use a repository URL in one of these forms:
+
+```text
+https://github.com/<owner>/<repo>
+https://gitlab.com/<owner>/<repo>
+https://codeberg.org/<owner>/<repo>
+```
+
+Codeberg is powered by Forgejo, so `ir` accesses Codeberg releases through the Forgejo-compatible API. Codeberg tools are recorded in `ir`'s state and can be managed with `ir ls`, `ir info`, `ir upgrade`, and `ir rm` like tools from GitHub and GitLab.
+
+```bash
+# Install Forgejo from Codeberg
+❯ ir get https://codeberg.org/forgejo/forgejo
+```
+
+GitHub example:
 
 ```bash
 ❯ ir get "https://github.com/ahmetb/kubectx"
@@ -351,7 +377,7 @@ Install selected tool? [Y/n]: y
 - **Pinned tags** (e.g. `1.7.0`) are held from auto-upgrade; use `ir upgrade --force` to re-pull.
 - The wrapper mounts the current directory into the container at `/tmp/cmd`, so the tool sees your local files.
 
-### Install specific release asset from GitHub/GitLab releases 🔦
+### Install specific release asset from GitHub, GitLab, or Codeberg releases 🔦
 
 In rare cases where install-release does not automatically find the correct release file for your system, you can manually specify the release file name. There are two ways to do this:
 
@@ -396,7 +422,7 @@ The tool will automatically parse the selected filename into keywords and store 
 You can also specify the release file name directly using the `-f` / `--file` flag:
 
 ```bash
-❯ ir get [GITHUB-URL or GITLAB-URL] -f [release asset filename]
+❯ ir get [GITHUB-URL or GITLAB-URL or CODEBERG-URL] -f [release asset filename]
 ```
 
 Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
@@ -538,7 +564,7 @@ This is useful when you want to install pre-release versions of tools like beta 
 ❯ ir config --pre-release
 ```
 
-#### Configure GitHub/GitLab tokens for higher rate limit 🔑
+#### Configure provider tokens for higher rate limits 🔑
 
 > For GitHub:
 
@@ -555,5 +581,16 @@ INFO: Done.
 ❯ ir config --gitlab-token [your gitlab token]
 
 INFO: Updated GitLab token
+INFO: Done.
+```
+
+> For Codeberg/Forgejo:
+
+Use a Codeberg access token when authenticated API access or a higher rate limit is needed.
+
+```bash
+❯ ir config --codeberg-token [your codeberg token]
+
+INFO: Updated Codeberg token
 INFO: Done.
 ```
