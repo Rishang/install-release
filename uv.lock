@@ -227,7 +227,7 @@ dev = [
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "ruff", specifier = ">=0.12.12" },
     { name = "setuptools" },
-    { name = "ty", specifier = ">=0.0.1a21" },
+    { name = "ty", specifier = ">=0.0.73" },
     { name = "types-requests", specifier = ">=2.32.4.20250809" },
 ]
 
