@@ -9,6 +9,8 @@ PROVIDER_STATE_KEY_PREFIXES: dict[str, str] = {
     "github": "https://github.com",
     "gitlab": "https://gitlab.com",
     "codeberg": "https://codeberg.org",
+    "gitlab_self": "gitlab@",
+    "forgejo_self": "forgejo@",
     "mise": "mise:",
     "docker": "docker:",
 }

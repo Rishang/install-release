@@ -264,6 +264,27 @@ https://gitlab.com/<owner>/<repo>
 https://codeberg.org/<owner>/<repo>
 ```
 
+Self-hosted GitLab and Forgejo/Gitea instances are addressed with a provider prefix, which tells `ir` which API the domain speaks (https is assumed):
+
+```text
+gitlab@<host>/<owner>/<repo>
+forgejo@<host>/<owner>/<repo>
+```
+
+```bash
+# Self-hosted GitLab (GitLab subgroups are supported)
+❯ ir get gitlab@gitlab.example.com/group/subgroup/mytool
+
+# Self-hosted Forgejo / Gitea
+❯ ir get forgejo@git.example.com/owner/mytool
+```
+
+Tokens are stored per host. `--host` selects which one `--gitlab-token` / `--codeberg-token` writes to, defaulting to `gitlab.com` / `codeberg.org`:
+
+```bash
+❯ ir config --gitlab-token <token> --host gitlab.example.com
+```
+
 Codeberg is powered by Forgejo, so `ir` accesses Codeberg releases through the Forgejo-compatible API. Codeberg tools are recorded in `ir`'s state and can be managed with `ir ls`, `ir info`, `ir upgrade`, and `ir rm` like tools from GitHub and GitLab.
 
 ```bash

@@ -77,6 +77,9 @@ def get(
         provider = DockerInteractProvider(url[len(_docker_user) :])
     elif url.startswith(_docker):
         provider = DockerInteractProvider(url[len(_docker) :])
+    elif url.startswith(("gitlab@", "forgejo@")):
+        # Self-hosted: keep the full path, GitLab subgroups need the depth
+        provider = GitInteractProvider(get_repo_info(url), package_mode=pkg)
     else:
         url = "/".join(url.split("/")[:5])
         provider = GitInteractProvider(get_repo_info(url), package_mode=pkg)
