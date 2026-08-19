@@ -6,8 +6,6 @@ import subprocess
 from datetime import datetime, timezone
 from typing import Any
 
-import requests
-
 from InstallRelease.config import dest
 from InstallRelease.helper import save_state
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
@@ -15,21 +13,6 @@ from InstallRelease.providers.docker.config import WRAPPER_TEMPLATE
 from InstallRelease.providers.docker.schemas import DockerImage
 from InstallRelease.providers.git.schemas import Release
 from InstallRelease.utils import logger, mkdir, pprint, show_table
-
-_DOCKERHUB_AUTH = "https://auth.docker.io/token"
-_DOCKERHUB_REGISTRY = "https://registry-1.docker.io/v2"
-# Accept both single-arch and multi-arch manifests
-_MANIFEST_ACCEPT = (
-    "application/vnd.oci.image.index.v1+json,"
-    "application/vnd.docker.distribution.manifest.list.v2+json,"
-    "application/vnd.docker.distribution.manifest.v2+json"
-)
-
-
-def _is_dockerhub(image: str) -> bool:
-    """Return True if the image is hosted on Docker Hub (no domain in first component)."""
-    first = image.split("/")[0]
-    return "." not in first and ":" not in first
 
 
 def _get_local_digest(cli_ref: str) -> str:
@@ -48,31 +31,22 @@ def _get_local_digest(cli_ref: str) -> str:
     return raw.split("@")[-1]
 
 
-def _get_remote_digest(image: str, tag: str) -> str:
-    """Return the manifest digest from Docker Hub, or empty string on failure/non-Hub image."""
-    if not _is_dockerhub(image):
-        return ""
-    try:
-        token_resp = requests.get(
-            _DOCKERHUB_AUTH,
-            params={
-                "service": "registry.docker.io",
-                "scope": f"repository:{image}:pull",
-            },
-            timeout=10,
-        )
-        token_resp.raise_for_status()
-        token = token_resp.json()["token"]
+def _get_remote_digest(cli_ref: str) -> str:
+    """Return the manifest digest from the registry, or empty string on failure.
 
-        manifest_resp = requests.head(
-            f"{_DOCKERHUB_REGISTRY}/{image}/manifests/{tag}",
-            headers={"Authorization": f"Bearer {token}", "Accept": _MANIFEST_ACCEPT},
-            timeout=10,
-        )
-        return manifest_resp.headers.get("Docker-Content-Digest", "")
-    except Exception as e:
-        logger.debug(f"Remote digest check failed for {image}:{tag}: {e}")
-        return ""
+    Uses the docker CLI so any registry and any configured credentials work.
+    """
+    result = subprocess.run(
+        ["docker", "buildx", "imagetools", "inspect", cli_ref],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    for line in result.stdout.splitlines():
+        if line.startswith("Digest:"):
+            return line.split(":", 1)[1].strip()
+    logger.debug(f"Remote digest check failed for {cli_ref}: {result.stderr.strip()}")
+    return ""
 
 
 def needs_update(image: str, tag: str, force: bool = False) -> bool:
@@ -85,9 +59,13 @@ def needs_update(image: str, tag: str, force: bool = False) -> bool:
         return True
     if tag != "latest":
         return False
-    local = _get_local_digest(DockerImage(image=image, tag=tag).cli_ref)
-    remote = _get_remote_digest(image, tag)
-    return not remote or local != remote  # no remote info → conservatively pull
+    cli_ref = DockerImage(image=image, tag=tag).cli_ref
+    local = _get_local_digest(cli_ref)
+    if not local:
+        return True  # not cached locally (or built locally) → pull
+    remote = _get_remote_digest(cli_ref)
+    # unknown remote (registry error, rate limit, no network) → keep what we have
+    return bool(remote) and local != remote
 
 
 def _get_entrypoint(cli_ref: str) -> list[str]:
