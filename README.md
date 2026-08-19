@@ -47,6 +47,10 @@ ir get https://gitlab.com/gitlab-org/cli -n glab
 
 # Install from Codeberg (Forgejo)
 ir get https://codeberg.org/forgejo/forgejo
+
+# Install from a self-hosted GitLab or Forgejo instance
+ir get gitlab@gitlab.example.com/group/subgroup/mytool
+ir get forgejo@git.example.com/owner/mytool
 ```
 
 #### [Package mode (`--pkg`)](#install-as-system-package-debrpmappimage-)
@@ -85,6 +89,7 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
 - [Example usage `ir --help` 💡](#example-usage-ir---help-)
   - [Install completion for cli 🎠](#install-completion-for-cli-)
   - [Install tool from GitHub, GitLab, and Codeberg releases 🌈](#install-tool-from-github-gitlab-and-codeberg-releases-)
+    - [Self-hosted GitLab and Forgejo instances 🏠](#self-hosted-gitlab-and-forgejo-instances-)
     - [Install as system package (deb/rpm/appimage) 📦](#install-as-system-package-debrpmappimage-)
   - [Install tool via mise registry 🧩](#install-tool-via-mise-registry-)
   - [Install Docker image as a CLI tool 🐳](#install-docker-image-as-a-cli-tool-)
@@ -161,7 +166,8 @@ If you want to change the installation path, you can use the `ir config --path <
 Example: Installing [deno (Rust-based JavaScript runtime)](https://github.com/denoland/deno) directly from its GitHub releases:
 
 ```bash
-# Usage: ir get [GITHUB-URL or GITLAB-URL or CODEBERG-URL or mise@<TOOL> or docker@<IMAGE-URI>]
+# Usage: ir get [GITHUB-URL or GITLAB-URL or CODEBERG-URL or gitlab@<HOST>/<OWNER>/<REPO>
+#                or forgejo@<HOST>/<OWNER>/<REPO> or mise@<TOOL> or docker@<IMAGE-URI>]
 
 # GitHub URL
 ❯ ir get https://github.com/denoland/deno
@@ -264,7 +270,16 @@ https://gitlab.com/<owner>/<repo>
 https://codeberg.org/<owner>/<repo>
 ```
 
-Self-hosted GitLab and Forgejo/Gitea instances are addressed with a provider prefix, which tells `ir` which API the domain speaks (https is assumed):
+Codeberg is powered by Forgejo, so `ir` accesses Codeberg releases through the Forgejo-compatible API. Codeberg tools are recorded in `ir`'s state and can be managed with `ir ls`, `ir info`, `ir upgrade`, and `ir rm` like tools from GitHub and GitLab.
+
+```bash
+# Install Forgejo from Codeberg
+❯ ir get https://codeberg.org/forgejo/forgejo
+```
+
+##### Self-hosted GitLab and Forgejo instances 🏠
+
+Self-hosted instances are addressed with a provider prefix, which tells `ir` which API the domain speaks (https is assumed):
 
 ```text
 gitlab@<host>/<owner>/<repo>
@@ -279,18 +294,7 @@ forgejo@<host>/<owner>/<repo>
 ❯ ir get forgejo@git.example.com/owner/mytool
 ```
 
-Tokens are stored per host. `--host` selects which one `--gitlab-token` / `--codeberg-token` writes to, defaulting to `gitlab.com` / `codeberg.org`:
-
-```bash
-❯ ir config --gitlab-token <token> --host gitlab.example.com
-```
-
-Codeberg is powered by Forgejo, so `ir` accesses Codeberg releases through the Forgejo-compatible API. Codeberg tools are recorded in `ir`'s state and can be managed with `ir ls`, `ir info`, `ir upgrade`, and `ir rm` like tools from GitHub and GitLab.
-
-```bash
-# Install Forgejo from Codeberg
-❯ ir get https://codeberg.org/forgejo/forgejo
-```
+Self-hosted tools are recorded in state under their prefixed form, so `ir ls`, `ir info`, `ir upgrade`, and `ir rm` work on them like any other tool. See [provider tokens](#configure-provider-tokens-for-higher-rate-limits-) for authenticating against a private instance.
 
 GitHub example:
 
@@ -601,7 +605,7 @@ INFO: Done.
 ```bash
 ❯ ir config --gitlab-token [your gitlab token]
 
-INFO: Updated GitLab token
+INFO: Updated GitLab token for gitlab.com
 INFO: Done.
 ```
 
@@ -612,6 +616,27 @@ Use a Codeberg access token when authenticated API access or a higher rate limit
 ```bash
 ❯ ir config --codeberg-token [your codeberg token]
 
-INFO: Updated Codeberg token
+INFO: Updated Codeberg/Forgejo token for codeberg.org
 INFO: Done.
+```
+
+> For self-hosted instances:
+
+GitLab and Forgejo tokens are stored per host, so a private instance's token is never sent to the public one. Add `--host` to write the token for a specific instance; without it, `--gitlab-token` targets `gitlab.com` and `--codeberg-token` targets `codeberg.org`.
+
+```bash
+❯ ir config --gitlab-token [your token] --host gitlab.example.com
+
+INFO: Updated GitLab token for gitlab.example.com
+INFO: Done.
+```
+
+Hosts are registered automatically the first time you install from them, so `ir config --host` only needs a token when the instance requires authentication.
+
+> Upgrading from an earlier version:
+
+Older versions stored a single token string per provider. On first run, `ir` converts it to the per-host form and keeps your existing token under `gitlab.com` / `codeberg.org` — no action needed, you will just see a one-time warning:
+
+```text
+WARNING  Config format changed: 'gitlab_token' is now a per-host map; migrated your token to host 'gitlab.com'.
 ```
