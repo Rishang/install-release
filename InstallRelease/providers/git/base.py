@@ -23,6 +23,24 @@ class ApiError(RepositoryError):
     pass
 
 
+# ── Self-hosted URL parsing ─────────────────────────────────────────────
+
+
+def split_prefixed_url(url: str, prefix: str) -> tuple[str, str]:
+    """Split ``<prefix><host>/<path>`` into ``(host, path)``.
+
+    Used for self-hosted instances addressed as ``gitlab@host/owner/repo``,
+    where the prefix names the API the host speaks. https is assumed.
+    The path keeps its full depth so GitLab subgroups survive.
+    """
+    parts = url[len(prefix) :].strip("/").split("/")
+    if len(parts) < 3 or not all(parts):
+        raise UnsupportedRepositoryError(
+            f"URL must be of the form {prefix}<host>/<owner>/<repo>: {url}"
+        )
+    return parts[0], "/".join(parts[1:])
+
+
 # ── Git provider ABC ────────────────────────────────────────────────────
 
 

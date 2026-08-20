@@ -3,7 +3,11 @@ from urllib.parse import urlsplit
 
 import requests
 
-from InstallRelease.providers.git.base import ApiError, UnsupportedRepositoryError
+from InstallRelease.providers.git.base import (
+    ApiError,
+    UnsupportedRepositoryError,
+    split_prefixed_url,
+)
 from InstallRelease.providers.git.github import GitHubInfo
 from InstallRelease.providers.git.schemas import RepositoryInfo
 from InstallRelease.utils import FilterDataclass, logger
@@ -35,25 +39,10 @@ class ForgejoInfo(GitHubInfo):
         data = data or {}
         repo_url = repo_url.rstrip("/")
 
-        split = urlsplit(repo_url)
-        if not split.scheme or not split.netloc:
-            raise UnsupportedRepositoryError(
-                f"Invalid Forgejo/Codeberg repository URL: {repo_url}"
-            )
-
-        parts = repo_url.split("/")
-        if len(parts) < 5:
-            raise UnsupportedRepositoryError(
-                f"Repository URL must be of the form "
-                f"https://<host>/<owner>/<repo>: {repo_url}"
-            )
+        host, self.owner, self.repo_name = self._resolve(repo_url)
 
         self.repo_url = repo_url
-        self.owner, self.repo_name = parts[-2], parts[-1]
-        self.api = (
-            f"{split.scheme}://{split.netloc}"
-            f"/api/v1/repos/{self.owner}/{self.repo_name}"
-        )
+        self.api = f"{host}/api/v1/repos/{self.owner}/{self.repo_name}"
         self.token = token or ""
         self.schemas = data
         self.response = None
@@ -70,6 +59,22 @@ class ForgejoInfo(GitHubInfo):
             logger.error(f"Failed to fetch repository information: {e!s}")
             raise ApiError(f"Failed to fetch repository information: {e!s}") from e
 
+    def _resolve(self, repo_url: str) -> tuple[str, str, str]:
+        """Return (host base url, owner, repo) for a full https repository URL."""
+        split = urlsplit(repo_url)
+        if not split.scheme or not split.netloc:
+            raise UnsupportedRepositoryError(
+                f"Invalid Forgejo/Codeberg repository URL: {repo_url}"
+            )
+
+        parts = repo_url.split("/")
+        if len(parts) < 5:
+            raise UnsupportedRepositoryError(
+                f"Repository URL must be of the form "
+                f"https://<host>/<owner>/<repo>: {repo_url}"
+            )
+        return f"{split.scheme}://{split.netloc}", parts[-2], parts[-1]
+
     def _req(self, url: str) -> dict[str, Any]:
         headers = dict(self.headers)
         if self.token:
@@ -85,3 +90,12 @@ class ForgejoInfo(GitHubInfo):
             return data
         except requests.RequestException as e:
             self._handle_request_error(e)
+
+
+class SelfHostedForgejoInfo(ForgejoInfo):
+    """Forgejo/Gitea handler for instances addressed as ``forgejo@host/owner/repo``."""
+
+    def _resolve(self, repo_url: str) -> tuple[str, str, str]:
+        host, path = split_prefixed_url(repo_url, "forgejo@")
+        owner, repo = path.split("/")[-2:]
+        return f"https://{host}", owner, repo

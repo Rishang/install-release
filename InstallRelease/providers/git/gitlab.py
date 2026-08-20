@@ -3,7 +3,7 @@ from urllib.parse import quote
 
 import requests
 
-from InstallRelease.providers.git.base import ApiError, RepoInfo
+from InstallRelease.providers.git.base import ApiError, RepoInfo, split_prefixed_url
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets, RepositoryInfo
 from InstallRelease.utils import FilterDataclass, logger
 
@@ -22,18 +22,16 @@ class GitlabInfo(RepoInfo):
     ) -> None:
         data = data or {}
 
-        repo_url = self._validate_url(repo_url, "gitlab.com")
+        self.host, self.project_path = self._resolve(repo_url)
 
-        repo_url_attr = repo_url.split("/")
-
-        self.repo_url = repo_url
-        self.owner, self.repo_name = repo_url_attr[-2], repo_url_attr[-1]
+        path_attr = self.project_path.split("/")
+        self.repo_url = repo_url.rstrip("/")
+        self.owner, self.repo_name = path_attr[0], path_attr[-1]
         self.response = None
 
-        project_path = f"{self.owner}/{self.repo_name}"
-        encoded_path = quote(project_path, safe="")
+        encoded_path = quote(self.project_path, safe="")
 
-        self.api = f"https://gitlab.com/api/v4/projects/{encoded_path}"
+        self.api = f"https://{self.host}/api/v4/projects/{encoded_path}"
 
         self.token = token or ""
 
@@ -57,6 +55,11 @@ class GitlabInfo(RepoInfo):
             raise ApiError(
                 f"Failed to fetch GitLab repository information: {e!s}"
             ) from e
+
+    def _resolve(self, repo_url: str) -> tuple[str, str]:
+        """Return (host, project_path) for a gitlab.com repository URL."""
+        repo_url = self._validate_url(repo_url, "gitlab.com")
+        return "gitlab.com", "/".join(repo_url.split("/")[-2:])
 
     def _req(self, url: str) -> dict[str, Any]:
         headers = self.headers.copy()
@@ -109,7 +112,7 @@ class GitlabInfo(RepoInfo):
                         asset_name = link.get("name", "")
                         if tag and asset_name:
                             direct_url = (
-                                f"https://gitlab.com/{self.owner}/{self.repo_name}"
+                                f"https://{self.host}/{self.project_path}"
                                 f"/-/releases/{tag}/downloads/{asset_name}"
                             )
                     assets.append(
@@ -142,3 +145,15 @@ class GitlabInfo(RepoInfo):
             return []
 
         return self.response
+
+
+class SelfHostedGitlabInfo(GitlabInfo):
+    """GitLab handler for self-hosted instances, addressed as ``gitlab@host/owner/repo``.
+
+    Everything but the host and namespace derivation is inherited: the GitLab
+    ``/api/v4`` surface is identical on gitlab.com and self-hosted instances.
+    The full namespace is kept, so subgroups work.
+    """
+
+    def _resolve(self, repo_url: str) -> tuple[str, str]:
+        return split_prefixed_url(repo_url, "gitlab@")

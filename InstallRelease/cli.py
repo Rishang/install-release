@@ -20,6 +20,7 @@ from InstallRelease.cli_interact import (
 from InstallRelease.cli_interact import (
     upgrade as _upgrade,
 )
+from InstallRelease.schemas import CODEBERG_HOST, GITLAB_HOST
 from InstallRelease.utils import logger, pprint
 
 
@@ -66,7 +67,11 @@ def get(
     debug: bool = __optionDebug,
     quiet: bool = __optionQuiet,
     url: str = typer.Argument(
-        None, help="GitHub/GitLab/Codeberg URL, mise@<tool>, or docker@<image>"
+        None,
+        help=(
+            "GitHub/GitLab/Codeberg URL, gitlab@<host>/<owner>/<repo>, "
+            "forgejo@<host>/<owner>/<repo>, mise@<tool>, or docker@<image>"
+        ),
     ),
     tag_name: str = typer.Option(
         "", "-t", "--tag", help="Select a specific release version."
@@ -184,6 +189,11 @@ def _config(
         "--codeberg-token",
         help="Set your Codeberg/Forgejo token to solve API rate-limiting issues.",
     ),
+    host: str = typer.Option(
+        "",
+        "--host",
+        help="Host the GitLab/Codeberg token belongs to, for self-hosted instances.",
+    ),
     path: str = typer.Option(
         "",
         "--path",
@@ -205,11 +215,13 @@ def _config(
         config.token = github_token
         logger.info("Updated GitHub token")
     if gitlab_token != "":
-        config.gitlab_token = gitlab_token
-        logger.info("Updated GitLab token")
+        gitlab_host = host or GITLAB_HOST
+        config.gitlab_token[gitlab_host] = gitlab_token
+        logger.info(f"Updated GitLab token for {gitlab_host}")
     if codeberg_token != "":
-        config.codeberg_token = codeberg_token
-        logger.info("Updated Codeberg token")
+        forgejo_host = host or CODEBERG_HOST
+        config.codeberg_token[forgejo_host] = codeberg_token
+        logger.info(f"Updated Codeberg/Forgejo token for {forgejo_host}")
     if path != "":
         config.path = path
         logger.info(f"Updated path to {path}")
