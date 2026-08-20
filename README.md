@@ -214,7 +214,7 @@ Codeberg repositories use the same install and update workflow. For example, ins
 Once installed, you can manage your tools with these simple commands:
 
 - **List**: `ir ls` — See all installed tools and versions.
-- **Update**: `ir upgrade` — Upgrade all installed tools to their latest releases.
+- **Update**: `ir upgrade` — Upgrade all installed tools to their latest releases, or use `ir upgrade <name>` for a specific tool.
 - **Remove**: `ir rm deno` — Remove a tool from your system.
 
 For more details, check the [Table of Contents](#table-of-contents-).
@@ -524,6 +524,14 @@ Updating: terrascan, v1.15.0 => v1.15.2
 Progress... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
 ```
     
+##### Update a specific installed tool
+
+To upgrade only one installed tool, provide its name:
+
+```bash
+❯ ir upgrade zen
+```
+
 ##### Update installed system packages 📦
     
 If you have tools installed as packages (deb/rpm/appimage), `ir upgrade` will inform you if updates are available but will **not** install them. To upgrade packages, run:
