@@ -5,7 +5,7 @@ This module handles the configuration of the tool.
 import os
 
 from InstallRelease.providers.git.schemas import Release
-from InstallRelease.schemas import ToolConfig
+from InstallRelease.schemas import CODEBERG_HOST, GITLAB_HOST, ToolConfig
 from InstallRelease.state import State, platform_path
 from InstallRelease.utils import logger
 
@@ -60,12 +60,32 @@ def load_config() -> ToolConfig:
     _config = cache_config.state.get("config")
 
     if _config is not None and isinstance(_config, ToolConfig):
+        if _migrate_host_tokens(_config):
+            cache_config.save()
         return _config
     else:
         new_config = ToolConfig()
         cache_config.set("config", new_config)
         cache_config.save()
         return new_config
+
+
+def _migrate_host_tokens(cfg: ToolConfig) -> bool:
+    """Convert pre-self-hosted flat token strings into host -> token maps."""
+    changed = False
+    for field_name, host in (
+        ("gitlab_token", GITLAB_HOST),
+        ("codeberg_token", CODEBERG_HOST),
+    ):
+        value = getattr(cfg, field_name, None)
+        if isinstance(value, str):
+            setattr(cfg, field_name, {host: value})
+            logger.warning(
+                f"Config format changed: '{field_name}' is now a per-host map; "
+                f"migrated your token to host '{host}'."
+            )
+            changed = True
+    return changed
 
 
 config: ToolConfig = load_config()

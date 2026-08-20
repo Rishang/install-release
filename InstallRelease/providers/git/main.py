@@ -5,7 +5,7 @@ import sys
 from tempfile import TemporaryDirectory
 from typing import Any, cast
 
-from InstallRelease.config import config, dest, pre_release_enabled
+from InstallRelease.config import cache_config, config, dest, pre_release_enabled
 from InstallRelease.helper import (
     detect_package_type_from_asset_name,
     detect_package_type_from_os_release,
@@ -22,11 +22,13 @@ from InstallRelease.providers.git.base import (
     RepoInfo,
     UnsupportedRepositoryError,
     get_release,
+    split_prefixed_url,
 )
-from InstallRelease.providers.git.forgejo import ForgejoInfo
+from InstallRelease.providers.git.forgejo import ForgejoInfo, SelfHostedForgejoInfo
 from InstallRelease.providers.git.github import GitHubInfo
-from InstallRelease.providers.git.gitlab import GitlabInfo
+from InstallRelease.providers.git.gitlab import GitlabInfo, SelfHostedGitlabInfo
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
+from InstallRelease.schemas import CODEBERG_HOST, GITLAB_HOST
 from InstallRelease.utils import (
     DIM_TABLE_THEME,
     download,
@@ -40,10 +42,37 @@ from InstallRelease.utils import (
 
 os_package_type = detect_package_type_from_os_release()
 
+
+def host_token(tokens: dict[str, str], host: str) -> str:
+    """Return the token for *host*, registering the host if it is new."""
+    if host not in tokens:
+        tokens[host] = ""
+        cache_config.save()
+        logger.info(
+            f"Registered new host '{host}', set a token with: ir config --host {host}"
+        )
+    return tokens[host] or ""
+
+
 _PROVIDER_CLASSES: dict[str, Any] = {
-    "github": (GitHubInfo, lambda cfg: cfg.token),
-    "gitlab": (GitlabInfo, lambda cfg: cfg.gitlab_token),
-    "codeberg": (ForgejoInfo, lambda cfg: cfg.codeberg_token),
+    "github": (GitHubInfo, lambda cfg, url: cfg.token),
+    "gitlab": (GitlabInfo, lambda cfg, url: host_token(cfg.gitlab_token, GITLAB_HOST)),
+    "codeberg": (
+        ForgejoInfo,
+        lambda cfg, url: host_token(cfg.codeberg_token, CODEBERG_HOST),
+    ),
+    "gitlab_self": (
+        SelfHostedGitlabInfo,
+        lambda cfg, url: host_token(
+            cfg.gitlab_token, split_prefixed_url(url, "gitlab@")[0]
+        ),
+    ),
+    "forgejo_self": (
+        SelfHostedForgejoInfo,
+        lambda cfg, url: host_token(
+            cfg.codeberg_token, split_prefixed_url(url, "forgejo@")[0]
+        ),
+    ),
 }
 
 
@@ -57,10 +86,11 @@ def get_repo_info(repo_url: str, data: dict[str, Any] | None = None) -> RepoInfo
     try:
         if provider_name is None:
             raise UnsupportedRepositoryError(
-                "Unsupported repository URL. Only GitHub and GitLab URLs are supported."
+                "Unsupported repository URL. Supported: GitHub, GitLab, Codeberg, "
+                "gitlab@<host>/<owner>/<repo>, forgejo@<host>/<owner>/<repo>."
             )
         cls, get_token = _PROVIDER_CLASSES[provider_name]
-        return cls(repo_url, data or {}, get_token(config))
+        return cls(repo_url, data or {}, get_token(config, repo_url))
     except (UnsupportedRepositoryError, ApiError) as e:
         logger.error(str(e))
         sys.exit(1)
