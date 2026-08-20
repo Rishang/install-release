@@ -94,7 +94,10 @@ def get(
 
 
 def upgrade(
-    force: bool = False, skip_prompt: bool = False, packages_only: bool = False
+    force: bool = False,
+    skip_prompt: bool = False,
+    packages_only: bool = False,
+    name: str | None = None,
 ) -> None:
     """Check all installed tools for newer versions and upgrade them.
 
@@ -104,6 +107,7 @@ def upgrade(
     state_info()
 
     state: TypeState = cache.state
+    keys = [k for k in state if not name or irKey.parse(k).name == name]
 
     # Collect upgrade candidates: name -> (url, new_version, is_package)
     upgrades: dict[str, tuple[str, str, bool]] = {}
@@ -159,7 +163,7 @@ def upgrade(
 
         if releases[0].published_dt() > state[k].published_dt() or force:
             with _lock:
-                if is_package(state, k) and not packages_only:
+                if is_package(state, k) and not packages_only and not name:
                     pkg_upgrades.add(i.name)
                 else:
                     upgrades[i.name] = (
@@ -169,7 +173,7 @@ def upgrade(
                     )
 
     # Phase 1: concurrent version checks
-    threads(task, data=list(state), max_workers=20, return_result=False)
+    threads(task, data=keys, max_workers=20, return_result=False)
 
     # Notify about package upgrades when not in --pkg mode
     if not packages_only and pkg_upgrades:
@@ -190,7 +194,7 @@ def upgrade(
             if r.lower() != "y":
                 return
 
-        if packages_only:
+        if packages_only or (name and any(v[2] for v in upgrades.values())):
             pprint("\n\n[bold]Need sudo access for installing packages...[/]")
             result = sh("sudo -v", interactive=True)
             if result.returncode != 0:

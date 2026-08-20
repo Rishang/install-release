@@ -117,6 +117,9 @@ def get(
 
 @app.command()
 def upgrade(
+    name: str | None = typer.Argument(
+        None, help="Name of a specific installed tool to upgrade."
+    ),
     debug: bool = __optionDebug,
     quiet: bool = __optionQuiet,
     force: bool = __optionForce,
@@ -131,7 +134,7 @@ def upgrade(
     | Upgrade all installed CLI tools from their repositories
     """
     setLogger(quiet, debug)
-    _upgrade(force=force, skip_prompt=skip_prompt, packages_only=pkg)
+    _upgrade(name=name, force=force, skip_prompt=skip_prompt, packages_only=pkg)
 
 
 @app.command()
