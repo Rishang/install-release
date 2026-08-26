@@ -6,6 +6,7 @@ import requests
 import tomllib
 import yaml
 
+from InstallRelease.config import config
 from InstallRelease.providers.mise.config import (
     _AQUA_REGISTRY_BASE,
     _MISE_REGISTRY_BASE,
@@ -53,7 +54,11 @@ def search_registry(query: str) -> list[str]:
     Substring hits win outright; ``difflib`` only steps in when there are
     none, to catch misspellings like ``tarraform`` -> ``terraform``.
     """
-    response = requests.get(_MISE_REGISTRY_TREE, timeout=10)
+    # api.github.com, not raw: only the API can list a directory.
+    # Authenticated so the 60/hr unauthenticated limit does not bite.
+    token = getattr(config, "token", "")
+    headers = {"Authorization": f"token {token}"} if token else {}
+    response = requests.get(_MISE_REGISTRY_TREE, headers=headers, timeout=10)
     response.raise_for_status()
     names = [
         p.removeprefix("registry/").removesuffix(".toml")
