@@ -24,6 +24,12 @@ _AQUA_REGISTRY_BASE = (
 )
 _MISE_REGISTRY_TREE = "https://api.github.com/repos/jdx/mise/git/trees/main?recursive=1"
 
+# (connect, read). These are small metadata files, so a connect attempt that
+# has not landed in 2s is a dead route (commonly an unreachable IPv6 address
+# that Python tries before falling back to IPv4) — fail over instead of
+# stalling on the default 10s.
+_MISE_TIMEOUT = (2, 30)
+
 
 def _current_os() -> str:
     return _OS_MAP.get(platform.system().lower(), platform.system().lower())

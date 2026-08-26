@@ -15,6 +15,7 @@ from InstallRelease.providers.git.schemas import Release, ReleaseAssets
 from InstallRelease.providers.mise.registry import (
     get_aqua_registry_yaml,
     get_backend,
+    get_description,
     resolve_download_url,
     search_registry,
 )
@@ -82,10 +83,18 @@ class MiseInteractProvider(InteractProvider):
     def report_not_found(self) -> None:
         logger.error(f"No aqua backend found in mise registry for '{self.toolname}'")
         matches = search_registry(self.toolname)
-        if matches:
-            pprint("[color(34)]Did you mean:[reset]")
-            for m in matches:
-                pprint(f"  [yellow]mise@{m}[reset]")
+        if not matches:
+            return
+        # sequential on purpose: the pooled session reuses one connection,
+        # where 10 parallel ones each risk a fresh 2s-capped connect stall
+        descriptions = [get_description(n) for n in matches]
+        show_table(
+            data=[
+                {"Name": f"mise@{n}", "Description": self._truncate(d, 80)}
+                for n, d in zip(matches, descriptions, strict=True)
+            ],
+            title="Did you mean",
+        )
 
     def _ensure_backend(self) -> bool:
         if self._backend is not None:
