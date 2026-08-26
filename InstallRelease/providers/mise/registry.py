@@ -1,5 +1,7 @@
 """Mise registry + Aqua registry resolution."""
 
+import difflib
+
 import requests
 import tomllib
 import yaml
@@ -7,6 +9,7 @@ import yaml
 from InstallRelease.providers.mise.config import (
     _AQUA_REGISTRY_BASE,
     _MISE_REGISTRY_BASE,
+    _MISE_REGISTRY_TREE,
     _current_arch,
     _current_os,
     _trim_v,
@@ -42,6 +45,26 @@ def get_aqua_registry_yaml(aqua_path: str) -> dict:
     response = requests.get(url, timeout=10)
     response.raise_for_status()
     return yaml.safe_load(response.text)
+
+
+def search_registry(query: str) -> list[str]:
+    """Fuzzy search mise registry tool names, best 10 matches.
+
+    Substring hits win outright; ``difflib`` only steps in when there are
+    none, to catch misspellings like ``tarraform`` -> ``terraform``.
+    """
+    response = requests.get(_MISE_REGISTRY_TREE, timeout=10)
+    response.raise_for_status()
+    names = [
+        p.removeprefix("registry/").removesuffix(".toml")
+        for p in (i["path"] for i in response.json().get("tree", []))
+        if p.startswith("registry/") and p.endswith(".toml")
+    ]
+    query = query.lower()
+    substring = [n for n in names if query in n.lower()]
+    # cutoff 0.7: below that difflib returns noise (obsidian -> odin, podman)
+    close = difflib.get_close_matches(query, names, n=10, cutoff=0.7)
+    return (substring or close)[:10]
 
 
 def get_backend(toolname: str) -> MiseToolInfo | None:

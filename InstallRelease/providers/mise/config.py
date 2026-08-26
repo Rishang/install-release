@@ -22,6 +22,7 @@ _MISE_REGISTRY_BASE = (
 _AQUA_REGISTRY_BASE = (
     "https://raw.githubusercontent.com/aquaproj/aqua-registry/main/pkgs"
 )
+_MISE_REGISTRY_TREE = "https://api.github.com/repos/jdx/mise/git/trees/main?recursive=1"
 
 
 def _current_os() -> str:
