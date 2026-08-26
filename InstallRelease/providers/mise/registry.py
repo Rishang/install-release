@@ -76,8 +76,7 @@ def search_registry(query: str) -> list[str]:
     query = query.lower()
     substring = [n for n in names if query in n.lower()]
     # cutoff 0.7: below that difflib returns noise (obsidian -> odin, podman)
-    close = difflib.get_close_matches(query, names, n=10, cutoff=0.7)
-    return (substring or close)[:10]
+    return (substring or difflib.get_close_matches(query, names, n=10, cutoff=0.7))[:10]
 
 
 def get_description(toolname: str) -> str:

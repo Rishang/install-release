@@ -87,11 +87,13 @@ class MiseInteractProvider(InteractProvider):
             return
         # sequential on purpose: the pooled session reuses one connection,
         # where 10 parallel ones each risk a fresh 2s-capped connect stall
-        descriptions = [get_description(n) for n in matches]
         show_table(
             data=[
-                {"Name": f"mise@{n}", "Description": self._truncate(d, 80)}
-                for n, d in zip(matches, descriptions, strict=True)
+                {
+                    "Name": f"mise@{n}",
+                    "Description": self._truncate(get_description(n), 80),
+                }
+                for n in matches
             ],
             title="Did you mean",
         )
