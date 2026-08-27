@@ -15,7 +15,9 @@ from InstallRelease.providers.git.schemas import Release, ReleaseAssets
 from InstallRelease.providers.mise.registry import (
     get_aqua_registry_yaml,
     get_backend,
+    get_description,
     resolve_download_url,
+    search_registry,
 )
 from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
 from InstallRelease.utils import logger, mkdir, pprint, show_table
@@ -78,6 +80,24 @@ class MiseInteractProvider(InteractProvider):
         self._backend: MiseToolInfo | None = None
         self._registry: dict = {}
 
+    def report_not_found(self) -> None:
+        logger.error(f"No aqua backend found in mise registry for '{self.toolname}'")
+        matches = search_registry(self.toolname)
+        if not matches:
+            return
+        # sequential on purpose: the pooled session reuses one connection,
+        # where 10 parallel ones each risk a fresh 2s-capped connect stall
+        show_table(
+            data=[
+                {
+                    "Name": f"mise@{n}",
+                    "Description": self._truncate(get_description(n), 80),
+                }
+                for n in matches
+            ],
+            title="Did you mean",
+        )
+
     def _ensure_backend(self) -> bool:
         if self._backend is not None:
             return True
@@ -106,9 +126,7 @@ class MiseInteractProvider(InteractProvider):
             return [version]
 
         if not self._ensure_backend():
-            logger.error(
-                f"No aqua backend found in mise registry for '{self.toolname}'"
-            )
+            self.report_not_found()
             return []
 
         owner, repo = self._backend.owner, self._backend.repo  # type: ignore[union-attr]
@@ -129,9 +147,7 @@ class MiseInteractProvider(InteractProvider):
             return None
 
         if not self._ensure_backend():
-            logger.error(
-                f"No aqua backend found in mise registry for '{self.toolname}'"
-            )
+            self.report_not_found()
             return None
 
         version = candidates[0]

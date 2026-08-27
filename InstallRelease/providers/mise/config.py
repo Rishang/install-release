@@ -22,6 +22,11 @@ _MISE_REGISTRY_BASE = (
 _AQUA_REGISTRY_BASE = (
     "https://raw.githubusercontent.com/aquaproj/aqua-registry/main/pkgs"
 )
+_MISE_REGISTRY_TREE = "https://api.github.com/repos/jdx/mise/git/trees/main?recursive=1"
+
+# (connect, read): 2s connect — Python has no Happy Eyeballs, so a dead IPv6
+# route eats the 10s default before falling back to IPv4.
+_MISE_TIMEOUT = (2, 30)
 
 
 def _current_os() -> str:

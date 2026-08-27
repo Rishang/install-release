@@ -1,18 +1,23 @@
 """Mise registry + Aqua registry resolution."""
 
-import requests
+import difflib
+from functools import cache
+
 import tomllib
 import yaml
 
+from InstallRelease.config import config
 from InstallRelease.providers.mise.config import (
     _AQUA_REGISTRY_BASE,
     _MISE_REGISTRY_BASE,
+    _MISE_REGISTRY_TREE,
+    _MISE_TIMEOUT,
     _current_arch,
     _current_os,
     _trim_v,
 )
 from InstallRelease.providers.mise.schemas import AquaAsset, MiseToolInfo
-from InstallRelease.utils import logger
+from InstallRelease.utils import logger, requests_session
 
 
 def _expand_template(
@@ -28,10 +33,15 @@ def _expand_template(
     return result
 
 
+@cache
 def get_mise_toml(toolname: str) -> dict:
-    """Fetch and parse the mise registry TOML for *toolname*."""
+    """Fetch and parse the mise registry TOML for *toolname*.
+
+    Cached: one CLI run resolves the same tool from several call sites.
+    Callers must treat the returned dict as read-only.
+    """
     url = f"{_MISE_REGISTRY_BASE}/{toolname}.toml"
-    response = requests.get(url, timeout=10)
+    response = requests_session.get(url, timeout=_MISE_TIMEOUT)
     response.raise_for_status()
     return tomllib.loads(response.text)
 
@@ -39,9 +49,42 @@ def get_mise_toml(toolname: str) -> dict:
 def get_aqua_registry_yaml(aqua_path: str) -> dict:
     """Fetch and parse the aqua registry YAML for the given aqua path."""
     url = f"{_AQUA_REGISTRY_BASE}/{aqua_path}/registry.yaml"
-    response = requests.get(url, timeout=10)
+    response = requests_session.get(url, timeout=_MISE_TIMEOUT)
     response.raise_for_status()
     return yaml.safe_load(response.text)
+
+
+def search_registry(query: str) -> list[str]:
+    """Fuzzy search mise registry tool names, best 10 matches.
+
+    Substring hits win outright; ``difflib`` only steps in when there are
+    none, to catch misspellings like ``tarraform`` -> ``terraform``.
+    """
+    # api.github.com, not raw: only the API can list a directory.
+    # Authenticated so the 60/hr unauthenticated limit does not bite.
+    token = getattr(config, "token", "")
+    headers = {"Authorization": f"token {token}"} if token else {}
+    response = requests_session.get(
+        _MISE_REGISTRY_TREE, headers=headers, timeout=_MISE_TIMEOUT
+    )
+    response.raise_for_status()
+    names = [
+        p.removeprefix("registry/").removesuffix(".toml")
+        for p in (i["path"] for i in response.json().get("tree", []))
+        if p.startswith("registry/") and p.endswith(".toml")
+    ]
+    query = query.lower()
+    substring = [n for n in names if query in n.lower()]
+    # cutoff 0.7: below that difflib returns noise (obsidian -> odin, podman)
+    return (substring or difflib.get_close_matches(query, names, n=10, cutoff=0.7))[:10]
+
+
+def get_description(toolname: str) -> str:
+    """Return the mise registry description for *toolname*, "" if unavailable."""
+    try:
+        return get_mise_toml(toolname).get("description", "")
+    except Exception:
+        return ""
 
 
 def get_backend(toolname: str) -> MiseToolInfo | None:
