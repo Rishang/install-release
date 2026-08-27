@@ -260,7 +260,7 @@ wheels = [
 
 [[package]]
 name = "install-release"
-version = "0.8.4"
+version = "0.8.9"
 source = { editable = "." }
 dependencies = [
     { name = "python-magic" },
