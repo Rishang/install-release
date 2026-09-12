@@ -74,6 +74,9 @@ def search_registry(query: str) -> list[str]:
         if p.startswith("registry/") and p.endswith(".toml")
     ]
     query = query.lower()
+    # exclude an exact match: it's the tool that just failed (e.g. no aqua
+    # backend), not a spelling correction, so suggesting it back is useless.
+    names = [n for n in names if n.lower() != query]
     substring = [n for n in names if query in n.lower()]
     # cutoff 0.7: below that difflib returns noise (obsidian -> odin, podman)
     return (substring or difflib.get_close_matches(query, names, n=10, cutoff=0.7))[:10]
