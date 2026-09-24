@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 
@@ -228,56 +229,60 @@ def list_install(
     state: TypeState | None = None,
     title: str = "Installed tools",
     hold_update: bool = False,
+    as_json: bool = False,
 ) -> None:
     """Render a table of installed tools, optionally filtering to held ones only."""
     if state is None:
         state_info()
         state = cache.state
 
-    _table = []
-    _hold_table = []
-    desc_length = 50
+    rows = []
     for key in state:
-        i = irKey.parse(key)
-        desc_raw = state[key].description or ""
-        desc = (
-            (desc_raw[:desc_length].rstrip() + "..")
-            if len(desc_raw) > desc_length
-            else desc_raw
-        )
-
-        if hold_update:
-            if state[key].hold_update:
-                _hold_table.append(
-                    {
-                        "Name": i.name,
-                        "Version": f"[dim]{state[key].tag_name}",
-                        "Title": (f"[dim yellow]{desc}[/dim yellow]"),
-                        "Url": f"[dim]{state[key].url}",
-                    }
-                )
+        release = state[key]
+        if hold_update and not release.hold_update:
             continue
-
-        version_str = state[key].tag_name
-        if is_package(state, key):
-            version_str += " [cyan](pkg)[/cyan]"
-
-        if state[key].hold_update:
-            version_str += "[yellow] *HOLD_UPDATE*[/yellow]"
-
-        _table.append(
+        rows.append(
             {
-                "Name": i.name,
-                "Version": version_str,
-                "Title": (f"[yellow]{desc}[/yellow]"),
-                "Url": state[key].url,
+                "name": irKey.parse(key).name,
+                "version": release.tag_name,
+                "type": release.package_type if release.is_package else "binary",
+                "hold": bool(release.hold_update),
+                "url": release.url,
+                "description": release.description or "",
             }
         )
 
-    if hold_update:
-        show_table(_hold_table, title=f"{title} kept on hold")
-    else:
-        show_table(_table, title=title)
+    if as_json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return
+
+    dim = "[dim]" if hold_update else ""
+    table = [
+        {
+            "Name": r["name"],
+            "Version": f"{dim}{r['version']}",
+            "Type": f"[cyan]{r['type']}" if r["type"] != "binary" else r["type"],
+            "Hold": "[yellow]yes" if r["hold"] else "",
+            "Url": f"{dim}{r['url']}",
+            "Description": f"[dim yellow]{r['description']}",
+        }
+        for r in rows
+    ]
+    name_width = max((len(r["name"]) for r in rows), default=4)
+    show_table(
+        table,
+        title=f"{title} kept on hold" if hold_update else title,
+        ignore_keys=["Hold"] if hold_update else None,
+        expand=True,
+        column_opts={
+            # High-priority columns keep their natural width; Url and
+            # Description absorb leftover space and truncate first.
+            "Name": {"min_width": min(name_width, 30)},
+            "Version": {"min_width": 7},
+            "Url": {"overflow": "ellipsis", "ratio": 2},
+            "Description": {"overflow": "ellipsis", "ratio": 3},
+        },
+    )
 
 
 def get_info(name: str) -> None:

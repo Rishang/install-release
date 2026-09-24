@@ -144,11 +144,16 @@ def ls(
         "--hold",
         help="List tools that are kept on hold.",
     ),
+    as_json: bool = typer.Option(
+        False,
+        "--json",
+        help="Print installed tools as JSON for scripting.",
+    ),
 ):
     """
     | List all installed CLI tools
     """
-    list_install(hold_update=hold)
+    list_install(hold_update=hold, as_json=as_json)
 
 
 @app.command()

@@ -320,24 +320,33 @@ def show_table(
     border_style: str = "",
     no_wrap: bool = True,
     theme: TableTheme | None = None,
+    expand: bool = False,
+    column_opts: dict[str, dict] | None = None,
 ):
-    """Render a rich table from a list of dicts."""
+    """Render a rich table from a list of dicts.
+
+    `column_opts` maps a column name to extra `Table.add_column` kwargs
+    (e.g. `min_width`, `ratio`, `overflow`), overriding the defaults.
+    """
     ignore_keys = ignore_keys or []
     theme = theme or DEFAULT_TABLE_THEME
+    column_opts = column_opts or {}
 
     table = Table(
         title=Text(title, style=theme.title_style),
         style=theme.table_style,
         border_style=border_style or theme.border_style,
+        expand=expand,
     )
     keys = [k for k in (data[0] if data else {}) if k not in ignore_keys]
     for i, col in enumerate(keys):
-        table.add_column(
-            col,
-            justify="left",
-            style=theme.column_styles[i % len(theme.column_styles)],
-            no_wrap=no_wrap,
-        )
+        opts = {
+            "justify": "left",
+            "style": theme.column_styles[i % len(theme.column_styles)],
+            "no_wrap": no_wrap,
+            **column_opts.get(col, {}),
+        }
+        table.add_column(col, **opts)
     for row in data:
         table.add_row(*[str(row.get(k, "")) for k in keys])
 
