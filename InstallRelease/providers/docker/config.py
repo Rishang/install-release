@@ -7,5 +7,5 @@ from __future__ import annotations
 WRAPPER_TEMPLATE = """\
 #!/bin/sh
 termflag=$([ -t 0 ] && echo -n "-t")
-docker run --rm -i $termflag -v "${{PWD}}:/tmp/cmd" -w /tmp/cmd {ref} {args}
+docker run --rm -i $termflag -v "${{PWD}}:/tmp/cmd" -w /tmp/cmd {docker_opts} {ref} {args}
 """

@@ -89,6 +89,9 @@ def get(
     pkg: bool = typer.Option(
         False, "--pkg", help="Install as OS package (deb/rpm/appimage)."
     ),
+    docker_opts: str = typer.Option(
+        "", "--docker-opts", help="Extra options to pass to the docker run command."
+    ),
 ):
     """
     | Install CLI tool from GitHub/GitLab releases or mise registry
@@ -112,6 +115,7 @@ def get(
         name=name,
         pkg=pkg,
         hold=bool(tag_name),
+        docker_opts=docker_opts,
     )
 
 

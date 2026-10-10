@@ -62,6 +62,7 @@ def get(
     name: str | None = None,
     pkg: bool = False,
     hold: bool = False,
+    docker_opts: str = "",
 ) -> None:
     """Resolve URL to provider and install the tool."""
     state_info()
@@ -91,6 +92,7 @@ def get(
         prompt=prompt,
         name=name,
         hold=hold,
+        docker_opts=docker_opts,
     )
 
 
@@ -210,11 +212,19 @@ def upgrade(
     for idx, name in enumerate(upgrades, 1):
         url, new_version, pkg_mode = upgrades[name]
         k = f"{url}#{name}"
+        docker_opts = state[k].docker_opts
         pct = int(idx * 100 / total)
         pprint(
             f"[bold yellow]({pct}%) Updating: {name}, {state[k].tag_name} => {new_version}[/]"
         )
-        get(url, version=new_version, prompt=False, name=name, pkg=pkg_mode)
+        get(
+            url,
+            version=new_version,
+            prompt=False,
+            name=name,
+            pkg=pkg_mode,
+            docker_opts=docker_opts or "",
+        )
 
 
 def show_state():
