@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from InstallRelease.config import dest
-from InstallRelease.helper import save_state
+from InstallRelease.helper import load_state, save_state
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.docker.config import WRAPPER_TEMPLATE
 from InstallRelease.providers.docker.schemas import DockerImage
@@ -179,6 +179,9 @@ class DockerInteractProvider(InteractProvider):
     def save_state(self, key: str, result: Release) -> None:
         save_state(key, result)
 
+    def load_state(self, key: str) -> Release | None:
+        return load_state(key)
+
     # ── Template method ──────────────────────────────────────────────────
 
     def get(
@@ -187,7 +190,7 @@ class DockerInteractProvider(InteractProvider):
         local: bool = True,
         prompt: bool = False,
         name: str | None = None,
-        docker_opts: str = "",
+        docker_opts: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Orchestrate the full install flow: resolve -> select -> prompt -> install -> save."""
@@ -200,6 +203,11 @@ class DockerInteractProvider(InteractProvider):
         image = self.select(candidates)
         if image is None:
             return
+
+        state_key = f"{PROVIDER_STATE_KEY_PREFIXES['docker']}{image.image}#{toolname}"
+        if docker_opts is None:
+            cached = self.load_state(state_key)
+            docker_opts = (cached.docker_opts if cached else None) or ""
 
         # Step 3
         if prompt:
@@ -233,5 +241,4 @@ class DockerInteractProvider(InteractProvider):
         # Pin hold_update for any non-latest tag so upgrade skips them
         release.hold_update = image.tag != "latest"
 
-        state_key = f"{PROVIDER_STATE_KEY_PREFIXES['docker']}{image.image}#{toolname}"
         self.save_state(state_key, release)

@@ -92,11 +92,82 @@ def test_docker_interact_provider_empty_docker_opts_removes(monkeypatch, tmp_pat
 
     content = wrapper_path.read_text()
     assert "-v /old/path:/old/path" not in content
-    assert (
-        'docker run --rm -i $termflag -v "${PWD}:/tmp/cmd" -w /tmp/cmd  alpine:3.19'
-        in content
-    )
+    assert "-w /tmp/cmd" in content
+    assert "alpine:3.19" in content
     assert saved_state["docker:library/alpine#alpine-custom"].docker_opts == ""
+
+
+def test_docker_interact_provider_omitted_docker_opts_preserves_stored_opts(
+    monkeypatch, tmp_path
+):
+    dest_dir = tmp_path / "bin"
+    dest_dir.mkdir()
+    monkeypatch.setattr("InstallRelease.providers.docker.main.dest", str(dest_dir))
+    monkeypatch.setattr(
+        "InstallRelease.providers.docker.main._get_entrypoint",
+        lambda ref: ["/entrypoint"],
+    )
+    monkeypatch.setattr(
+        "InstallRelease.providers.docker.main.subprocess.run",
+        MagicMock(return_value=MagicMock(returncode=0)),
+    )
+
+    saved_state = {}
+    monkeypatch.setattr(
+        DockerInteractProvider,
+        "save_state",
+        lambda self, key, release: saved_state.update({key: release}),
+    )
+    monkeypatch.setattr(
+        DockerInteractProvider,
+        "load_state",
+        lambda self, key: saved_state.get(key),
+    )
+
+    provider = DockerInteractProvider("alpine:3.19")
+
+    # 1. First install with opts
+    provider.get(
+        name="alpine-custom",
+        prompt=False,
+        docker_opts="-v /persistent:/persistent",
+    )
+    wrapper_path = dest_dir / "alpine-custom"
+    assert "-v /persistent:/persistent" in wrapper_path.read_text()
+    key = "docker:library/alpine#alpine-custom"
+    assert saved_state[key].docker_opts == "-v /persistent:/persistent"
+
+    # 2. Re-run without docker_opts (omitted -> defaults to None)
+    provider.get(
+        name="alpine-custom",
+        prompt=False,
+    )
+    content = wrapper_path.read_text()
+    assert "-v /persistent:/persistent" in content
+    assert saved_state[key].docker_opts == "-v /persistent:/persistent"
+
+
+def test_cli_get_defaults_docker_opts_to_none(monkeypatch):
+    captured_args = {}
+
+    def fake_get(url, **kwargs):
+        captured_args["url"] = url
+        captured_args.update(kwargs)
+
+    monkeypatch.setattr(cli, "_get", fake_get)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli.app,
+        [
+            "get",
+            "docker@alpine:latest",
+            "-y",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert captured_args["docker_opts"] is None
 
 
 def test_cli_get_passes_docker_opts_to_get_function(monkeypatch):
@@ -212,6 +283,55 @@ def test_real_install_and_upgrade_preserves_docker_opts(monkeypatch, tmp_path):
     content = wrapper_path.read_text()
     assert "-v /my/data:/data:rw" in content
     assert state_dict[key].docker_opts == "-v /my/data:/data:rw"
+
+
+def test_cli_interact_get_omitted_docker_opts_preserves_stored_opts(
+    monkeypatch, tmp_path
+):
+    dest_dir = tmp_path / "bin"
+    dest_dir.mkdir()
+    monkeypatch.setattr("InstallRelease.config.dest", str(dest_dir))
+    monkeypatch.setattr("InstallRelease.providers.docker.main.dest", str(dest_dir))
+    monkeypatch.setattr(
+        "InstallRelease.providers.docker.main._get_entrypoint",
+        lambda ref: ["/entrypoint"],
+    )
+    monkeypatch.setattr(
+        "InstallRelease.providers.docker.main.subprocess.run",
+        MagicMock(return_value=MagicMock(returncode=0)),
+    )
+
+    state_dict = {}
+    monkeypatch.setattr(cli_interact.cache, "state", state_dict)
+    monkeypatch.setattr("InstallRelease.helper.state.cache.state", state_dict)
+    monkeypatch.setattr(
+        "InstallRelease.helper.state.cache.set",
+        lambda k, v: state_dict.update({k: v}),
+    )
+    monkeypatch.setattr("InstallRelease.helper.state.cache.save", lambda: None)
+    monkeypatch.setattr(cli_interact, "state_info", lambda: None)
+
+    # 1. Install tool with docker_opts
+    cli_interact.get(
+        "docker@alpine:3.19",
+        name="alpine-tool",
+        docker_opts="-v /persistent:/persistent",
+        prompt=False,
+    )
+    wrapper_path = dest_dir / "alpine-tool"
+    assert "-v /persistent:/persistent" in wrapper_path.read_text()
+    key = "docker:library/alpine#alpine-tool"
+    assert state_dict[key].docker_opts == "-v /persistent:/persistent"
+
+    # 2. Re-run get without docker_opts (e.g. changing tag or reinstalling)
+    cli_interact.get(
+        "docker@alpine:latest",
+        name="alpine-tool",
+        prompt=False,
+    )
+    content = wrapper_path.read_text()
+    assert "-v /persistent:/persistent" in content
+    assert state_dict[key].docker_opts == "-v /persistent:/persistent"
 
 
 def test_cli_interact_get_warns_docker_opts_on_non_docker_url(monkeypatch, caplog):

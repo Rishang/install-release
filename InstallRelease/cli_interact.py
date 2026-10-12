@@ -62,7 +62,7 @@ def get(
     name: str | None = None,
     pkg: bool = False,
     hold: bool = False,
-    docker_opts: str = "",
+    docker_opts: str | None = None,
 ) -> None:
     """Resolve URL to provider and install the tool."""
     state_info()
@@ -228,7 +228,7 @@ def upgrade(
             prompt=False,
             name=name,
             pkg=pkg_mode,
-            docker_opts=docker_opts or "",
+            docker_opts=docker_opts,
         )
 
 

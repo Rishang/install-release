@@ -89,8 +89,8 @@ def get(
     pkg: bool = typer.Option(
         False, "--pkg", help="Install as OS package (deb/rpm/appimage)."
     ),
-    docker_opts: str = typer.Option(
-        "", "--docker-opts", help="Extra options to pass to the docker run command."
+    docker_opts: str | None = typer.Option(
+        None, "--docker-opts", help="Extra options to pass to the docker run command."
     ),
 ):
     """
