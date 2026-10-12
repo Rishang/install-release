@@ -143,7 +143,12 @@ class DockerInteractProvider(InteractProvider):
     # ── Step 4 ───────────────────────────────────────────────────────────
 
     def install(
-        self, candidate: DockerImage, toolname: str, temp_dir: str, local: bool
+        self,
+        candidate: DockerImage,
+        toolname: str,
+        temp_dir: str,
+        local: bool,
+        docker_opts: str = "",
     ) -> bool:
         """Pull the Docker image and write an executable wrapper script to dest."""
         pprint(f"[cyan]Pulling {candidate.cli_ref}...[/cyan]")
@@ -158,7 +163,13 @@ class DockerInteractProvider(InteractProvider):
         # Images without ENTRYPOINT need the command name prepended explicitly
         args = '"$@"' if entrypoint else f'{toolname} "$@"'
         with open(script_path, "w") as f:
-            f.write(WRAPPER_TEMPLATE.format(ref=candidate.cli_ref, args=args))
+            f.write(
+                WRAPPER_TEMPLATE.format(
+                    ref=candidate.cli_ref,
+                    args=args,
+                    docker_opts=docker_opts or "",
+                )
+            )
         os.chmod(script_path, 0o755)
         logger.info(f"Installed wrapper: {script_path}")
         return True
@@ -176,6 +187,7 @@ class DockerInteractProvider(InteractProvider):
         local: bool = True,
         prompt: bool = False,
         name: str | None = None,
+        docker_opts: str = "",
         **kwargs: Any,
     ) -> None:
         """Orchestrate the full install flow: resolve -> select -> prompt -> install -> save."""
@@ -197,7 +209,13 @@ class DockerInteractProvider(InteractProvider):
             pprint("\n[magenta]Pulling image...[/magenta]")
 
         # Step 4
-        if not self.install(image, toolname=toolname, temp_dir="", local=local):
+        if not self.install(
+            image,
+            toolname=toolname,
+            temp_dir="",
+            local=local,
+            docker_opts=docker_opts,
+        ):
             return
 
         # Step 5
@@ -210,6 +228,7 @@ class DockerInteractProvider(InteractProvider):
             published_at=now_str,
             assets=[],
             description=f"Docker image wrapper: {image.cli_ref}",
+            docker_opts=docker_opts,
         )
         # Pin hold_update for any non-latest tag so upgrade skips them
         release.hold_update = image.tag != "latest"

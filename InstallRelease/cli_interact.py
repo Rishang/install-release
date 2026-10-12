@@ -71,6 +71,11 @@ def get(
     # State-key prefixes (used internally by upgrade/pull_state)
     _mise_user, _mise = "mise@", PROVIDER_STATE_KEY_PREFIXES["mise"]
     _docker_user, _docker = "docker@", PROVIDER_STATE_KEY_PREFIXES["docker"]
+    if docker_opts and not (url.startswith(_docker_user) or url.startswith(_docker)):
+        logger.warning(
+            "--docker-opts is only supported for docker images and will be ignored."
+        )
+
     if url.startswith(_mise_user):
         provider: InteractProvider = MiseInteractProvider(url[len(_mise_user) :])
     elif url.startswith(_mise):
