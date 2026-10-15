@@ -125,6 +125,10 @@ Requires [libmagic](https://github.com/ahupp/python-magic#installation) as a run
 curl -Lo ~/bin/ir https://github.com/Rishang/install-release/releases/latest/download/install-release-linux-x86_64
 chmod +x ~/bin/ir
 
+# Register it under the name `ir` so `ir upgrade` updates ~/bin/ir
+# (otherwise upgrades go to ~/bin/install-release instead)
+ir get https://github.com/Rishang/install-release -n ir
+
 # Bash
 # echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc 
 
@@ -134,6 +138,8 @@ chmod +x ~/bin/ir
 # Fish
 # echo 'set -gx PATH $HOME/bin $PATH' >> ~/.config/fish/config.fish 
 ```
+
+> **Note:** If you already ran `ir upgrade` before registering with `-n ir`, a stale `install-release` entry may exist. Remove it with `ir rm install-release` to avoid duplicate rows in `ir ls` and double upgrades.
 
 #### Option 2: pip install
 
