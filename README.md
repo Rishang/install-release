@@ -127,7 +127,7 @@ chmod +x ~/bin/ir
 
 # Register it under the name `ir` so `ir upgrade` updates ~/bin/ir
 # (otherwise upgrades go to ~/bin/install-release instead)
-ir get https://github.com/Rishang/install-release -n ir
+~/bin/ir get https://github.com/Rishang/install-release -n ir
 
 # Bash
 # echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc 

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 import typer
 
@@ -307,7 +308,12 @@ def me(
     _v = install_release_version._local_version
 
     if update:
-        _cmd = "ir get https://github.com/Rishang/install-release"
+        # Reinstall under the name this binary runs as (e.g. `ir`), so the
+        # upgrade overwrites it instead of creating ~/bin/install-release
+        _name = os.path.basename(sys.argv[0])
+        if not _name or _name.endswith(".py"):
+            _name = "ir"
+        _cmd = f"{_name} get https://github.com/Rishang/install-release -n {_name}"
         pprint(f"Running: {_cmd}")
 
         os.system(_cmd)
