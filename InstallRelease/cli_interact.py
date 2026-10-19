@@ -62,6 +62,7 @@ def get(
     name: str | None = None,
     pkg: bool = False,
     hold: bool = False,
+    docker_opts: str | None = None,
 ) -> None:
     """Resolve URL to provider and install the tool."""
     state_info()
@@ -70,6 +71,11 @@ def get(
     # State-key prefixes (used internally by upgrade/pull_state)
     _mise_user, _mise = "mise@", PROVIDER_STATE_KEY_PREFIXES["mise"]
     _docker_user, _docker = "docker@", PROVIDER_STATE_KEY_PREFIXES["docker"]
+    if docker_opts and not (url.startswith(_docker_user) or url.startswith(_docker)):
+        logger.warning(
+            "--docker-opts is only supported for docker images and will be ignored."
+        )
+
     if url.startswith(_mise_user):
         provider: InteractProvider = MiseInteractProvider(url[len(_mise_user) :])
     elif url.startswith(_mise):
@@ -91,6 +97,7 @@ def get(
         prompt=prompt,
         name=name,
         hold=hold,
+        docker_opts=docker_opts,
     )
 
 
@@ -210,11 +217,19 @@ def upgrade(
     for idx, name in enumerate(upgrades, 1):
         url, new_version, pkg_mode = upgrades[name]
         k = f"{url}#{name}"
+        docker_opts = state[k].docker_opts
         pct = int(idx * 100 / total)
         pprint(
             f"[bold yellow]({pct}%) Updating: {name}, {state[k].tag_name} => {new_version}[/]"
         )
-        get(url, version=new_version, prompt=False, name=name, pkg=pkg_mode)
+        get(
+            url,
+            version=new_version,
+            prompt=False,
+            name=name,
+            pkg=pkg_mode,
+            docker_opts=docker_opts,
+        )
 
 
 def show_state():

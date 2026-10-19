@@ -386,6 +386,9 @@ Tools installed via `mise@` are also tracked by `ir ls` and upgraded with `ir up
 
 # Custom tool name
 ❯ ir get docker@mcr.microsoft.com/azure-cli -n az
+
+# Pass extra docker run options (e.g. volume mounts, env vars)
+❯ ir get docker@alpine:latest -n alpine --docker-opts "-v $HOME/data:/data"
 ```
 
 ```
@@ -401,6 +404,10 @@ Install selected tool? [Y/n]: y
 - **Latest tags** (`latest`) are checked for updates via digest comparison during `ir upgrade` — only re-pulled when the remote image has changed.
 - **Pinned tags** (e.g. `1.7.0`) are held from auto-upgrade; use `ir upgrade --force` to re-pull.
 - The wrapper mounts the current directory into the container at `/tmp/cmd`, so the tool sees your local files.
+- **Extra Docker options (`--docker-opts`)**: You can pass additional flags to `docker run` (e.g. `-v` volume mounts or `-e` environment variables) via `--docker-opts`.
+  - The value is inserted into the `/bin/sh` wrapper as-is, so it's raw shell (paths with spaces must be quoted).
+  - The options are persisted in state and reused on `ir upgrade`.
+  - Re-running `ir get` without `--docker-opts` preserves the previously saved options. To clear them, pass an explicit empty string (`--docker-opts ""`).
 
 ### Install specific release asset from GitHub, GitLab, or Codeberg releases 🔦
 

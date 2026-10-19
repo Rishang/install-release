@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from InstallRelease.config import dest
-from InstallRelease.helper import save_state
+from InstallRelease.helper import load_state, save_state
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.docker.config import WRAPPER_TEMPLATE
 from InstallRelease.providers.docker.schemas import DockerImage
@@ -143,7 +143,12 @@ class DockerInteractProvider(InteractProvider):
     # ── Step 4 ───────────────────────────────────────────────────────────
 
     def install(
-        self, candidate: DockerImage, toolname: str, temp_dir: str, local: bool
+        self,
+        candidate: DockerImage,
+        toolname: str,
+        temp_dir: str,
+        local: bool,
+        docker_opts: str = "",
     ) -> bool:
         """Pull the Docker image and write an executable wrapper script to dest."""
         pprint(f"[cyan]Pulling {candidate.cli_ref}...[/cyan]")
@@ -158,7 +163,13 @@ class DockerInteractProvider(InteractProvider):
         # Images without ENTRYPOINT need the command name prepended explicitly
         args = '"$@"' if entrypoint else f'{toolname} "$@"'
         with open(script_path, "w") as f:
-            f.write(WRAPPER_TEMPLATE.format(ref=candidate.cli_ref, args=args))
+            f.write(
+                WRAPPER_TEMPLATE.format(
+                    ref=candidate.cli_ref,
+                    args=args,
+                    docker_opts=docker_opts or "",
+                )
+            )
         os.chmod(script_path, 0o755)
         logger.info(f"Installed wrapper: {script_path}")
         return True
@@ -168,6 +179,9 @@ class DockerInteractProvider(InteractProvider):
     def save_state(self, key: str, result: Release) -> None:
         save_state(key, result)
 
+    def load_state(self, key: str) -> Release | None:
+        return load_state(key)
+
     # ── Template method ──────────────────────────────────────────────────
 
     def get(
@@ -176,6 +190,7 @@ class DockerInteractProvider(InteractProvider):
         local: bool = True,
         prompt: bool = False,
         name: str | None = None,
+        docker_opts: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Orchestrate the full install flow: resolve -> select -> prompt -> install -> save."""
@@ -189,6 +204,11 @@ class DockerInteractProvider(InteractProvider):
         if image is None:
             return
 
+        state_key = f"{PROVIDER_STATE_KEY_PREFIXES['docker']}{image.image}#{toolname}"
+        if docker_opts is None:
+            cached = self.load_state(state_key)
+            docker_opts = (cached.docker_opts if cached else None) or ""
+
         # Step 3
         if prompt:
             decision = self.prompt(toolname, image)
@@ -197,7 +217,13 @@ class DockerInteractProvider(InteractProvider):
             pprint("\n[magenta]Pulling image...[/magenta]")
 
         # Step 4
-        if not self.install(image, toolname=toolname, temp_dir="", local=local):
+        if not self.install(
+            image,
+            toolname=toolname,
+            temp_dir="",
+            local=local,
+            docker_opts=docker_opts,
+        ):
             return
 
         # Step 5
@@ -210,9 +236,9 @@ class DockerInteractProvider(InteractProvider):
             published_at=now_str,
             assets=[],
             description=f"Docker image wrapper: {image.cli_ref}",
+            docker_opts=docker_opts,
         )
         # Pin hold_update for any non-latest tag so upgrade skips them
         release.hold_update = image.tag != "latest"
 
-        state_key = f"{PROVIDER_STATE_KEY_PREFIXES['docker']}{image.image}#{toolname}"
         self.save_state(state_key, release)

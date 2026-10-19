@@ -45,6 +45,7 @@ class Release:
     published_at: str
     assets: list[ReleaseAssets]
     description: str | None = field(default=None)
+    docker_opts: str | None = None
     hold_update: bool | None = field(default=False)
     custom_release_words: list[str] | None = field(default=None)
     package_type: str | None = field(
