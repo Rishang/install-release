@@ -19,3 +19,25 @@ def test_upgrade_accepts_and_filters_by_name(monkeypatch):
 
     assert result.exit_code == 0
     assert captured == ["repo#zen"]
+
+
+def test_me_upgrade_keeps_running_binary_name(monkeypatch):
+    for argv0, expected in [
+        ("/home/u/bin/ir", "ir get https://github.com/Rishang/install-release -n ir"),
+        (
+            "install-release",
+            "install-release get https://github.com/Rishang/install-release -n install-release",
+        ),
+        (
+            "/src/InstallRelease/cli.py",
+            "ir get https://github.com/Rishang/install-release -n ir",
+        ),
+    ]:
+        ran = []
+        monkeypatch.setattr(cli.sys, "argv", [argv0])
+        monkeypatch.setattr(cli.os, "system", ran.append)
+
+        result = CliRunner().invoke(cli.app, ["me", "-U"])
+
+        assert result.exit_code == 0
+        assert ran == [expected]
