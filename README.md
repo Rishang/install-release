@@ -114,7 +114,13 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
 
 #### Option 1: Standalone binary (recommended)
 
-Download the latest binary for your platform from [GitHub Releases](https://github.com/Rishang/install-release/releases) — no Python required.
+One-line install (Linux x86_64/aarch64, macOS) — detects your platform, installs `ir` into `~/bin` and prints the PATH setup for your shell:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Rishang/install-release/main/install.sh | bash
+```
+
+Or do it manually: download the latest binary for your platform from [GitHub Releases](https://github.com/Rishang/install-release/releases) — no Python required.
 
 Requires [libmagic](https://github.com/ahupp/python-magic#installation) as a runtime dependency.
 
