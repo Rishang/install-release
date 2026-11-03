@@ -22,9 +22,7 @@
 This can be any tool you want to install, which is pre-compiled for your device and present on a supported provider.
 
 
-<!-- <a href="https://asciinema.org/a/fzvnZV9t4l9irF5F?autoplay=1"><img src="https://asciinema.org/a/fzvnZV9t4l9irF5F.svg" alt="asciinema CLI demo" width="100%" /></a> -->
-
-<a href="#getting-started"><img src=".github/images/787536.gif" alt="asciinema CLI demo" width="100%" /></a>
+<a href="#getting-started"><img src=".github/images/demo.gif" alt="ir CLI demo: install gron from GitHub and jq from the mise registry, list and remove tools" width="100%" /></a>
 
 > INFO: It's mainly for installing tools that are not directly available officially by package managers like `apt, yum, pacman, brew` etc.
 
