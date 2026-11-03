@@ -24,7 +24,6 @@ from importlib.metadata import (
 from pathlib import Path
 
 import requests
-import zstandard as zstd
 from rich import print as pprint
 from rich.console import Console
 from rich.logging import RichHandler
@@ -283,11 +282,18 @@ def extract(path: str, at: str) -> bool:
                 shutil.copyfileobj(f_in, f_out)
 
         elif path.endswith((".pkg.tar.zst", ".tar.zst")):
-            with (
-                open(path, "rb") as f,
-                zstd.ZstdDecompressor().stream_reader(f) as reader,
-            ):
-                with tarfile.open(fileobj=reader, mode="r|") as tar:
+            if sys.version_info >= (3, 14):
+                # stdlib zstd (PEP 784); zstandard has no wheels for newer Pythons
+                with tarfile.open(path, mode="r:zst") as tar:
+                    tar.extractall(path=at)
+            else:
+                import zstandard as zstd
+
+                with (
+                    open(path, "rb") as f,
+                    zstd.ZstdDecompressor().stream_reader(f) as reader,
+                    tarfile.open(fileobj=reader, mode="r|") as tar,
+                ):
                     tar.extractall(path=at)
 
         else:
