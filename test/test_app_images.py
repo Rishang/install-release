@@ -109,11 +109,25 @@ def test_minimal_entry_without_internal_desktop(tmp_path, monkeypatch):
     assert entry["Icon"] == str(app.icon_path)
 
 
+def test_unparseable_internal_entry_falls_back(tmp_path, monkeypatch):
+    app, config = _install_entry(tmp_path, monkeypatch, "garbage")
+    assert config[ENTRY]["Name"] == "app-appimage"
+    assert config[ENTRY]["Exec"] == str(app.appimage_path)
+
+
+def test_dbus_entry_without_exec_gets_exec(tmp_path, monkeypatch):
+    desktop = "[Desktop Entry]\nName=X\nType=Application\nDBusActivatable=true\n"
+    app, config = _install_entry(tmp_path, monkeypatch, desktop)
+    assert config[ENTRY]["Exec"] == str(app.appimage_path)
+    assert "DBusActivatable" not in config[ENTRY]
+
+
 @pytest.mark.parametrize(
     ("exec_val", "no_sandbox", "expected"),
     [
         ('"/opt/My App/bin" --title="a  b" %U', False, 'APP --title="a  b" %U'),
         ("env -u X FOO=1 foo %F", False, "env -u X FOO=1 APP %F"),
+        ("/usr/bin/env FOO=1 foo %U", False, "/usr/bin/env FOO=1 APP %U"),
         ('sh -c "foo --bar"', False, "APP"),
         ("AppRun --no-sandbox %U", True, "APP --no-sandbox %U"),
         ("foo %U", True, "APP --no-sandbox %U"),

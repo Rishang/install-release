@@ -50,7 +50,7 @@ def _point_exec_at(exec_val: str, appimage: str, no_sandbox: bool) -> str:
     tokens = list(_EXEC_TOKEN.finditer(exec_val))
     words = [t.group().replace('"', "") for t in tokens]  # for matching only
     i = 0
-    if words and words[0] == "env":
+    if words and Path(words[0]).name == "env":
         i = 1
         while i < len(words) and (words[i].startswith("-") or "=" in words[i]):
             i += 2 if words[i] in _ENV_OPTS_WITH_ARG else 1
@@ -77,8 +77,9 @@ def _point_entry_at(
     config.remove_option(ENTRY, "DBusActivatable")
     config.remove_option(ENTRY, "TryExec")
     for section in config.sections():
-        if config.has_option(section, "Exec"):
-            exec_val = _point_exec_at(config.get(section, "Exec"), appimage, no_sandbox)
+        if section == ENTRY or config.has_option(section, "Exec"):
+            exec_val = config.get(section, "Exec", fallback="")
+            exec_val = _point_exec_at(exec_val, appimage, no_sandbox)
             config.set(section, "Exec", exec_val)
         if section == ENTRY or config.has_option(section, "Icon"):
             config.set(section, "Icon", icon)
@@ -244,7 +245,6 @@ class AppImage(PackageInstallerABC):
             config = desktop_parser()
             config[ENTRY] = {
                 "Name": self.name,
-                "Exec": "",  # just the AppImage, filled in below
                 "Type": "Application",
                 "Categories": "Utility;",
                 "StartupWMClass": self.name,
