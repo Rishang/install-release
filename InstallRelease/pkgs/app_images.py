@@ -112,23 +112,17 @@ class AppImage(PackageInstallerABC):
 
         logger.debug(f"Creating desktop entry: {self.desktop_entry_path}")
 
-        # extract once, reuse for sandbox detection, pid name, AND icon —
-        #      previously extracted twice (once here, once inside icon()).
         appimage_abs_path = self.appimage_path.resolve()
         extracted_dir = self._appimage_extract(appimage_abs_path)
 
-        # default to False (no-sandbox) rather than True when extraction
-        #      fails, so non-Electron apps don't get the flag unnecessarily.
+        # default to False so non-Electron apps don't get --no-sandbox.
         needs_no_sandbox = False
-        # pid_name is a local variable; previously it was stored as
-        #      instance state via a hidden side effect in desktop_entry().
-        pid_name: str | None = None
+        internal: configparser.RawConfigParser | None = None
 
         if extracted_dir and extracted_dir.exists():
             try:
                 needs_no_sandbox = self._needs_no_sandbox(extracted_dir)
-                pid_name = self._get_pid_name(extracted_dir)
-                logger.debug(f"Detected PID name: {pid_name}")
+                internal = self._read_internal_desktop(extracted_dir)
 
                 # Copy icon while we still have the extracted dir.
                 icon_file = self._find_icon(extracted_dir)
@@ -142,35 +136,52 @@ class AppImage(PackageInstallerABC):
                         f"No icon found in extracted AppImage for: {self.name}"
                     )
             finally:
-                # cleanup is always done here — previously the caller was
-                #      responsible, creating an asymmetric and leak-prone contract.
                 shutil.rmtree(extracted_dir.parent, ignore_errors=True)
         else:
             logger.warning(
                 f"Could not extract AppImage for inspection: {appimage_abs_path}"
             )
 
-        exec_cmd = (
-            f"{self.appimage_path} --no-sandbox"
-            if needs_no_sandbox
-            else str(self.appimage_path)
-        )
-        startup_wm_class = pid_name or self.name
+        appimage = str(self.appimage_path)
+        if " " in appimage:
+            appimage = f'"{appimage}"'
 
-        # use configparser to write the .desktop file instead of a raw
-        #      string, consistent with how we read it in _get_pid_name().
-        config = configparser.RawConfigParser()
-        config.optionxform = str  # preserve key casing (Name, Exec, etc.)
-        config["Desktop Entry"] = {
-            "Name": self.name,
-            "Exec": exec_cmd,
-            "Icon": str(self.icon_path),
-            "Type": "Application",
-            "Categories": "Utility;",
-            "StartupWMClass": startup_wm_class,
-        }
+        if internal:
+            # Reuse the app's own entry (Name, Categories, Keywords, MimeType,
+            # Actions, ...) and only point it at the installed AppImage.
+            config = internal
+            startup_wm_class = self._get_pid_name(config)
+            # D-Bus activation looks up the app by its own desktop-file name,
+            # which differs from ours, and TryExec names a binary not on PATH.
+            config.remove_option("Desktop Entry", "DBusActivatable")
+            config.remove_option("Desktop Entry", "TryExec")
+            for section in config.sections():
+                if config.has_option(section, "Exec"):
+                    config.set(
+                        section,
+                        "Exec",
+                        self._rewrite_exec(
+                            config.get(section, "Exec"), appimage, needs_no_sandbox
+                        ),
+                    )
+        else:
+            config = configparser.RawConfigParser(interpolation=None)
+            config.optionxform = str  # preserve key casing (Name, Exec, etc.)
+            exec_cmd = f"{appimage} --no-sandbox" if needs_no_sandbox else appimage
+            config["Desktop Entry"] = {
+                "Name": self.name,
+                "Exec": exec_cmd,
+                "Type": "Application",
+                "Categories": "Utility;",
+            }
+            startup_wm_class = None
+
+        entry = config["Desktop Entry"]
+        entry["Icon"] = str(self.icon_path)
+        entry["StartupWMClass"] = startup_wm_class or self.name
+
         self.ensure_directory(self.desktop_entry_path.parent)
-        with open(self.desktop_entry_path, "w") as f:
+        with open(self.desktop_entry_path, "w", encoding="utf-8") as f:
             config.write(f, space_around_delimiters=False)
 
     def icon(self, remove: bool = False):
@@ -249,24 +260,68 @@ class AppImage(PackageInstallerABC):
         logger.debug("No Electron/sandbox indicators, Exec will not use --no-sandbox")
         return False
 
-    def _get_pid_name(self, extracted_dir: Path) -> str | None:
+    def _read_internal_desktop(
+        self, extracted_dir: Path
+    ) -> configparser.RawConfigParser | None:
         """
-        Detect the actual process name the AppImage launches by reading
-        the internal .desktop file's Exec= entry.
-
-        Returns the binary name (e.g. "code", "obsidian") or None if not found.
+        Parse the AppImage's own .desktop file (at the squashfs root, per the
+        AppImage spec). Returns None if there is none or it can't be parsed.
         """
-        for f in extracted_dir.glob("*.desktop"):
-            config = configparser.RawConfigParser(strict=False)
-            config.read(f)
-            exec_val = config.get("Desktop Entry", "Exec", fallback=None)
-            if exec_val:
-                binary = exec_val.split()[0]
-                pid_name = Path(binary).name
-                logger.debug(f"Found PID name '{pid_name}' from {f.name}")
-                return pid_name
+        for f in sorted(extracted_dir.glob("*.desktop")):
+            config = configparser.RawConfigParser(strict=False, interpolation=None)
+            config.optionxform = str  # preserve key casing (Name, Exec, etc.)
+            try:
+                config.read(f, encoding="utf-8")
+            except (configparser.Error, UnicodeDecodeError) as e:
+                logger.debug(f"Could not parse {f.name}: {e}")
+                continue
+            if config.has_section("Desktop Entry"):
+                logger.debug(f"Using internal desktop file: {f.name}")
+                return config
 
-        logger.debug("No internal .desktop file found; could not detect PID name")
+        logger.debug("No internal .desktop file found")
+        return None
+
+    @staticmethod
+    def _exec_binary_index(tokens: list[str]) -> int:
+        """Index of the program in Exec tokens, skipping `env VAR=value ...`."""
+        i = 0
+        if tokens and tokens[0] == "env":
+            i = 1
+            while i < len(tokens) and "=" in tokens[i]:
+                i += 1
+        return i
+
+    def _rewrite_exec(self, exec_val: str, appimage: str, no_sandbox: bool) -> str:
+        """
+        Replace the program in an Exec= value with the AppImage, keeping the
+        app's own arguments and field codes (e.g. %U).
+        """
+        tokens = exec_val.split()
+        i = self._exec_binary_index(tokens)
+        args = tokens[i + 1 :]
+        if no_sandbox and "--no-sandbox" not in args:
+            args.insert(0, "--no-sandbox")
+        return " ".join([*tokens[:i], appimage, *args])
+
+    def _get_pid_name(self, config: configparser.RawConfigParser) -> str | None:
+        """
+        Detect the window class of the app from its internal .desktop entry:
+        StartupWMClass= if set (e.g. "com.mitchellh.ghostty", the Wayland
+        app-id), otherwise the Exec= binary name (e.g. "code", "obsidian").
+        """
+        wm_class = config.get("Desktop Entry", "StartupWMClass", fallback="").strip()
+        if wm_class:
+            logger.debug(f"Found StartupWMClass '{wm_class}'")
+            return wm_class
+
+        tokens = config.get("Desktop Entry", "Exec", fallback="").split()
+        i = self._exec_binary_index(tokens)
+        if i < len(tokens):
+            pid_name = Path(tokens[i]).name
+            logger.debug(f"Found PID name '{pid_name}' from Exec")
+            return pid_name
+
         return None
 
     def _find_icon(self, extracted_dir: Path) -> Path | None:
