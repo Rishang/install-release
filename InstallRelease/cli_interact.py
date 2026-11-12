@@ -278,7 +278,8 @@ def list_install(
             "Version": f"{dim}{r['version']}",
             "Type": f"[cyan]{r['type']}" if r["type"] != "binary" else r["type"],
             "Hold": "[yellow]yes" if r["hold"] else "",
-            "Url": f"{dim}{r['url']}",
+            # A real hyperlink, so clicking a truncated URL opens the full one.
+            "Url": f"{dim}[link={r['url']}]{r['url']}[/link]" if r["url"] else "",
             "Description": f"[dim yellow]{r['description']}",
         }
         for r in rows
