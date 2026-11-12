@@ -58,7 +58,7 @@ if os.environ.get("IR_DEBUG", "").lower() == "true":
     setLogger(debug=True)
 
 app = typer.Typer(
-    help="GitHub / GitLab / Mise release installer based on your system (Linux/MacOS). Repo: https://github.com/Rishang/install-release",
+    help="GitHub / GitLab / Codeberg / Mise / Docker release installer based on your system (Linux/MacOS). Repo: https://github.com/Rishang/install-release",
     pretty_exceptions_enable=False,
 )
 
@@ -95,7 +95,7 @@ def get(
     ),
 ):
     """
-    | Install CLI tool from GitHub/GitLab releases or mise registry
+    | Install CLI tool from GitHub/GitLab/Codeberg releases, mise registry or Docker image
     """
 
     setLogger(quiet, debug)
@@ -212,8 +212,10 @@ def _config(
         "--path",
         help="Set install path.",
     ),
-    pre_release: bool = typer.Option(
-        False, "--pre-release", help="Include pre-releases when checking for updates."
+    pre_release: bool | None = typer.Option(
+        None,
+        "--pre-release/--no-pre-release",
+        help="Include pre-releases when checking for updates.",
     ),
 ):
     """
@@ -239,7 +241,9 @@ def _config(
         config.path = path
         logger.info(f"Updated path to {path}")
 
-    config.pre_release = pre_release
+    if pre_release is not None:
+        config.pre_release = pre_release
+        logger.info(f"Updated pre-release to {pre_release}")
 
     cache_config.save()
     logger.info("Done.")

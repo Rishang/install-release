@@ -5,12 +5,12 @@
   <em>CLI to install any CLI</em>
   <br><br>
   <a href="https://shields.io/">
-    <img src="https://img.shields.io/badge/Python-3.10_to_3.14-xx.svg" alt="Python Version" />
+    <img src="https://img.shields.io/badge/Python-3.10_to_3.15-xx.svg" alt="Python Version" />
   </a>
   <a href="https://pepy.tech/project/install-release">
     <img src="https://static.pepy.tech/personalized-badge/install-release?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads" alt="Downloads" />
   </a>
-<p>
+</p>
 
 <br>
 
@@ -79,7 +79,6 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
 
 ## Table of Contents 📚
 
-- [Table of Contents 📚](#table-of-contents-)
 - [Highlights](#highlights)
 - [Getting started ⚡](#getting-started)
   - [Installation](#installation)
@@ -98,6 +97,7 @@ ir get docker@mcr.microsoft.com/azure-cli -n az
   - [Show info about an installed tool ℹ️](#show-info-about-an-installed-tool-️)
   - [Remove installed release ❌](#remove-installed-release-)
   - [Update all previously installed tools to the latest version 🕶](#update-all-previously-installed-tools-to-the-latest-version-)
+    - [Update a specific installed tool](#update-a-specific-installed-tool)
     - [Update installed system packages 📦](#update-installed-system-packages-)
   - [Pull state templates for installing tools 📄](#pull-state-templates-for-installing-tools-)
   - [Hold Update to specific installed tool ✋](#hold-update-to-specific-installed-tool-)
@@ -126,6 +126,7 @@ Requires [libmagic](https://github.com/ahupp/python-magic#installation) as a run
 
 ```bash
 # Linux x86_64
+mkdir -p ~/bin
 curl -Lo ~/bin/ir https://github.com/Rishang/install-release/releases/latest/download/install-release-linux-x86_64
 chmod +x ~/bin/ir
 
@@ -149,7 +150,7 @@ chmod +x ~/bin/ir
 
 **Prerequisites:**
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - pip
 - [libmagic](https://github.com/ahupp/python-magic#installation)
 
@@ -199,28 +200,6 @@ Verify the installation:
 deno 1.46.3 ...
 ```
 
-Example: Installing [GitLab CLI](https://gitlab.com/gitlab-org/cli) with a custom binary name `glab`:
-
-```bash
-❯ ir get https://gitlab.com/gitlab-org/cli -n glab
-```
-
-Verify the installation:
-
-```bash
-❯ which glab
-~/bin/glab
-
-❯ glab --version
-glab 1.80.0 ...
-```
-
-Codeberg repositories use the same install and update workflow. For example, install [Forgejo](https://codeberg.org/forgejo/forgejo) from its Codeberg releases:
-
-```bash
-❯ ir get https://codeberg.org/forgejo/forgejo
-```
-
 Once installed, you can manage your tools with these simple commands:
 
 - **List**: `ir ls` — See all installed tools and versions.
@@ -238,24 +217,24 @@ For more details, check the [Table of Contents](#table-of-contents-).
 ❯ ir --help
 Usage: ir [OPTIONS] COMMAND [ARGS]...
 
-  GitHub / GitLab / Codeberg / Mise release installer based on your system (Linux/MacOS)
+  GitHub / GitLab / Codeberg / Mise / Docker release installer based on your system (Linux/MacOS).
 
-  Options:
-    --install-completion   Install completion for the current shell.
-    --show-completion      Show completion for the current shell, to copy it or customize the installation.
-    --help                Show this message and exit.
+Options:
+  --install-completion   Install completion for the current shell.
+  --show-completion      Show completion for the current shell, to copy it or customize the installation.
+  --help                 Show this message and exit.
 
-  Commands:
-    get      | Install CLI tool from GitHub/GitLab/Codeberg releases or mise registry
-    upgrade  | Upgrade all installed CLI tools from their repositories
-    ls       | List all installed CLI tools
-    info     | Show info about an installed CLI tool
-    rm       | Remove any installed CLI tool
-    config   | Set configs for Install-Release
-    state    | Show the current stored state of Install-Release
-    pull     | Install tools from the remote install-release state URL
-    hold     | Keep an installed CLI tool's updates on hold.
-    me       | Update the Install-Release tool.
+Commands:
+  get      | Install CLI tool from GitHub/GitLab/Codeberg releases, mise registry or Docker image
+  upgrade  | Upgrade all installed CLI tools from their repositories
+  ls       | List all installed CLI tools
+  info     | Show info about an installed CLI tool
+  rm       | Remove any installed CLI tool
+  config   | Set configs for Install-Release
+  state    | Show the current stored state of Install-Release
+  pull     | Install tools from the remote install-release state URL
+  hold     | Keep an installed CLI tool's updates on hold.
+  me       | Update the Install-Release tool.
 ```
 
 For sub-command help use: `ir <sub-command> --help`
@@ -281,11 +260,6 @@ https://codeberg.org/<owner>/<repo>
 ```
 
 Codeberg is powered by Forgejo, so `ir` accesses Codeberg releases through the Forgejo-compatible API. Codeberg tools are recorded in `ir`'s state and can be managed with `ir ls`, `ir info`, `ir upgrade`, and `ir rm` like tools from GitHub and GitLab.
-
-```bash
-# Install Forgejo from Codeberg
-❯ ir get https://codeberg.org/forgejo/forgejo
-```
 
 ##### Self-hosted GitLab and Forgejo instances 🏠
 
@@ -368,6 +342,8 @@ Some tools (like Terraform, Packer, etc.) don't publish platform-specific binari
 ❯ ir get mise@terraform -t v1.12.0
 ```
 
+> **Note:** Installing a specific version (`-t` / `--tag`, or `mise@<tool>:<version>`) puts the tool on hold, so `ir upgrade` skips it. Run `ir hold --unset <name>` to get updates again.
+
 ```
                      Install terraform (via mise/aqua)
 ┏━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -412,7 +388,7 @@ Install selected tool? [Y/n]: y
 ```
 
 - **Latest tags** (`latest`) are checked for updates via digest comparison during `ir upgrade` — only re-pulled when the remote image has changed.
-- **Pinned tags** (e.g. `1.7.0`) are held from auto-upgrade; use `ir upgrade --force` to re-pull.
+- **Pinned tags** (e.g. `1.7.0`) are held from auto-upgrade (`ir upgrade --force` does not touch them); re-run `ir get docker@<image>:<tag>` to re-pull.
 - The wrapper mounts the current directory into the container at `/tmp/cmd`, so the tool sees your local files.
 - **Extra Docker options (`--docker-opts`)**: You can pass additional flags to `docker run` (e.g. `-v` volume mounts or `-e` environment variables) via `--docker-opts`.
   - The value is inserted into the `/bin/sh` wrapper as-is, so it's raw shell (paths with spaces must be quoted).
@@ -441,7 +417,7 @@ During the installation prompt, review the available release assets and type the
 ┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
 │ 1        │ bore-v0.4.0-x86_64-unknown-linux-musl.tar.gz    │ 1.2       │ 1523      │
 │ 2        │ bore-v0.4.0-x86_64-unknown-linux-gnu.rpm        │ 1.3       │ 845       │
-│ 3        │ bore-v0.4.0-aarch64-unknown-linux-musl.deb      │ 1.1       │ 234       │
+│ 3        │ bore-v0.4.0-x86_64-unknown-linux-gnu.tar.gz     │ 1.1       │ 234       │
 │ 4        │ bore-v0.4.0-x86_64-apple-darwin.dmg             │ 1.2       │ 456       │
 │ 5        │ bore-v0.4.0-x86_64-apple-darwin.tar.gz          │ 1.2       │ 1523      │
 └──────────┴─────────────────────────────────────────────────┴───────────┴───────────┘
@@ -467,14 +443,14 @@ You can also specify the release file name directly using the `-f` / `--file` fl
 ❯ ir get [GITHUB-URL or GITLAB-URL or CODEBERG-URL] -f [release asset filename]
 ```
 
-Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, v0.4.0, arm, linux, musleabi`
+Example: Installing the bore tool from GitHub with the release file name `bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz`. Here, the keywords generated are: `bore, arm, linux, musleabi, tar`
 
 ```bash
 ❯ ir get https://github.com/ekzhang/bore -f bore-v0.4.0-arm-unknown-linux-musleabi.tar.gz
 ```
 
 **How it works:**
-- The tool parses the release file name into keywords (removing version numbers and file extensions)
+- The tool parses the release file name into keywords (removing version numbers and the last file extension)
 - These keywords are stored in the state file to match the correct release file during future tool upgrades
 - This ensures consistent upgrades to the same release variant
 
@@ -612,6 +588,9 @@ This is useful when you want to install pre-release versions of tools like beta 
 
 ```bash
 ❯ ir config --pre-release
+
+# Turn it off again
+❯ ir config --no-pre-release
 ```
 
 #### Configure provider tokens for higher rate limits 🔑
