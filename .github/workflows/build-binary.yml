@@ -22,7 +22,7 @@ jobs:
             executable: install-release-linux-x86_64
             pkg_deps: patchelf
             build_args: ""
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             executable: install-release-linux-aarch64
             pkg_deps: patchelf
             build_args: ""
