@@ -5,6 +5,7 @@ This module is for installing Linux AppImages.
 import configparser
 import os
 import platform
+import re
 import shutil
 import subprocess
 import tempfile
@@ -12,6 +13,99 @@ from pathlib import Path
 
 from InstallRelease.pkgs.base import PackageInstallerABC
 from InstallRelease.utils import logger
+
+ENTRY = "Desktop Entry"
+# One Exec= token: a run of "quoted strings" and non-space chars, e.g. --opt="a b".
+_EXEC_TOKEN = re.compile(r'(?:"(?:[^"\\]|\\.)*"|[^\s"])+')
+# Characters that force an Exec= argument to be quoted (desktop entry spec).
+_EXEC_RESERVED = set(" \t\n\"'\\><~|&;$*?#()`")
+_ENV_OPTS_WITH_ARG = {"-u", "--unset", "-C", "--chdir"}
+
+
+def desktop_parser() -> configparser.RawConfigParser:
+    """A parser for .desktop files: keeps key casing, leaves %U etc. alone."""
+    config = configparser.RawConfigParser(strict=False, interpolation=None)
+    config.optionxform = str  # preserve key casing (Name, Exec, etc.)
+    return config
+
+
+def _exec_quote(arg: str) -> str:
+    """Quote one argument for an Exec= value per the desktop entry spec."""
+    arg = arg.replace("%", "%%")
+    if not any(c in _EXEC_RESERVED for c in arg):
+        return arg
+    # The file's string escaping (\\ -> \) applies before Exec quoting
+    # (\" -> "), so a literal backslash takes four and " ` $ take two.
+    arg = arg.replace("\\", "\\" * 4)
+    for c in '"`$':
+        arg = arg.replace(c, "\\\\" + c)
+    return f'"{arg}"'
+
+
+def _point_exec_at(exec_val: str, appimage: str, no_sandbox: bool) -> str:
+    """
+    Replace the program in an Exec= value with the (already quoted) AppImage,
+    keeping any `env ...` prefix and the app's arguments verbatim.
+    """
+    tokens = list(_EXEC_TOKEN.finditer(exec_val))
+    words = [t.group().replace('"', "") for t in tokens]  # for matching only
+    i = 0
+    if words and words[0] == "env":
+        i = 1
+        while i < len(words) and (words[i].startswith("-") or "=" in words[i]):
+            i += 2 if words[i] in _ENV_OPTS_WITH_ARG else 1
+
+    if i >= len(tokens):
+        prefix, rest = "", ""
+    else:
+        prefix, rest = exec_val[: tokens[i].start()], exec_val[tokens[i].end() :]
+        if Path(words[i]).name in ("sh", "bash"):
+            # shortcut: shell-wrapped commands aren't parsed, so the app gets
+            # no args; parse the -c string if an AppImage ever needs them.
+            rest = ""
+
+    sandbox = " --no-sandbox" if no_sandbox and "--no-sandbox" not in rest else ""
+    return f"{prefix}{appimage}{sandbox}{rest}"
+
+
+def _point_entry_at(
+    config: configparser.RawConfigParser, appimage: str, icon: str, no_sandbox: bool
+) -> None:
+    """Point every Exec= and Icon= of a desktop entry at the installed files."""
+    # D-Bus activation looks up the app by its own desktop-file name, which
+    # differs from ours, and TryExec names a binary that isn't on PATH.
+    config.remove_option(ENTRY, "DBusActivatable")
+    config.remove_option(ENTRY, "TryExec")
+    for section in config.sections():
+        if config.has_option(section, "Exec"):
+            exec_val = _point_exec_at(config.get(section, "Exec"), appimage, no_sandbox)
+            config.set(section, "Exec", exec_val)
+        if section == ENTRY or config.has_option(section, "Icon"):
+            config.set(section, "Icon", icon)
+
+
+def _load_internal_entry(extracted_dir: Path) -> configparser.RawConfigParser | None:
+    """
+    Parse the AppImage's own .desktop file (at the squashfs root, per the
+    AppImage spec). Returns None if there is none or it can't be parsed.
+    """
+    for f in sorted(extracted_dir.glob("*.desktop")):
+        config = desktop_parser()
+        try:
+            config.read(f, encoding="utf-8")
+        except (configparser.Error, UnicodeDecodeError) as e:
+            logger.debug(f"Could not parse {f.name}: {e}")
+            continue
+        if config.has_section(ENTRY):
+            logger.debug(f"Using internal desktop file: {f.name}")
+            # Without StartupWMClass, desktops match windows by desktop-file
+            # name (the Wayland app-id); ours is renamed, so pin that name.
+            if not config.get(ENTRY, "StartupWMClass", fallback="").strip():
+                config.set(ENTRY, "StartupWMClass", f.stem)
+            return config
+
+    logger.debug("No internal .desktop file found")
+    return None
 
 
 class AppImage(PackageInstallerABC):
@@ -112,23 +206,17 @@ class AppImage(PackageInstallerABC):
 
         logger.debug(f"Creating desktop entry: {self.desktop_entry_path}")
 
-        # extract once, reuse for sandbox detection, pid name, AND icon —
-        #      previously extracted twice (once here, once inside icon()).
         appimage_abs_path = self.appimage_path.resolve()
         extracted_dir = self._appimage_extract(appimage_abs_path)
 
-        # default to False (no-sandbox) rather than True when extraction
-        #      fails, so non-Electron apps don't get the flag unnecessarily.
+        # default to False so non-Electron apps don't get --no-sandbox.
         needs_no_sandbox = False
-        # pid_name is a local variable; previously it was stored as
-        #      instance state via a hidden side effect in desktop_entry().
-        pid_name: str | None = None
+        internal_entry: configparser.RawConfigParser | None = None
 
         if extracted_dir and extracted_dir.exists():
             try:
                 needs_no_sandbox = self._needs_no_sandbox(extracted_dir)
-                pid_name = self._get_pid_name(extracted_dir)
-                logger.debug(f"Detected PID name: {pid_name}")
+                internal_entry = _load_internal_entry(extracted_dir)
 
                 # Copy icon while we still have the extracted dir.
                 icon_file = self._find_icon(extracted_dir)
@@ -142,35 +230,34 @@ class AppImage(PackageInstallerABC):
                         f"No icon found in extracted AppImage for: {self.name}"
                     )
             finally:
-                # cleanup is always done here — previously the caller was
-                #      responsible, creating an asymmetric and leak-prone contract.
                 shutil.rmtree(extracted_dir.parent, ignore_errors=True)
         else:
             logger.warning(
                 f"Could not extract AppImage for inspection: {appimage_abs_path}"
             )
 
-        exec_cmd = (
-            f"{self.appimage_path} --no-sandbox"
-            if needs_no_sandbox
-            else str(self.appimage_path)
+        if internal_entry:
+            # Reuse the app's own entry (Name, Categories, Keywords, MimeType,
+            # Actions, StartupWMClass, ...), pointed at the installed files.
+            config = internal_entry
+        else:
+            config = desktop_parser()
+            config[ENTRY] = {
+                "Name": self.name,
+                "Exec": "",  # just the AppImage, filled in below
+                "Type": "Application",
+                "Categories": "Utility;",
+                "StartupWMClass": self.name,
+            }
+        _point_entry_at(
+            config,
+            _exec_quote(str(self.appimage_path)),
+            str(self.icon_path),
+            needs_no_sandbox,
         )
-        startup_wm_class = pid_name or self.name
 
-        # use configparser to write the .desktop file instead of a raw
-        #      string, consistent with how we read it in _get_pid_name().
-        config = configparser.RawConfigParser()
-        config.optionxform = str  # preserve key casing (Name, Exec, etc.)
-        config["Desktop Entry"] = {
-            "Name": self.name,
-            "Exec": exec_cmd,
-            "Icon": str(self.icon_path),
-            "Type": "Application",
-            "Categories": "Utility;",
-            "StartupWMClass": startup_wm_class,
-        }
         self.ensure_directory(self.desktop_entry_path.parent)
-        with open(self.desktop_entry_path, "w") as f:
+        with open(self.desktop_entry_path, "w", encoding="utf-8") as f:
             config.write(f, space_around_delimiters=False)
 
     def icon(self, remove: bool = False):
@@ -248,26 +335,6 @@ class AppImage(PackageInstallerABC):
 
         logger.debug("No Electron/sandbox indicators, Exec will not use --no-sandbox")
         return False
-
-    def _get_pid_name(self, extracted_dir: Path) -> str | None:
-        """
-        Detect the actual process name the AppImage launches by reading
-        the internal .desktop file's Exec= entry.
-
-        Returns the binary name (e.g. "code", "obsidian") or None if not found.
-        """
-        for f in extracted_dir.glob("*.desktop"):
-            config = configparser.RawConfigParser(strict=False)
-            config.read(f)
-            exec_val = config.get("Desktop Entry", "Exec", fallback=None)
-            if exec_val:
-                binary = exec_val.split()[0]
-                pid_name = Path(binary).name
-                logger.debug(f"Found PID name '{pid_name}' from {f.name}")
-                return pid_name
-
-        logger.debug("No internal .desktop file found; could not detect PID name")
-        return None
 
     def _find_icon(self, extracted_dir: Path) -> Path | None:
         """
