@@ -204,7 +204,7 @@ def upgrade(
 
         if packages_only or (name and any(v[2] for v in upgrades.values())):
             pprint("\n\n[bold]Need sudo access for installing packages...[/]")
-            result = sh("sudo -v", interactive=True)
+            result = sh("sudo -n true || sudo -v", interactive=True)
             if result.returncode != 0:
                 pprint("[bold red]Failed to acquire sudo. Aborting.[/]")
                 return
