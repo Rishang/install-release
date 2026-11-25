@@ -8,7 +8,7 @@ from typing import Any
 
 import requests
 
-from InstallRelease.config import config, dest
+from InstallRelease.config import config, dest, pre_release_enabled
 from InstallRelease.helper import extract_url, install_bin, save_state
 from InstallRelease.providers.base import PROVIDER_STATE_KEY_PREFIXES, InteractProvider
 from InstallRelease.providers.git.schemas import Release, ReleaseAssets
@@ -229,7 +229,7 @@ class MiseInteractProvider(InteractProvider):
         toolname = name or self.toolname
 
         # Step 1
-        candidates = self.resolve(version=version)
+        candidates = self.resolve(version=version, pre_release=pre_release_enabled())
         if not candidates:
             return
 
