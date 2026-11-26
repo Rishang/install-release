@@ -263,6 +263,7 @@ class GitInteractProvider(InteractProvider):
             extra_words=extra_words,
             disable_adjustments=disable_adjustments,
             package_type=self.package_type if self.package_mode else None,
+            pre_release=pre_release_enabled(),
         )
 
         if result is not False:

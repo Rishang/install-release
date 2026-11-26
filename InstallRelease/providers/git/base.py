@@ -82,6 +82,7 @@ def get_release(
     extra_words: list[str] | None = None,
     disable_adjustments: bool = False,
     package_type: str | None = None,
+    pre_release: bool = False,
 ) -> ReleaseAssets | bool:
     """Select the best-matching release asset using the platform scorer."""
     extra_words = list(extra_words or [])
@@ -97,9 +98,16 @@ def get_release(
         logger.warning(f"No releases found for: {repo_url}")
         return False
 
-    target = next((r for r in releases if r.assets and not r.prerelease), None)
+    target = next(
+        (r for r in releases if r.assets and (pre_release or not r.prerelease)), None
+    )
     if not target or not target.assets:
-        logger.warning("No suitable release found (non-prerelease with assets)")
+        msg = (
+            "No suitable release found (with assets)"
+            if pre_release
+            else "No suitable release found (non-prerelease with assets)"
+        )
+        logger.warning(msg)
         return False
 
     best_name = scorer.select_best([a.name for a in target.assets])

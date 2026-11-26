@@ -139,7 +139,9 @@ def upgrade(
         if i.url.startswith(_mise):
             toolname = i.url[len(_mise) :]
             pprint(f"Fetching: [blue]mise@{toolname}[/blue]")
-            versions = MiseInteractProvider(toolname).resolve()
+            versions = MiseInteractProvider(toolname).resolve(
+                pre_release=pre_release_enabled()
+            )
             if versions and (force or versions[0] != state[k].tag_name):
                 with _lock:
                     upgrades[i.name] = (i.url, versions[0], False)
