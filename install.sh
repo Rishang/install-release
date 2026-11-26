@@ -47,6 +47,7 @@ bold "Installing ir into ~/bin ..."
 cd "$tmp_dir"
 # -y: no prompt, so this also works when piped from curl
 ./ir-cli get "https://github.com/${REPO}" -n ir -y
+ln -sf "$HOME/bin/ir" "$HOME/bin/install-release"
 
 echo
 green "✔ ir installed to ~/bin/ir"
