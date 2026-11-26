@@ -50,7 +50,7 @@ cd "$tmp_dir"
 ln -sf "$HOME/bin/ir" "$HOME/bin/install-release"
 
 echo
-green "✔ ir installed to ~/bin/ir"
+green "✔ ir installed to ~/bin/ir (symlinked at ~/bin/install-release)"
 echo
 
 case ":$PATH:" in
