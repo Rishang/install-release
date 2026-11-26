@@ -135,4 +135,3 @@ def test_mise_upgrade_passes_pre_release_config(monkeypatch):
     cli_interact.upgrade(skip_prompt=True)
 
     assert captured == [True]
-  
