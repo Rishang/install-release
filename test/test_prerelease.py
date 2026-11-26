@@ -120,7 +120,9 @@ def test_mise_upgrade_passes_pre_release_config(monkeypatch):
     )
     monkeypatch.setattr(cli_interact, "pre_release_enabled", lambda: True)
     monkeypatch.setattr(cli_interact, "state_info", lambda: None)
-    monkeypatch.setattr(cli_interact.cache, "state", {"mise:ripgrep#ripgrep": old_release})
+    monkeypatch.setattr(
+        cli_interact.cache, "state", {"mise:ripgrep#ripgrep": old_release}
+    )
     monkeypatch.setattr(
         cli_interact,
         "threads",
