@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+from typing import NamedTuple
 
 from rich.console import Console
 
@@ -101,6 +102,14 @@ def get(
     )
 
 
+class PendingUpgrade(NamedTuple):
+    """A tool with a newer version waiting to be installed."""
+
+    url: str
+    version: str
+    is_package: bool
+
+
 def upgrade(
     force: bool = False,
     skip_prompt: bool = False,
@@ -110,16 +119,16 @@ def upgrade(
     """Check all installed tools for newer versions and upgrade them.
 
     Phase 1: Concurrently fetch latest versions for all tools (git + mise).
-    Phase 2: Show pending upgrades, prompt user, then install sequentially.
+    Phase 2: Prompt for and install binaries, then prompt for and install packages.
     """
     state_info()
 
     state: TypeState = cache.state
     keys = [k for k in state if not name or irKey.parse(k).name == name]
 
-    # Collect upgrade candidates: name -> (url, new_version, is_package)
-    upgrades: dict[str, tuple[str, str, bool]] = {}
-    pkg_upgrades: set[str] = set()  # names only, for notification
+    # Upgrade candidates by tool name; packages are asked about after binaries
+    upgrades: dict[str, PendingUpgrade] = {}
+    pkg_upgrades: dict[str, PendingUpgrade] = {}
     _lock = threading.Lock()
     _mise = PROVIDER_STATE_KEY_PREFIXES["mise"]
     _docker = PROVIDER_STATE_KEY_PREFIXES["docker"]
@@ -144,7 +153,7 @@ def upgrade(
             )
             if versions and (force or versions[0] != state[k].tag_name):
                 with _lock:
-                    upgrades[i.name] = (i.url, versions[0], False)
+                    upgrades[i.name] = PendingUpgrade(i.url, versions[0], False)
             return
 
         # ── docker tools ─────────────────────────────────────────────────────
@@ -159,7 +168,7 @@ def upgrade(
             pprint(f"Checking: [blue]docker@{cli_image}:{tag}[/blue]")
             if docker_needs_update(image_ref, tag, force=force):
                 with _lock:
-                    upgrades[i.name] = (i.url, tag, False)
+                    upgrades[i.name] = PendingUpgrade(i.url, tag, False)
             return
 
         # ── git tools ───────────────────────────────────────────────────────
@@ -174,9 +183,11 @@ def upgrade(
         if releases[0].published_dt() > state[k].published_dt() or force:
             with _lock:
                 if is_package(state, k) and not packages_only and not name:
-                    pkg_upgrades.add(i.name)
+                    pkg_upgrades[i.name] = PendingUpgrade(
+                        repo.repo_url, releases[0].tag_name, True
+                    )
                 else:
-                    upgrades[i.name] = (
+                    upgrades[i.name] = PendingUpgrade(
                         repo.repo_url,
                         releases[0].tag_name,
                         is_package(state, k),
@@ -185,53 +196,58 @@ def upgrade(
     # Phase 1: concurrent version checks
     threads(task, data=keys, max_workers=20, return_result=False)
 
-    # Notify about package upgrades when not in --pkg mode
-    if not packages_only and pkg_upgrades:
-        pprint("\n[bold cyan]Following package can be upgraded.[/]\n")
-        pprint("[bold indian_red]" + " ".join(pkg_upgrades))
-        pprint(
-            "\n[bold white]To upgrade packages, run: [green]ir upgrade --pkg[/green][/]\n"
-        )
+    if not upgrades and not pkg_upgrades:
+        pprint("[bold green]All tools are onto latest version")
+        return
 
-    # Phase 2: prompt and install pending upgrades
-    if upgrades:
-        pprint("\n[bold magenta]Following tool will get upgraded.\n")
-        console.print("[bold yellow]" + " ".join(upgrades))
-        pprint("\n[bold blue]Upgrade these tools, (Y/n):", end=" ")
+    def confirm_and_install(
+        batch: dict[str, PendingUpgrade], label: str, needs_sudo: bool
+    ) -> None:
+        """Prompt for one batch of upgrades (Enter = yes), then install it."""
+        pprint(f"\n[bold magenta]Following {label} will get upgraded.\n")
+        console.print("[bold yellow]" + " ".join(batch))
+        pprint(f"\n[bold blue]Upgrade these {label}, (Y/n):", end=" ")
 
         if not skip_prompt:
-            r = input()
-            if r.lower() != "y":
+            r = input().strip().lower()
+            if r not in ("", "y", "yes"):
                 return
 
-        if packages_only or (name and any(v[2] for v in upgrades.values())):
+        if needs_sudo:
             pprint("\n\n[bold]Need sudo access for installing packages...[/]")
             result = sh("sudo -n true || sudo -v", interactive=True)
             if result.returncode != 0:
                 pprint("[bold red]Failed to acquire sudo. Aborting.[/]")
                 return
             pprint()
-    else:
-        pprint("[bold green]All tools are onto latest version")
-        return
 
-    total = len(upgrades)
-    for idx, name in enumerate(upgrades, 1):
-        url, new_version, pkg_mode = upgrades[name]
-        k = f"{url}#{name}"
-        docker_opts = state[k].docker_opts
-        pct = int(idx * 100 / total)
-        pprint(
-            f"[bold yellow]({pct}%) Updating: {name}, {state[k].tag_name} => {new_version}[/]"
+        total = len(batch)
+        for idx, tool in enumerate(batch, 1):
+            pending = batch[tool]
+            k = f"{pending.url}#{tool}"
+            docker_opts = state[k].docker_opts
+            pct = int(idx * 100 / total)
+            pprint(
+                f"[bold yellow]({pct}%) Updating: {tool}, {state[k].tag_name} => {pending.version}[/]"
+            )
+            get(
+                pending.url,
+                version=pending.version,
+                prompt=False,
+                name=tool,
+                pkg=pending.is_package,
+                docker_opts=docker_opts,
+            )
+
+    # Phase 2: binaries first, then packages (each with its own prompt)
+    if upgrades:
+        confirm_and_install(
+            upgrades,
+            "packages" if packages_only else "binaries",
+            needs_sudo=packages_only or any(u.is_package for u in upgrades.values()),
         )
-        get(
-            url,
-            version=new_version,
-            prompt=False,
-            name=name,
-            pkg=pkg_mode,
-            docker_opts=docker_opts,
-        )
+    if pkg_upgrades:
+        confirm_and_install(pkg_upgrades, "packages", needs_sudo=True)
 
 
 def show_state():

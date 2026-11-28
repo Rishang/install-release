@@ -527,7 +527,7 @@ To upgrade only one installed tool, provide its name:
 
 ##### Update installed system packages 📦
     
-If you have tools installed as packages (deb/rpm/appimage), `ir upgrade` will inform you if updates are available but will **not** install them. To upgrade packages, run:
+If you have tools installed as packages (deb/rpm/appimage), `ir upgrade` first asks to upgrade binaries (press Enter for yes), and once those are done it asks separately whether to upgrade the pending packages (this needs sudo). To upgrade only packages, run:
     
 ```bash
 ❯ ir upgrade --pkg
